@@ -449,6 +449,8 @@ export const ChessBoard: React.FC = () => {
   const whiteComputerEnabledRef = useRef<boolean>(false);
   const blackComputerEnabledRef = useRef<boolean>(false);
   const isComputerThinkingRef = useRef<boolean>(false);
+  const activeComputerMoveSideRef = useRef<PieceColor | null>(null);
+  const computerMoveSequenceIdRef = useRef<number>(0);
   const [isComputerThinking, setIsComputerThinkingState] =
     useState<boolean>(false);
 
@@ -491,6 +493,23 @@ export const ChessBoard: React.FC = () => {
   function setComputerThinking(value: boolean) {
     isComputerThinkingRef.current = value;
     setIsComputerThinkingState(value);
+
+    if (!value) {
+      activeComputerMoveSideRef.current = null;
+    }
+  }
+
+  function setComputerThinkingForSide(side: PieceColor | null, value: boolean) {
+    activeComputerMoveSideRef.current = value ? side : null;
+    setComputerThinking(value);
+  }
+
+  function invalidateComputerMoveSequences() {
+    computerMoveSequenceIdRef.current += 1;
+  }
+
+  function isComputerMoveSequenceCurrent(sequenceId: number) {
+    return computerMoveSequenceIdRef.current === sequenceId;
   }
 
   function setEngineAutoUpdate(value: boolean | ((previous: boolean) => boolean)) {
@@ -538,11 +557,44 @@ export const ChessBoard: React.FC = () => {
     return !!piece && isSideComputerControlled(piece.color);
   }
 
+  async function cancelPlayerEngine(side: PieceColor) {
+    invalidateComputerMoveSequences();
+
+    if (activeComputerMoveSideRef.current === side) {
+      setComputerThinkingForSide(null, false);
+    }
+
+    try {
+      const response = await fetch(
+        `/api/computer-move/cancel?side=${encodeURIComponent(side)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.warn(
+          `[cancelPlayerEngine] backend returned HTTP ${response.status} for ${side}`
+        );
+      }
+    } catch (error) {
+      console.warn(`[cancelPlayerEngine] could not cancel ${side} engine`, error);
+    }
+  }
+
   function updateWhiteComputerEnabled(enabled: boolean) {
     whiteComputerEnabledRef.current = enabled;
     setWhiteComputerEnabled(enabled);
 
-    if (enabled && normalizeSide(clock?.sideToMove) === "white") {
+    if (!enabled) {
+      void cancelPlayerEngine("white");
+      return;
+    }
+
+    if (normalizeSide(clock?.sideToMove) === "white") {
       runComputerMoveSequence("white");
     }
   }
@@ -551,7 +603,12 @@ export const ChessBoard: React.FC = () => {
     blackComputerEnabledRef.current = enabled;
     setBlackComputerEnabled(enabled);
 
-    if (enabled && normalizeSide(clock?.sideToMove) === "black") {
+    if (!enabled) {
+      void cancelPlayerEngine("black");
+      return;
+    }
+
+    if (normalizeSide(clock?.sideToMove) === "black") {
       runComputerMoveSequence("black");
     }
   }
@@ -561,6 +618,8 @@ export const ChessBoard: React.FC = () => {
     blackComputerEnabledRef.current = false;
     setWhiteComputerEnabled(false);
     setBlackComputerEnabled(false);
+    void cancelPlayerEngine("white");
+    void cancelPlayerEngine("black");
   }
 
   async function loadBoardFromBackend() {
@@ -1195,7 +1254,10 @@ export const ChessBoard: React.FC = () => {
     return true;
   }
 
-  async function requestComputerMove(): Promise<{
+  async function requestComputerMove(
+    sequenceId: number,
+    requestedSide: PieceColor | null
+  ): Promise<{
     gameEnded: boolean;
     sideToMove: string | null;
     success: boolean;
@@ -1203,7 +1265,7 @@ export const ChessBoard: React.FC = () => {
     console.log("[requestComputerMove] start");
 
     try {
-      setComputerThinking(true);
+      setComputerThinkingForSide(requestedSide, true);
       setLoadError(null);
 
       const response = await fetch("/api/computer-move", {
@@ -1216,6 +1278,14 @@ export const ChessBoard: React.FC = () => {
       const data: MoveResult = await response.json();
       console.log("[requestComputerMove] response", response.status, data);
 
+      if (!isComputerMoveSequenceCurrent(sequenceId)) {
+        return {
+          gameEnded: false,
+          sideToMove: data.sideToMove ?? null,
+          success: false,
+        };
+      }
+
       if (!response.ok || !data.success) {
         if (handleGameEndState(data.gameState)) {
           await loadClock();
@@ -1227,7 +1297,11 @@ export const ChessBoard: React.FC = () => {
         }
 
         const message = data.message || `HTTP ${response.status}`;
-        setLoadError(message);
+
+        if (message !== "Computer move was cancelled") {
+          setLoadError(message);
+        }
+
         return {
           gameEnded: false,
           sideToMove: data.sideToMove ?? null,
@@ -1263,12 +1337,15 @@ export const ChessBoard: React.FC = () => {
         success: false,
       };
     } finally {
-      setComputerThinking(false);
+      if (isComputerMoveSequenceCurrent(sequenceId)) {
+        setComputerThinkingForSide(null, false);
+      }
     }
   }
 
   async function requestComputerMoveIfEnabled(
-    initialSideToMove: string | null | undefined
+    initialSideToMove: string | null | undefined,
+    sequenceId: number
   ): Promise<{ gameEnded: boolean; sideToMove: string | null; moved: boolean }> {
     let nextSide = normalizeSide(initialSideToMove);
     let moved = false;
@@ -1278,11 +1355,12 @@ export const ChessBoard: React.FC = () => {
       nextSide &&
       isSideComputerControlled(nextSide) &&
       !isComputerThinkingRef.current &&
+      isComputerMoveSequenceCurrent(sequenceId) &&
       guard < 200
     ) {
       guard++;
 
-      const result = await requestComputerMove();
+      const result = await requestComputerMove(sequenceId, nextSide);
 
       if (!result.success || result.gameEnded) {
         return {
@@ -1313,9 +1391,21 @@ export const ChessBoard: React.FC = () => {
   }
 
   function runComputerMoveSequence(initialSideToMove: string | null | undefined) {
-    requestComputerMoveIfEnabled(initialSideToMove)
-      .then(() => synchronizeAfterMoveSequence())
+    const sequenceId = computerMoveSequenceIdRef.current + 1;
+    computerMoveSequenceIdRef.current = sequenceId;
+
+    requestComputerMoveIfEnabled(initialSideToMove, sequenceId)
+      .then(() => {
+        if (isComputerMoveSequenceCurrent(sequenceId)) {
+          return synchronizeAfterMoveSequence();
+        }
+        return undefined;
+      })
       .catch(async (error) => {
+        if (!isComputerMoveSequenceCurrent(sequenceId)) {
+          return;
+        }
+
         console.error("[runComputerMoveSequence] error", error);
         setLoadError("Fehler beim Ausführen des Engine-Zugs.");
         await loadBoardFromBackend();
@@ -1894,7 +1984,7 @@ export const ChessBoard: React.FC = () => {
             ]
               .filter(Boolean)
               .join(" ")}
-            onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabled)}
+            onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabledRef.current)}
             aria-pressed={whiteComputerEnabled}
             title="Computer spielt Weiß ein-/ausschalten"
           >
@@ -1909,7 +1999,7 @@ export const ChessBoard: React.FC = () => {
             ]
               .filter(Boolean)
               .join(" ")}
-            onClick={() => updateBlackComputerEnabled(!blackComputerEnabled)}
+            onClick={() => updateBlackComputerEnabled(!blackComputerEnabledRef.current)}
             aria-pressed={blackComputerEnabled}
             title="Computer spielt Schwarz ein-/ausschalten"
           >
