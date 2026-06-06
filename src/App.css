@@ -1,0 +1,894 @@
+/* App-Layout */
+#root {
+  min-height: 100vh;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  height: 56px;
+  padding: 0 24px;
+  border-bottom: 1px solid #222;
+  background: #333;
+  color: #f5f5f5;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  box-sizing: border-box;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.top-engine-controls {
+  margin-left: auto;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-engine-button {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #3a3a3a;
+  color: #dddddd;
+  cursor: pointer;
+
+  height: 26px;
+  white-space: nowrap;
+}
+
+.top-engine-button.auto-toggle {
+  min-width: 96px;
+}
+
+.top-engine-button.computer-toggle {
+  min-width: 88px;
+}
+
+.top-engine-button.new-game {
+  min-width: 88px;
+}
+
+.top-engine-button.engine-settings {
+  min-width: 116px;
+}
+
+.top-engine-button:hover {
+  background: #444;
+  color: #ffffff;
+}
+
+.top-engine-button.top-engine-button-pressed {
+  background: #202020;
+  color: #ffffff;
+  border-color: #777;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  transform: translateY(1px);
+}
+
+.top-engine-button.top-engine-button-pressed:hover {
+  background: #252525;
+}
+
+.top-engine-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1.5rem;
+  background: #4a4a4a;
+  overflow-x: auto;
+}
+
+.board-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 0 0 auto;
+}
+
+.board-column {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Brett-Kachel: darf nicht mit dem rechten Engine-Bereich mitwachsen */
+.board-wrapper {
+  flex: 0 0 auto;
+  align-self: flex-start;
+
+  background: #2b2b2b;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* Uhrbereich unter dem Brett */
+.clock-area {
+  width: calc(8 * 80px + 24px);
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.clock-box {
+  flex: 1 1 0;
+  min-width: 0;
+
+  border: 1px solid #3f3f3f;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clock-box:first-child {
+  background: #f3f3f3;
+  color: #111111;
+}
+
+.clock-box:nth-child(2) {
+  background: #111111;
+  color: #f3f3f3;
+}
+
+.clock-box.clock-active {
+  outline: 3px solid #d6c26a;
+  outline-offset: 2px;
+}
+
+.clock-box.clock-running {
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.clock-box:first-child .clock-label {
+  font-size: 0.75rem;
+  color: #333333;
+  margin-bottom: 2px;
+}
+
+.clock-box:nth-child(2) .clock-label {
+  font-size: 0.75rem;
+  color: #bbbbbb;
+  margin-bottom: 2px;
+}
+
+.clock-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: inherit;
+}
+
+.clock-error {
+  flex: 0 0 100%;
+  color: #ff8080;
+  font-size: 0.75rem;
+}
+
+/* Container für Brett + Figuren */
+.board-container {
+  position: relative;
+  width: calc(8 * 80px);
+  height: calc(8 * 80px);
+}
+
+/* Schachbrett-Raster */
+.board {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 80px);
+  grid-template-rows: repeat(8, 80px);
+  border: 2px solid #333;
+  background: #000;
+}
+
+.square {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+}
+
+/* Brettfarben */
+.square-light {
+  background: #f0d9b5;
+}
+
+.square-dark {
+  background: #769656;
+}
+
+/* Auswahl / letzter Zug */
+.square-selected {
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.85);
+}
+
+.square-last-move {
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.6);
+}
+
+/* Mögliche Ziel-Felder */
+.square-possible::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 3px solid rgba(0, 255, 200, 0.9);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+}
+
+.square-selected.square-possible::after {
+  border-color: rgba(255, 255, 0, 0.95);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Beschriftung unten rechts im Feld */
+.square-label {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+/* Figuren-Layer */
+.pieces-layer {
+  pointer-events: none;
+}
+
+.pieces-layer .piece {
+  position: absolute;
+  font-size: 64px;
+  line-height: 80px;
+  text-align: center;
+  transition: transform 180ms ease-out;
+}
+
+/* Figurendarstellung mit Animation */
+.piece {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2rem;
+  line-height: 1;
+  pointer-events: auto;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+
+.piece-dragging {
+  z-index: 30;
+  cursor: grabbing;
+  transition: none !important;
+}
+
+.piece-white {
+  color: #ffffff !important;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+.piece-black {
+  color: #000000 !important;
+}
+
+/* Linkes Panel: Züge */
+.moves-panel {
+  flex: 0 0 170px;
+  height: calc(8 * 80px + 24px);
+  min-width: 0;
+  background: #2b2b2b;
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  color: #f5f5f5;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Rechtes Panel: feste Breite, damit lange Engine-Lines nichts verschieben */
+.engine-panel {
+  flex: 0 0 920px;
+  width: 920px;
+  min-width: 920px;
+  max-width: 920px;
+  align-self: flex-start;
+
+  color: #f5f5f5;
+  box-sizing: border-box;
+}
+
+/* Panel-Titel */
+.panel-title {
+  margin: 0 0 6px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 4px;
+}
+
+/* Zugliste */
+.moves-list {
+  max-height: calc(8 * 80px + 24px - 70px);
+  overflow-y: auto;
+}
+
+.moves-empty {
+  font-style: italic;
+  color: #aaaaaa;
+  padding: 4px 0;
+}
+
+.move-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 0;
+}
+
+.move-number {
+  width: 26px;
+  text-align: right;
+  margin-right: 4px;
+  color: #bbbbbb;
+}
+
+.move-entry {
+  flex: 1;
+}
+
+.move-entry-white {
+  color: #ffffff;
+}
+
+.move-entry-black {
+  color: #dddddd;
+}
+
+/* Alte Engine-Controls; bleiben nur für Kompatibilität */
+.engine-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.engine-refresh-button,
+.engine-toggle-button {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #3a3a3a;
+  color: #f5f5f5;
+  cursor: pointer;
+}
+
+.engine-refresh-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Hauptbereich im Engine-Panel:
+   Bewertungsbalken bleibt links, Content-Spalte rechts. */
+.engine-panel-main {
+  width: 920px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+/* Schmale, senkrechte Bewertungsleiste direkt rechts vom Brett */
+.engine-bar-wrapper {
+  flex: 0 0 24px;
+  width: 24px;
+  height: calc(8 * 80px + 24px);
+
+  border: 1px solid #666;
+  border-radius: 4px;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column-reverse;
+  box-sizing: border-box;
+}
+
+.engine-bar-wrapper-empty {
+  background: #111111;
+}
+
+.engine-bar-white,
+.engine-bar-black {
+  width: 100%;
+  transition: height 400ms ease-in-out;
+}
+
+.engine-bar-white {
+  background: #f3f3f3;
+}
+
+.engine-bar-black {
+  background: #111111;
+}
+
+.engine-content-column {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Rechts von der Leiste: Fenster mit Engine-Lines */
+.engine-lines {
+  flex: 0 0 auto;
+  height: calc(8 * 80px + 24px);
+  overflow: auto;
+
+  background: #2b2b2b;
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+
+  box-sizing: border-box;
+}
+
+.engine-line {
+  padding: 4px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.engine-line-header {
+  font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.engine-line-moves {
+  font-size: 0.75rem;
+  color: #dddddd;
+  margin-top: 2px;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Engine-Fehler / leerer Zustand */
+.engine-error {
+  color: #ff8080;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.engine-empty {
+  font-style: italic;
+  color: #aaaaaa;
+  padding: 4px 0;
+}
+
+/* Engine-Panel Placeholder */
+.engine-placeholder {
+  width: 920px;
+  height: calc(8 * 80px + 24px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #888888;
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 8px 4px;
+  box-sizing: border-box;
+}
+
+.engine-placeholder-text {
+  opacity: 0.9;
+}
+
+/* Stockfish configuration panel */
+.stockfish-config-panel {
+  width: 100%;
+  box-sizing: border-box;
+
+  background: #2b2b2b;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.stockfish-config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stockfish-config-version {
+  color: #aaaaaa;
+  font-size: 0.72rem;
+}
+
+.stockfish-config-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stockfish-config-section {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.stockfish-config-section-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f5f5f5;
+  margin-bottom: 8px;
+}
+
+.stockfish-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.stockfish-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.75rem;
+  color: #dddddd;
+}
+
+.stockfish-config-field-wide {
+  margin-bottom: 8px;
+}
+
+.stockfish-config-field input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1f1f1f;
+  color: #f5f5f5;
+  font-size: 0.75rem;
+}
+
+.stockfish-config-field input[readonly] {
+  color: #bbbbbb;
+}
+
+.stockfish-config-hint {
+  margin-top: 8px;
+  color: #bbbbbb;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.stockfish-save-button {
+  margin-top: 8px;
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #3a3a3a;
+  color: #f5f5f5;
+  cursor: pointer;
+}
+
+.stockfish-save-button:hover {
+  background: #444;
+  color: #ffffff;
+}
+
+.stockfish-save-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.stockfish-config-message {
+  margin-top: 6px;
+  color: #a8ffb0;
+  font-size: 0.75rem;
+}
+
+/* Promotion-Dialog */
+.promotion-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.promotion-dialog-content {
+  background: #2b2b2b;
+  color: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 320px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+.promotion-dialog-content p {
+  margin: 0 0 12px 0;
+}
+
+.promotion-options {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.promotion-button,
+.promotion-cancel-button {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #f5f5f5;
+  color: #111111;
+  cursor: pointer;
+}
+
+.promotion-button:hover,
+.promotion-cancel-button:hover {
+  background: #ffffff;
+}
+
+/* Hover-Vorschau für Schachstellungen aus der Zugliste */
+.move-entry-previewable {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.move-entry-previewable:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hover-board {
+  position: fixed;
+  width: 240px;
+  height: 240px;
+  display: grid;
+  grid-template-columns: repeat(8, 30px);
+  grid-template-rows: repeat(8, 30px);
+  border: 2px solid #222222;
+  background: #111111;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
+  z-index: 1000;
+  pointer-events: none;
+  box-sizing: content-box;
+}
+
+.hover-board-square {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.hover-board-square-light {
+  background: #f0d9b5;
+}
+
+.hover-board-square-dark {
+  background: #769656;
+}
+
+.hover-board-piece {
+  font-size: 23px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.hover-board-piece-white {
+  color: #ffffff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
+.hover-board-piece-black {
+  color: #000000;
+}
+
+
+/* Game-End-Dialog */
+.game-end-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+}
+
+.game-end-dialog-content {
+  background: #2b2b2b;
+  color: #f5f5f5;
+  border-radius: 10px;
+  padding: 18px;
+  min-width: 340px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+  text-align: center;
+}
+
+.game-end-dialog-content h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.game-end-dialog-content p {
+  margin: 0 0 16px 0;
+  color: #dddddd;
+  font-size: 0.95rem;
+}
+
+.game-end-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.game-end-dialog-button {
+  min-width: 104px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 5px;
+  border: 1px solid #555;
+  background: #f5f5f5;
+  color: #111111;
+  cursor: pointer;
+}
+
+.game-end-dialog-button:hover {
+  background: #ffffff;
+}
+
+/* Game-Settings-Dialog */
+.game-settings-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 130;
+}
+
+.game-settings-dialog-content {
+  background: #2b2b2b;
+  color: #f5f5f5;
+  border-radius: 10px;
+  padding: 18px;
+  min-width: 380px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+}
+
+.game-settings-dialog-content h2 {
+  margin: 0 0 14px 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.game-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: #dddddd;
+}
+
+.game-settings-field input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 5px 7px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1f1f1f;
+  color: #f5f5f5;
+  font-size: 0.85rem;
+}
+
+.game-settings-error {
+  margin-top: 10px;
+  color: #ff8080;
+  font-size: 0.8rem;
+}
+
+.game-settings-dialog-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.game-settings-dialog-button {
+  min-width: 120px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 5px;
+  border: 1px solid #555;
+  background: #f5f5f5;
+  color: #111111;
+  cursor: pointer;
+}
+
+.game-settings-dialog-button:hover {
+  background: #ffffff;
+}
+
+.game-settings-dialog-button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
