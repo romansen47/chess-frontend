@@ -556,6 +556,13 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
+  function disablePlayerEngines() {
+    whiteComputerEnabledRef.current = false;
+    blackComputerEnabledRef.current = false;
+    setWhiteComputerEnabled(false);
+    setBlackComputerEnabled(false);
+  }
+
   async function loadBoardFromBackend() {
     try {
       console.log("[loadBoardFromBackend] start");
@@ -819,8 +826,12 @@ export const ChessBoard: React.FC = () => {
     const slot = stockfishConfig[role];
     const settings = slot.settings;
 
+    const sectionClassName = allowMultiPV
+      ? "stockfish-config-section stockfish-config-section-evaluation"
+      : "stockfish-config-section stockfish-config-section-player";
+
     return (
-      <div className="stockfish-config-section">
+      <div className={sectionClassName}>
         <div className="stockfish-config-section-title">
           {title} · version {version}
         </div>
@@ -1003,6 +1014,7 @@ export const ChessBoard: React.FC = () => {
       setIsStartingNewGame(true);
       setLoadError(null);
       setGameSettingsError(null);
+      disablePlayerEngines();
 
       const response = await fetch("/api/new-game", {
         method: "POST",
@@ -2052,21 +2064,23 @@ export const ChessBoard: React.FC = () => {
                     {stockfishConfig ? (
                       <>
                         <div className="stockfish-config-sections">
-                          {renderStockfishSlotSection(
-                            "whitePlayer",
-                            "White player engine",
-                            stockfishConfig.whitePlayerVersion,
-                            "Für echte Computerzüge von Weiß. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
-                            false
-                          )}
+                          <div className="stockfish-player-config-sections">
+                            {renderStockfishSlotSection(
+                              "whitePlayer",
+                              "White player engine",
+                              stockfishConfig.whitePlayerVersion,
+                              "Für echte Computerzüge von Weiß. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
+                              false
+                            )}
 
-                          {renderStockfishSlotSection(
-                            "blackPlayer",
-                            "Black player engine",
-                            stockfishConfig.blackPlayerVersion,
-                            "Für echte Computerzüge von Schwarz. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
-                            false
-                          )}
+                            {renderStockfishSlotSection(
+                              "blackPlayer",
+                              "Black player engine",
+                              stockfishConfig.blackPlayerVersion,
+                              "Für echte Computerzüge von Schwarz. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
+                              false
+                            )}
+                          </div>
 
                           {renderStockfishSlotSection(
                             "evaluation",

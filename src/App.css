@@ -569,6 +569,12 @@
   gap: 10px;
 }
 
+.stockfish-player-config-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .stockfish-config-section {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
@@ -587,6 +593,14 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(110px, 1fr));
   gap: 8px;
+}
+
+.stockfish-config-section-player .stockfish-config-grid {
+  grid-template-columns: repeat(3, minmax(62px, 1fr));
+}
+
+.stockfish-config-section-evaluation .stockfish-config-grid {
+  grid-template-columns: repeat(4, minmax(80px, 1fr));
 }
 
 .stockfish-config-field {
@@ -621,6 +635,19 @@
   color: #bbbbbb;
   font-size: 0.72rem;
   line-height: 1.3;
+}
+
+@media (max-width: 1180px) {
+  .stockfish-player-config-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .stockfish-config-section-player .stockfish-config-grid,
+  .stockfish-config-section-evaluation .stockfish-config-grid {
+    grid-template-columns: repeat(2, minmax(90px, 1fr));
+  }
 }
 
 .stockfish-save-button {
