@@ -146,6 +146,42 @@ interface GameSettings {
   version: number;
 }
 
+interface AnalysisReplaySettings {
+  moveTimeSeconds: number;
+  depth: number;
+  threads: number;
+  hashSize: number;
+  multiPV: number;
+  contempt: number;
+  uciElo: number;
+}
+
+interface AnalysisProfilePoint {
+  ply: number;
+  from: string | null;
+  to: string | null;
+  san: string | null;
+  evaluation: number;
+  bar: number;
+  depth: number;
+}
+
+interface AnalysisReplayStep {
+  active: boolean;
+  done: boolean;
+  totalPlies: number;
+  currentPly: number;
+  from: string | null;
+  to: string | null;
+  san: string | null;
+  evaluation: number;
+  bar: number;
+  depth: number;
+  board: BoardResponse | null;
+  profile: AnalysisProfilePoint[];
+  message: string | null;
+}
+
 function squareName(file: number, rank: number): string {
   const fileChar = String.fromCharCode("a".charCodeAt(0) + file - 1);
   return `${fileChar}${rank}`;
@@ -404,6 +440,18 @@ function createDefaultGameSettings(): GameSettings {
   };
 }
 
+function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
+  return {
+    moveTimeSeconds: 5,
+    depth: 0,
+    threads: 1,
+    hashSize: 256,
+    multiPV: 1,
+    contempt: 0,
+    uciElo: 0,
+  };
+}
+
 function formatTimeControlFromSettings(settings: GameSettings): string {
   const base =
     settings.timeForEachPlayerSeconds % 60 === 0
@@ -480,6 +528,24 @@ export const ChessBoard: React.FC = () => {
     null
   );
 
+
+  const [showAnalysisSettingsDialog, setShowAnalysisSettingsDialog] =
+    useState<boolean>(false);
+  const [analysisSettings, setAnalysisSettings] =
+    useState<AnalysisReplaySettings>(() => createDefaultAnalysisReplaySettings());
+  const [analysisReplayActive, setAnalysisReplayActiveState] =
+    useState<boolean>(false);
+  const analysisReplayActiveRef = useRef<boolean>(false);
+  const [isAnalysisReplayRunning, setIsAnalysisReplayRunning] =
+    useState<boolean>(false);
+  const [analysisReplayStatus, setAnalysisReplayStatus] =
+    useState<string | null>(null);
+  const [analysisReplayError, setAnalysisReplayError] =
+    useState<string | null>(null);
+  const [analysisProfile, setAnalysisProfile] =
+    useState<AnalysisProfilePoint[]>([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
+  const analysisReplayCancelledRef = useRef<boolean>(false);
+
   const squareToPieceMap = useMemo(() => {
     const map = new Map<string, Piece>();
 
@@ -523,6 +589,12 @@ export const ChessBoard: React.FC = () => {
   function setGameEndState(value: string | null) {
     gameEndStateRef.current = value;
     setGameEndStateState(value);
+  }
+
+
+  function setAnalysisReplayActive(value: boolean) {
+    analysisReplayActiveRef.current = value;
+    setAnalysisReplayActiveState(value);
   }
 
   function normalizeSide(side: string | null | undefined): PieceColor | null {
@@ -673,7 +745,9 @@ export const ChessBoard: React.FC = () => {
       setClock(data);
       if (data.gameState) {
         setGameEndState(data.gameState);
-        setShowGameEndDialog(true);
+        if (!analysisReplayActiveRef.current) {
+          setShowGameEndDialog(true);
+        }
       } else {
         setGameEndState(null);
       }
@@ -1043,6 +1117,139 @@ export const ChessBoard: React.FC = () => {
     };
   }, [engineAutoUpdate, clock?.gameState]);
 
+  function openAnalysisSettingsDialog() {
+    setAnalysisReplayError(null);
+    setAnalysisReplayStatus(null);
+    setShowGameEndDialog(false);
+    setShowAnalysisSettingsDialog(true);
+  }
+
+  function updateAnalysisSettingsNumberField(
+    key: keyof AnalysisReplaySettings,
+    value: number
+  ) {
+    const safeValue = Number.isFinite(value) ? value : 0;
+
+    setAnalysisSettings((prev) => ({
+      ...prev,
+      [key]: key === "contempt" ? safeValue : Math.max(0, safeValue),
+    }));
+  }
+
+  function applyAnalysisReplayStep(step: AnalysisReplayStep) {
+    if (step.board?.pieces) {
+      setPieces(mapBackendPiecesToLocalPieces(step.board.pieces));
+    }
+
+    if (step.from && step.to) {
+      setLastMove({ from: step.from, to: step.to });
+    }
+
+    setAnalysisProfile(step.profile?.length ? step.profile : [{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
+
+    setEngineEval({
+      eval: step.evaluation ?? 0,
+      bar: step.bar ?? 0.5,
+      lines: [],
+    });
+  }
+
+  async function runAnalysisReplayLoop() {
+    setIsAnalysisReplayRunning(true);
+    analysisReplayCancelledRef.current = false;
+
+    try {
+      while (!analysisReplayCancelledRef.current) {
+        const response = await fetch("/api/analysis-replay/next", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || `HTTP ${response.status}`);
+        }
+
+        const step: AnalysisReplayStep = await response.json();
+        applyAnalysisReplayStep(step);
+
+        const progressText = `${step.currentPly} / ${step.totalPlies}`;
+        setAnalysisReplayStatus(step.done ? `Analyse fertig (${progressText}).` : `Analysiere ${progressText}…`);
+
+        if (step.done) {
+          break;
+        }
+      }
+    } catch (error) {
+      console.error("[runAnalysisReplayLoop] error", error);
+      setAnalysisReplayError("Analyse-Replay ist fehlgeschlagen.");
+    } finally {
+      setIsAnalysisReplayRunning(false);
+    }
+  }
+
+  async function startAnalysisReplay() {
+    try {
+      setAnalysisReplayError(null);
+      setAnalysisReplayStatus("Analyse wird vorbereitet…");
+      setIsAnalysisReplayRunning(true);
+      setShowAnalysisSettingsDialog(false);
+      setShowGameEndDialog(false);
+      setSelectedSquare(null);
+      updatePossibleTargets([]);
+      setHoverPreview(null);
+      setPromotionContext(null);
+      disablePlayerEngines();
+      setAnalysisReplayActive(true);
+      setEngineAutoUpdate(false);
+      setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
+
+      const response = await fetch("/api/analysis-replay/start", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(analysisSettings),
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+
+      const step: AnalysisReplayStep = await response.json();
+      applyAnalysisReplayStep(step);
+      setAnalysisReplayStatus(`Analysiere 0 / ${step.totalPlies}…`);
+      setIsAnalysisReplayRunning(false);
+
+      await runAnalysisReplayLoop();
+    } catch (error) {
+      console.error("[startAnalysisReplay] error", error);
+      setAnalysisReplayError("Analyse-Replay konnte nicht gestartet werden.");
+      setAnalysisReplayActive(false);
+      setIsAnalysisReplayRunning(false);
+    }
+  }
+
+  async function cancelAnalysisReplay() {
+    analysisReplayCancelledRef.current = true;
+    setIsAnalysisReplayRunning(false);
+    setAnalysisReplayStatus("Analyse abgebrochen.");
+
+    try {
+      await fetch("/api/analysis-replay/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.warn("[cancelAnalysisReplay] backend cancel failed", error);
+    }
+  }
+
   function openGameSettingsDialog() {
     setGameSettingsError(null);
     setShowGameEndDialog(false);
@@ -1074,6 +1281,12 @@ export const ChessBoard: React.FC = () => {
       setLoadError(null);
       setGameSettingsError(null);
       disablePlayerEngines();
+      analysisReplayCancelledRef.current = true;
+      setAnalysisReplayActive(false);
+      setIsAnalysisReplayRunning(false);
+      setAnalysisReplayStatus(null);
+      setAnalysisReplayError(null);
+      setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const response = await fetch("/api/new-game", {
         method: "POST",
@@ -1345,7 +1558,7 @@ export const ChessBoard: React.FC = () => {
 
   async function requestComputerMoveIfEnabled(
     initialSideToMove: string | null | undefined,
-    sequenceId: number
+    sequenceId: number = computerMoveSequenceIdRef.current
   ): Promise<{ gameEnded: boolean; sideToMove: string | null; moved: boolean }> {
     let nextSide = normalizeSide(initialSideToMove);
     let moved = false;
@@ -1516,7 +1729,7 @@ export const ChessBoard: React.FC = () => {
       return;
     }
 
-    if (isLoadingMoves || isComputerThinking || promotionContext || clock?.gameState) {
+    if (analysisReplayActive || isLoadingMoves || isComputerThinking || promotionContext || clock?.gameState) {
       return;
     }
 
@@ -1711,7 +1924,7 @@ export const ChessBoard: React.FC = () => {
   const handleSquareClick = async (square: string) => {
     console.log("[handleSquareClick] clicked", square);
 
-    if (isLoadingMoves || isComputerThinking) {
+    if (analysisReplayActive || isLoadingMoves || isComputerThinking) {
       console.log(
         "[handleSquareClick] move currently in progress, ignoring click"
       );
@@ -1921,6 +2134,80 @@ export const ChessBoard: React.FC = () => {
     );
   };
 
+  const renderAnalysisProfile = () => {
+    const width = 640;
+    const height = 82;
+    const paddingX = 12;
+    const paddingY = 10;
+    const maxAbsEval = 5;
+    const points = analysisProfile.length > 0 ? analysisProfile : [{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }];
+    const totalPly = Math.max(1, points[points.length - 1]?.ply ?? 1);
+
+    const toX = (ply: number) =>
+      paddingX + (Math.max(0, ply) / totalPly) * (width - paddingX * 2);
+    const toY = (evaluation: number) => {
+      const clamped = Math.max(-maxAbsEval, Math.min(maxAbsEval, evaluation));
+      const normalized = (maxAbsEval - clamped) / (maxAbsEval * 2);
+      return paddingY + normalized * (height - paddingY * 2);
+    };
+
+    const polyline = points
+      .map((point) => `${toX(point.ply)},${toY(point.evaluation)}`)
+      .join(" ");
+    const zeroY = toY(0);
+    const latest = points[points.length - 1];
+
+    return (
+      <div className="analysis-profile-panel">
+        <div className="analysis-profile-header">
+          <strong>Analyseverlauf</strong>
+          <span>
+            {latest?.ply ?? 0} Halbzüge · Eval {(latest?.evaluation ?? 0).toFixed(2)}
+            {latest?.depth ? ` · depth ${latest.depth}` : ""}
+          </span>
+        </div>
+
+        <svg
+          className="analysis-profile-chart"
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label="Bewertungsverlauf der analysierten Partie"
+        >
+          <line
+            className="analysis-profile-zero-line"
+            x1={paddingX}
+            y1={zeroY}
+            x2={width - paddingX}
+            y2={zeroY}
+          />
+          <polyline className="analysis-profile-line" points={polyline} />
+          {points.map((point) => (
+            <circle
+              key={point.ply}
+              className="analysis-profile-point"
+              cx={toX(point.ply)}
+              cy={toY(point.evaluation)}
+              r={point.ply === latest?.ply ? 3.2 : 2.1}
+            />
+          ))}
+        </svg>
+
+        <div className="analysis-profile-footer">
+          <span>{analysisReplayStatus ?? "Analysemodus"}</span>
+          {isAnalysisReplayRunning && (
+            <button className="analysis-cancel-button" onClick={cancelAnalysisReplay}>
+              Cancel
+            </button>
+          )}
+        </div>
+
+        {analysisReplayError && (
+          <div className="analysis-profile-error">{analysisReplayError}</div>
+        )}
+      </div>
+    );
+  };
+
   const renderPieces = () => {
     return pieces.map((piece) => {
       const x = (piece.file - 1) * 80;
@@ -1961,50 +2248,54 @@ export const ChessBoard: React.FC = () => {
         <h1>Chess Frontend</h1>
 
         <div className="top-engine-controls">
-          <button
-            className={[
-              "top-engine-button",
-              "auto-toggle",
-              engineAutoUpdate ? "top-engine-button-pressed" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={() => setEngineAutoUpdate((prev) => !prev)}
-            aria-pressed={engineAutoUpdate}
-            title="Automatische Engine-Auswertung ein-/ausschalten"
-          >
-            Evaluation
-          </button>
+          {!analysisReplayActive && (
+            <>
+              <button
+                className={[
+                  "top-engine-button",
+                  "auto-toggle",
+                  engineAutoUpdate ? "top-engine-button-pressed" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => setEngineAutoUpdate((prev) => !prev)}
+                aria-pressed={engineAutoUpdate}
+                title="Automatische Engine-Auswertung ein-/ausschalten"
+              >
+                Evaluation
+              </button>
 
-          <button
-            className={[
-              "top-engine-button",
-              "computer-toggle",
-              whiteComputerEnabled ? "top-engine-button-pressed" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabledRef.current)}
-            aria-pressed={whiteComputerEnabled}
-            title="Computer spielt Weiß ein-/ausschalten"
-          >
-            White CPU
-          </button>
+              <button
+                className={[
+                  "top-engine-button",
+                  "computer-toggle",
+                  whiteComputerEnabled ? "top-engine-button-pressed" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabledRef.current)}
+                aria-pressed={whiteComputerEnabled}
+                title="Computer spielt Weiß ein-/ausschalten"
+              >
+                White CPU
+              </button>
 
-          <button
-            className={[
-              "top-engine-button",
-              "computer-toggle",
-              blackComputerEnabled ? "top-engine-button-pressed" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={() => updateBlackComputerEnabled(!blackComputerEnabledRef.current)}
-            aria-pressed={blackComputerEnabled}
-            title="Computer spielt Schwarz ein-/ausschalten"
-          >
-            Black CPU
-          </button>
+              <button
+                className={[
+                  "top-engine-button",
+                  "computer-toggle",
+                  blackComputerEnabled ? "top-engine-button-pressed" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => updateBlackComputerEnabled(!blackComputerEnabledRef.current)}
+                aria-pressed={blackComputerEnabled}
+                title="Computer spielt Schwarz ein-/ausschalten"
+              >
+                Black CPU
+              </button>
+            </>
+          )}
 
           <button
             className="top-engine-button new-game"
@@ -2089,35 +2380,41 @@ export const ChessBoard: React.FC = () => {
             </div>
 
             <div className="clock-area">
-              <div
-                className={[
-                  "clock-box",
-                  clock?.sideToMove === "white" ? "clock-active" : "",
-                  clock?.whiteRunning ? "clock-running" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                <div className="clock-time">
-                  {formatClockTime(clock?.whiteTime)}
-                </div>
-              </div>
+              {analysisReplayActive ? (
+                renderAnalysisProfile()
+              ) : (
+                <>
+                  <div
+                    className={[
+                      "clock-box",
+                      clock?.sideToMove === "white" ? "clock-active" : "",
+                      clock?.whiteRunning ? "clock-running" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <div className="clock-time">
+                      {formatClockTime(clock?.whiteTime)}
+                    </div>
+                  </div>
 
-              <div
-                className={[
-                  "clock-box",
-                  clock?.sideToMove === "black" ? "clock-active" : "",
-                  clock?.blackRunning ? "clock-running" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                <div className="clock-time">
-                  {formatClockTime(clock?.blackTime)}
-                </div>
-              </div>
+                  <div
+                    className={[
+                      "clock-box",
+                      clock?.sideToMove === "black" ? "clock-active" : "",
+                      clock?.blackRunning ? "clock-running" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <div className="clock-time">
+                      {formatClockTime(clock?.blackTime)}
+                    </div>
+                  </div>
 
-              {clockError && <div className="clock-error">{clockError}</div>}
+                  {clockError && <div className="clock-error">{clockError}</div>}
+                </>
+              )}
             </div>
           </section>
 
@@ -2359,6 +2656,109 @@ export const ChessBoard: React.FC = () => {
             </div>
           )}
 
+          {showAnalysisSettingsDialog && (
+            <div className="analysis-settings-dialog">
+              <div className="analysis-settings-dialog-content">
+                <h2>Analyse</h2>
+                <p className="analysis-settings-description">
+                  Die beendete Partie wird von der Ausgangsstellung aus nachgespielt.
+                  Nach jedem Halbzug bewertet die DeepAnalysisUciEngine die neue Stellung.
+                </p>
+
+                <div className="analysis-settings-form">
+                  <label className="analysis-settings-field">
+                    <span>Time per move (seconds)</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={3600}
+                      value={analysisSettings.moveTimeSeconds}
+                      onChange={(e) =>
+                        updateAnalysisSettingsNumberField(
+                          "moveTimeSeconds",
+                          Number(e.target.value)
+                        )
+                      }
+                    />
+                  </label>
+
+                  <label className="analysis-settings-field">
+                    <span>Depth</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={64}
+                      value={analysisSettings.depth}
+                      onChange={(e) =>
+                        updateAnalysisSettingsNumberField("depth", Number(e.target.value))
+                      }
+                    />
+                  </label>
+
+                  <label className="analysis-settings-field">
+                    <span>Threads</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={256}
+                      value={analysisSettings.threads}
+                      onChange={(e) =>
+                        updateAnalysisSettingsNumberField("threads", Number(e.target.value))
+                      }
+                    />
+                  </label>
+
+                  <label className="analysis-settings-field">
+                    <span>Hash MB</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={262144}
+                      value={analysisSettings.hashSize}
+                      onChange={(e) =>
+                        updateAnalysisSettingsNumberField("hashSize", Number(e.target.value))
+                      }
+                    />
+                  </label>
+
+                  <label className="analysis-settings-field">
+                    <span>MultiPV</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={256}
+                      value={analysisSettings.multiPV}
+                      onChange={(e) =>
+                        updateAnalysisSettingsNumberField("multiPV", Number(e.target.value))
+                      }
+                    />
+                  </label>
+                </div>
+
+                {analysisReplayError && (
+                  <div className="analysis-settings-error">{analysisReplayError}</div>
+                )}
+
+                <div className="analysis-settings-dialog-actions">
+                  <button
+                    className="analysis-settings-dialog-button"
+                    onClick={() => setShowAnalysisSettingsDialog(false)}
+                    disabled={isAnalysisReplayRunning}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="analysis-settings-dialog-button"
+                    onClick={startAnalysisReplay}
+                    disabled={isAnalysisReplayRunning}
+                  >
+                    {isAnalysisReplayRunning ? "Starting..." : "OK"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {showGameEndDialog && gameEndState && (
             <div className="game-end-dialog">
               <div className="game-end-dialog-content">
@@ -2375,7 +2775,7 @@ export const ChessBoard: React.FC = () => {
 
                   <button
                     className="game-end-dialog-button"
-                    onClick={() => undefined}
+                    onClick={openAnalysisSettingsDialog}
                   >
                     Analyse
                   </button>

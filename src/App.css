@@ -919,3 +919,170 @@
   opacity: 0.65;
   cursor: default;
 }
+
+/* Analyse-Replay: ersetzt nach Partieende den Uhrbereich */
+.analysis-profile-panel {
+  width: 100%;
+  min-height: 104px;
+  border: 1px solid #3f3f3f;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #2b2b2b;
+  color: #f5f5f5;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.analysis-profile-header,
+.analysis-profile-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.78rem;
+}
+
+.analysis-profile-header span,
+.analysis-profile-footer span {
+  color: #cccccc;
+}
+
+.analysis-profile-chart {
+  width: 100%;
+  height: 82px;
+  margin: 4px 0;
+  display: block;
+  background: #181818;
+  border-radius: 5px;
+}
+
+.analysis-profile-zero-line {
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 1;
+}
+
+.analysis-profile-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.analysis-profile-point {
+  fill: #f5f5f5;
+  stroke: #111111;
+  stroke-width: 1;
+}
+
+.analysis-cancel-button {
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #3a3a3a;
+  color: #f5f5f5;
+  cursor: pointer;
+}
+
+.analysis-cancel-button:hover {
+  background: #444;
+}
+
+.analysis-profile-error {
+  margin-top: 4px;
+  color: #ff8080;
+  font-size: 0.75rem;
+}
+
+/* Analyse-Settings-Dialog */
+.analysis-settings-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 135;
+}
+
+.analysis-settings-dialog-content {
+  background: #2b2b2b;
+  color: #f5f5f5;
+  border-radius: 10px;
+  padding: 18px;
+  min-width: 420px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+}
+
+.analysis-settings-dialog-content h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.analysis-settings-description {
+  margin: 0 0 14px 0;
+  color: #dddddd;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.analysis-settings-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.analysis-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #dddddd;
+}
+
+.analysis-settings-field input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 5px 7px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1f1f1f;
+  color: #f5f5f5;
+  font-size: 0.85rem;
+}
+
+.analysis-settings-error {
+  margin-top: 10px;
+  color: #ff8080;
+  font-size: 0.8rem;
+}
+
+.analysis-settings-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.analysis-settings-dialog-button {
+  min-width: 96px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 5px;
+  border: 1px solid #555;
+  background: #f5f5f5;
+  color: #111111;
+  cursor: pointer;
+}
+
+.analysis-settings-dialog-button:hover {
+  background: #ffffff;
+}
+
+.analysis-settings-dialog-button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
