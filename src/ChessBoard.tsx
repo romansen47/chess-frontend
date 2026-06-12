@@ -1213,6 +1213,7 @@ export const ChessBoard: React.FC = () => {
       setIsAnalysisReplayRunning(true);
       setShowAnalysisSettingsDialog(false);
       setShowGameEndDialog(false);
+      setShowStockfishConfig(false);
       setSelectedSquare(null);
       updatePossibleTargets([]);
       setHoverPreview(null);
@@ -1254,7 +1255,7 @@ export const ChessBoard: React.FC = () => {
   async function cancelAnalysisReplay() {
     analysisReplayCancelledRef.current = true;
     setIsAnalysisReplayRunning(false);
-    setAnalysisReplayFinished(false);
+    setAnalysisReplayFinished(true);
     setAnalysisReplayStatus("Analyse abgebrochen.");
 
     try {
@@ -2156,10 +2157,10 @@ export const ChessBoard: React.FC = () => {
   };
 
   const renderAnalysisProfile = () => {
-    const width = 640;
-    const height = 82;
+    const width = 860;
+    const height = 560;
     const paddingX = 12;
-    const paddingY = 10;
+    const paddingY = 18;
     const maxAbsEval = 5;
     const points = analysisProfile.length > 0 ? analysisProfile : [{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }];
     const analyzedPoints = points.filter((point) => point.ply > 0);
@@ -2353,6 +2354,16 @@ export const ChessBoard: React.FC = () => {
             </>
           )}
 
+          {analysisReplayActive && isAnalysisReplayRunning && (
+            <button
+              className="top-engine-button analysis-repeat"
+              onClick={cancelAnalysisReplay}
+              title="Laufende Analyse abbrechen"
+            >
+              Analyse abbrechen
+            </button>
+          )}
+
           {analysisReplayActive && analysisReplayFinished && gameEndState && (
             <button
               className="top-engine-button analysis-repeat"
@@ -2449,43 +2460,39 @@ export const ChessBoard: React.FC = () => {
               </div>
             </div>
 
-            <div className="clock-area">
-              {analysisReplayActive ? (
-                renderAnalysisProfile()
-              ) : (
-                <>
-                  <div
-                    className={[
-                      "clock-box",
-                      clock?.sideToMove === "white" ? "clock-active" : "",
-                      clock?.whiteRunning ? "clock-running" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    <div className="clock-time">
-                      {formatClockTime(clock?.whiteTime)}
-                    </div>
+            {!analysisReplayActive && (
+              <div className="clock-area">
+                <div
+                  className={[
+                    "clock-box",
+                    clock?.sideToMove === "white" ? "clock-active" : "",
+                    clock?.whiteRunning ? "clock-running" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <div className="clock-time">
+                    {formatClockTime(clock?.whiteTime)}
                   </div>
+                </div>
 
-                  <div
-                    className={[
-                      "clock-box",
-                      clock?.sideToMove === "black" ? "clock-active" : "",
-                      clock?.blackRunning ? "clock-running" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    <div className="clock-time">
-                      {formatClockTime(clock?.blackTime)}
-                    </div>
+                <div
+                  className={[
+                    "clock-box",
+                    clock?.sideToMove === "black" ? "clock-active" : "",
+                    clock?.blackRunning ? "clock-running" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <div className="clock-time">
+                    {formatClockTime(clock?.blackTime)}
                   </div>
+                </div>
 
-                  {clockError && <div className="clock-error">{clockError}</div>}
-                </>
-              )}
-            </div>
+                {clockError && <div className="clock-error">{clockError}</div>}
+              </div>
+            )}
           </section>
 
           <section className="engine-panel">
@@ -2506,104 +2513,110 @@ export const ChessBoard: React.FC = () => {
               )}
 
               <div className="engine-content-column">
-                {showStockfishConfig && (
-                  <div className="stockfish-config-panel">
-                    <div className="stockfish-config-header">
-                      <strong>Engine configuration</strong>
+                {analysisReplayActive ? (
+                  renderAnalysisProfile()
+                ) : (
+                  <>
+                    {showStockfishConfig && (
+                      <div className="stockfish-config-panel">
+                        <div className="stockfish-config-header">
+                          <strong>Engine configuration</strong>
 
-                      {stockfishConfig && (
-                        <span className="stockfish-config-version">
-                          version {stockfishConfig.version}
-                        </span>
-                      )}
-                    </div>
-
-                    {stockfishConfig ? (
-                      <>
-                        <div className="stockfish-config-sections">
-                          <div className="stockfish-player-config-sections">
-                            {renderStockfishSlotSection(
-                              "whitePlayer",
-                              "White player engine",
-                              stockfishConfig.whitePlayerVersion,
-                              "Für echte Computerzüge von Weiß. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
-                              false
-                            )}
-
-                            {renderStockfishSlotSection(
-                              "blackPlayer",
-                              "Black player engine",
-                              stockfishConfig.blackPlayerVersion,
-                              "Für echte Computerzüge von Schwarz. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
-                              false
-                            )}
-                          </div>
-
-                          {renderStockfishSlotSection(
-                            "evaluation",
-                            "Evaluation engine",
-                            stockfishConfig.evaluationVersion,
-                            "Für die Evaluation. Änderungen hier leeren serverseitig den Evaluation-Cache.",
-                            true
+                          {stockfishConfig && (
+                            <span className="stockfish-config-version">
+                              version {stockfishConfig.version}
+                            </span>
                           )}
                         </div>
 
-                        <button
-                          className="stockfish-save-button"
-                          onClick={saveStockfishConfig}
-                          disabled={isSavingStockfishConfig}
-                        >
-                          {isSavingStockfishConfig
-                            ? "Saving..."
-                            : "Save engine settings"}
-                        </button>
-                      </>
-                    ) : (
-                      <div className="engine-empty">
-                        Engine settings are loading…
+                        {stockfishConfig ? (
+                          <>
+                            <div className="stockfish-config-sections">
+                              <div className="stockfish-player-config-sections">
+                                {renderStockfishSlotSection(
+                                  "whitePlayer",
+                                  "White player engine",
+                                  stockfishConfig.whitePlayerVersion,
+                                  "Für echte Computerzüge von Weiß. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
+                                  false
+                                )}
+
+                                {renderStockfishSlotSection(
+                                  "blackPlayer",
+                                  "Black player engine",
+                                  stockfishConfig.blackPlayerVersion,
+                                  "Für echte Computerzüge von Schwarz. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
+                                  false
+                                )}
+                              </div>
+
+                              {renderStockfishSlotSection(
+                                "evaluation",
+                                "Evaluation engine",
+                                stockfishConfig.evaluationVersion,
+                                "Für die Evaluation. Änderungen hier leeren serverseitig den Evaluation-Cache.",
+                                true
+                              )}
+                            </div>
+
+                            <button
+                              className="stockfish-save-button"
+                              onClick={saveStockfishConfig}
+                              disabled={isSavingStockfishConfig}
+                            >
+                              {isSavingStockfishConfig
+                                ? "Saving..."
+                                : "Save engine settings"}
+                            </button>
+                          </>
+                        ) : (
+                          <div className="engine-empty">
+                            Engine settings are loading…
+                          </div>
+                        )}
+
+                        {stockfishConfigMessage && (
+                          <div className="stockfish-config-message">
+                            {stockfishConfigMessage}
+                          </div>
+                        )}
+
+                        {stockfishConfigError && (
+                          <div className="engine-error">
+                            {stockfishConfigError}
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {stockfishConfigMessage && (
-                      <div className="stockfish-config-message">
-                        {stockfishConfigMessage}
+                    {evalError && (
+                      <div className="engine-error">Error: {evalError}</div>
+                    )}
+
+                    {engineEval && (
+                      <div className="engine-lines">
+                        {engineEval.lines.length === 0 && (
+                          <div className="engine-empty">No engine lines.</div>
+                        )}
+
+                        {engineEval.lines.map((line, idx) => (
+                          <div key={idx} className="engine-line">
+                            <div className="engine-line-header">
+                              #{idx + 1} · {line.eval.toFixed(2)} · depth{" "}
+                              {line.depth}
+                            </div>
+                            <div className="engine-line-moves">{line.moves}</div>
+                          </div>
+                        ))}
                       </div>
                     )}
 
-                    {stockfishConfigError && (
-                      <div className="engine-error">
-                        {stockfishConfigError}
+                    {!engineEval && !isLoadingEval && !evalError && (
+                      <div className="engine-placeholder-text">
+                        Engine output will appear here.
                       </div>
                     )}
-                  </div>
-                )}
-
-                {evalError && (
-                  <div className="engine-error">Error: {evalError}</div>
-                )}
-
-                {engineEval && (
-                  <div className="engine-lines">
-                    {engineEval.lines.length === 0 && (
-                      <div className="engine-empty">No engine lines.</div>
-                    )}
-
-                    {engineEval.lines.map((line, idx) => (
-                      <div key={idx} className="engine-line">
-                        <div className="engine-line-header">
-                          #{idx + 1} · {line.eval.toFixed(2)} · depth{" "}
-                          {line.depth}
-                        </div>
-                        <div className="engine-line-moves">{line.moves}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {!engineEval && !isLoadingEval && !evalError && (
-                  <div className="engine-placeholder-text">
-                    Engine output will appear here.
-                  </div>
+                  </>
                 )}
               </div>
             </div>
