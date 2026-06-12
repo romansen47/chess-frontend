@@ -546,6 +546,7 @@ export const ChessBoard: React.FC = () => {
     useState<boolean>(false);
   const [analysisProfile, setAnalysisProfile] =
     useState<AnalysisProfilePoint[]>([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
+  const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const analysisReplayCancelledRef = useRef<boolean>(false);
 
   const squareToPieceMap = useMemo(() => {
@@ -1157,6 +1158,7 @@ export const ChessBoard: React.FC = () => {
       setLastMove({ from: step.from, to: step.to });
     }
 
+    setAnalysisTotalPlies(Math.max(0, step.totalPlies ?? 0));
     setAnalysisProfile(step.profile?.length ? step.profile : [{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
     setEngineEval({
@@ -1218,6 +1220,7 @@ export const ChessBoard: React.FC = () => {
       disablePlayerEngines();
       setAnalysisReplayActive(true);
       setEngineAutoUpdate(false);
+      setAnalysisTotalPlies(0);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const response = await fetch("/api/analysis-replay/start", {
@@ -1303,6 +1306,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisReplayStatus(null);
       setAnalysisReplayError(null);
       setAnalysisReplayFinished(false);
+      setAnalysisTotalPlies(0);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const response = await fetch("/api/new-game", {
@@ -2158,10 +2162,12 @@ export const ChessBoard: React.FC = () => {
     const paddingY = 10;
     const maxAbsEval = 5;
     const points = analysisProfile.length > 0 ? analysisProfile : [{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }];
-    const totalPly = Math.max(1, points[points.length - 1]?.ply ?? 1);
+    const analyzedPoints = points.filter((point) => point.ply > 0);
+    const analyzedPointMap = new Map<number, AnalysisProfilePoint>(
+      analyzedPoints.map((point) => [point.ply, point])
+    );
+    const totalPly = Math.max(1, analysisTotalPlies, analyzedPoints[analyzedPoints.length - 1]?.ply ?? 0);
 
-    const toX = (ply: number) =>
-      paddingX + (Math.max(0, ply) / totalPly) * (width - paddingX * 2);
     const toY = (evaluation: number) => {
       const clamped = Math.max(-maxAbsEval, Math.min(maxAbsEval, evaluation));
       const normalized = (maxAbsEval - clamped) / (maxAbsEval * 2);
@@ -2169,11 +2175,24 @@ export const ChessBoard: React.FC = () => {
     };
 
     const zeroY = toY(0);
-    const latest = points[points.length - 1];
-    const chartPoints = points.filter((point) => point.ply > 0);
+    const latest = analyzedPoints[analyzedPoints.length - 1] ?? points[points.length - 1];
     const availableWidth = width - paddingX * 2;
-    const slotWidth = availableWidth / Math.max(1, chartPoints.length);
-    const barWidth = Math.max(3, Math.min(18, slotWidth * 0.72));
+    const slotWidth = availableWidth / totalPly;
+    const barWidth = slotWidth;
+    const chartPoints = Array.from({ length: totalPly }, (_, index) => {
+      const ply = index + 1;
+      return (
+        analyzedPointMap.get(ply) ?? {
+          ply,
+          from: null,
+          to: null,
+          san: null,
+          evaluation: 0,
+          bar: 0.5,
+          depth: 0,
+        }
+      );
+    });
     const formatEvaluation = (point: AnalysisProfilePoint) => {
       const san = point.san ? `${point.san} · ` : "";
       const depth = point.depth ? ` · depth ${point.depth}` : "";
@@ -2204,7 +2223,7 @@ export const ChessBoard: React.FC = () => {
             y2={zeroY}
           />
           {chartPoints.map((point) => {
-            const x = toX(point.ply);
+            const x = paddingX + (point.ply - 1) * slotWidth;
             const y = toY(point.evaluation);
             const top = Math.min(y, zeroY);
             const barHeight = Math.max(1.5, Math.abs(zeroY - y));
@@ -2217,11 +2236,11 @@ export const ChessBoard: React.FC = () => {
                 className={`analysis-profile-bar ${
                   isPositive ? "analysis-profile-bar-positive" : "analysis-profile-bar-negative"
                 }${isLatest ? " analysis-profile-bar-latest" : ""}`}
-                x={x - barWidth / 2}
+                x={x}
                 y={top}
                 width={barWidth}
                 height={barHeight}
-                rx={1.5}
+                rx={0}
               >
                 <title>{formatEvaluation(point)}</title>
               </rect>

@@ -956,34 +956,30 @@
   height: 82px;
   margin: 4px 0;
   display: block;
-  background: #769656;
+  background: #303030;
   border-radius: 5px;
 }
 
 .analysis-profile-zero-line {
-  stroke: rgba(255, 255, 255, 0.25);
+  stroke: rgba(0, 0, 0, 0.18);
   stroke-width: 1;
 }
 
 .analysis-profile-bar {
   cursor: default;
-  shape-rendering: geometricPrecision;
+  shape-rendering: crispEdges;
 }
 
 .analysis-profile-bar-positive {
-  fill: #f5f5f5;
-  stroke: rgba(0, 0, 0, 0.45);
-  stroke-width: 0.8;
+  fill: #ffffff;
 }
 
 .analysis-profile-bar-negative {
   fill: #050505;
-  stroke: rgba(255, 255, 255, 0.55);
-  stroke-width: 0.8;
 }
 
 .analysis-profile-bar-latest {
-  stroke-width: 1.4;
+  filter: brightness(1.12);
 }
 
 .analysis-profile-bar:hover {
