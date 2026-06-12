@@ -956,7 +956,7 @@
   height: 82px;
   margin: 4px 0;
   display: block;
-  background: #181818;
+  background: #769656;
   border-radius: 5px;
 }
 
@@ -965,18 +965,29 @@
   stroke-width: 1;
 }
 
-.analysis-profile-line {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.9);
-  stroke-width: 2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+.analysis-profile-bar {
+  cursor: default;
+  shape-rendering: geometricPrecision;
 }
 
-.analysis-profile-point {
+.analysis-profile-bar-positive {
   fill: #f5f5f5;
-  stroke: #111111;
-  stroke-width: 1;
+  stroke: rgba(0, 0, 0, 0.45);
+  stroke-width: 0.8;
+}
+
+.analysis-profile-bar-negative {
+  fill: #050505;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 0.8;
+}
+
+.analysis-profile-bar-latest {
+  stroke-width: 1.4;
+}
+
+.analysis-profile-bar:hover {
+  filter: brightness(1.12);
 }
 
 .analysis-cancel-button {

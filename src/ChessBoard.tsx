@@ -2168,11 +2168,17 @@ export const ChessBoard: React.FC = () => {
       return paddingY + normalized * (height - paddingY * 2);
     };
 
-    const polyline = points
-      .map((point) => `${toX(point.ply)},${toY(point.evaluation)}`)
-      .join(" ");
     const zeroY = toY(0);
     const latest = points[points.length - 1];
+    const chartPoints = points.filter((point) => point.ply > 0);
+    const availableWidth = width - paddingX * 2;
+    const slotWidth = availableWidth / Math.max(1, chartPoints.length);
+    const barWidth = Math.max(3, Math.min(18, slotWidth * 0.72));
+    const formatEvaluation = (point: AnalysisProfilePoint) => {
+      const san = point.san ? `${point.san} · ` : "";
+      const depth = point.depth ? ` · depth ${point.depth}` : "";
+      return `${point.ply}. Halbzug · ${san}Eval ${point.evaluation.toFixed(2)}${depth}`;
+    };
 
     return (
       <div className="analysis-profile-panel">
@@ -2197,16 +2203,30 @@ export const ChessBoard: React.FC = () => {
             x2={width - paddingX}
             y2={zeroY}
           />
-          <polyline className="analysis-profile-line" points={polyline} />
-          {points.map((point) => (
-            <circle
-              key={point.ply}
-              className="analysis-profile-point"
-              cx={toX(point.ply)}
-              cy={toY(point.evaluation)}
-              r={point.ply === latest?.ply ? 3.2 : 2.1}
-            />
-          ))}
+          {chartPoints.map((point) => {
+            const x = toX(point.ply);
+            const y = toY(point.evaluation);
+            const top = Math.min(y, zeroY);
+            const barHeight = Math.max(1.5, Math.abs(zeroY - y));
+            const isPositive = point.evaluation > 0;
+            const isLatest = point.ply === latest?.ply;
+
+            return (
+              <rect
+                key={point.ply}
+                className={`analysis-profile-bar ${
+                  isPositive ? "analysis-profile-bar-positive" : "analysis-profile-bar-negative"
+                }${isLatest ? " analysis-profile-bar-latest" : ""}`}
+                x={x - barWidth / 2}
+                y={top}
+                width={barWidth}
+                height={barHeight}
+                rx={1.5}
+              >
+                <title>{formatEvaluation(point)}</title>
+              </rect>
+            );
+          })}
         </svg>
 
         <div className="analysis-profile-footer">
