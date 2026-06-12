@@ -68,6 +68,10 @@
   min-width: 116px;
 }
 
+.top-engine-button.analysis-repeat {
+  min-width: 136px;
+}
+
 .top-engine-button:hover {
   background: #444;
   color: #ffffff;

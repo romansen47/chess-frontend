@@ -542,6 +542,8 @@ export const ChessBoard: React.FC = () => {
     useState<string | null>(null);
   const [analysisReplayError, setAnalysisReplayError] =
     useState<string | null>(null);
+  const [analysisReplayFinished, setAnalysisReplayFinished] =
+    useState<boolean>(false);
   const [analysisProfile, setAnalysisProfile] =
     useState<AnalysisProfilePoint[]>([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
   const analysisReplayCancelledRef = useRef<boolean>(false);
@@ -1124,6 +1126,16 @@ export const ChessBoard: React.FC = () => {
     setShowAnalysisSettingsDialog(true);
   }
 
+  function reopenGameEndDialog() {
+    if (!gameEndStateRef.current) {
+      return;
+    }
+
+    setAnalysisReplayError(null);
+    setShowAnalysisSettingsDialog(false);
+    setShowGameEndDialog(true);
+  }
+
   function updateAnalysisSettingsNumberField(
     key: keyof AnalysisReplaySettings,
     value: number
@@ -1179,6 +1191,7 @@ export const ChessBoard: React.FC = () => {
         setAnalysisReplayStatus(step.done ? `Analyse fertig (${progressText}).` : `Analysiere ${progressText}…`);
 
         if (step.done) {
+          setAnalysisReplayFinished(true);
           break;
         }
       }
@@ -1194,6 +1207,7 @@ export const ChessBoard: React.FC = () => {
     try {
       setAnalysisReplayError(null);
       setAnalysisReplayStatus("Analyse wird vorbereitet…");
+      setAnalysisReplayFinished(false);
       setIsAnalysisReplayRunning(true);
       setShowAnalysisSettingsDialog(false);
       setShowGameEndDialog(false);
@@ -1228,6 +1242,7 @@ export const ChessBoard: React.FC = () => {
     } catch (error) {
       console.error("[startAnalysisReplay] error", error);
       setAnalysisReplayError("Analyse-Replay konnte nicht gestartet werden.");
+      setAnalysisReplayFinished(false);
       setAnalysisReplayActive(false);
       setIsAnalysisReplayRunning(false);
     }
@@ -1236,6 +1251,7 @@ export const ChessBoard: React.FC = () => {
   async function cancelAnalysisReplay() {
     analysisReplayCancelledRef.current = true;
     setIsAnalysisReplayRunning(false);
+    setAnalysisReplayFinished(false);
     setAnalysisReplayStatus("Analyse abgebrochen.");
 
     try {
@@ -1286,6 +1302,7 @@ export const ChessBoard: React.FC = () => {
       setIsAnalysisReplayRunning(false);
       setAnalysisReplayStatus(null);
       setAnalysisReplayError(null);
+      setAnalysisReplayFinished(false);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const response = await fetch("/api/new-game", {
@@ -2297,21 +2314,35 @@ export const ChessBoard: React.FC = () => {
             </>
           )}
 
-          <button
-            className="top-engine-button new-game"
-            onClick={openGameSettingsDialog}
-            title="Neue Partie konfigurieren"
-          >
-            New Game
-          </button>
+          {analysisReplayActive && analysisReplayFinished && gameEndState && (
+            <button
+              className="top-engine-button analysis-repeat"
+              onClick={reopenGameEndDialog}
+              title="Optionen nach der abgeschlossenen Analyse öffnen"
+            >
+              Analyse-Optionen
+            </button>
+          )}
 
-          <button
-            className="top-engine-button engine-settings"
-            onClick={() => setShowStockfishConfig((prev) => !prev)}
-            title="Engine-Einstellungen anzeigen"
-          >
-            Engine Settings
-          </button>
+          {!analysisReplayActive && (
+            <>
+              <button
+                className="top-engine-button new-game"
+                onClick={openGameSettingsDialog}
+                title="Neue Partie konfigurieren"
+              >
+                New Game
+              </button>
+
+              <button
+                className="top-engine-button engine-settings"
+                onClick={() => setShowStockfishConfig((prev) => !prev)}
+                title="Engine-Einstellungen anzeigen"
+              >
+                Engine Settings
+              </button>
+            </>
+          )}
         </div>
       </header>
 
