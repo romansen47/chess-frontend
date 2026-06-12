@@ -164,6 +164,13 @@ interface AnalysisProfilePoint {
   evaluation: number;
   bar: number;
   depth: number;
+  lines?: EngineLine[];
+}
+
+interface AnalysisPositionSelection {
+  position: string;
+  label: string;
+  ply: number;
 }
 
 interface AnalysisReplayStep {
@@ -446,7 +453,7 @@ function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
     depth: 0,
     threads: 1,
     hashSize: 256,
-    multiPV: 1,
+    multiPV: 3,
     contempt: 0,
     uciElo: 0,
   };
@@ -547,6 +554,8 @@ export const ChessBoard: React.FC = () => {
   const [analysisProfile, setAnalysisProfile] =
     useState<AnalysisProfilePoint[]>([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
+  const [analysisSelectedPosition, setAnalysisSelectedPosition] =
+    useState<AnalysisPositionSelection | null>(null);
   const analysisReplayCancelledRef = useRef<boolean>(false);
 
   const squareToPieceMap = useMemo(() => {
@@ -1161,10 +1170,12 @@ export const ChessBoard: React.FC = () => {
     setAnalysisTotalPlies(Math.max(0, step.totalPlies ?? 0));
     setAnalysisProfile(step.profile?.length ? step.profile : [{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
+    const latestProfilePoint = step.profile?.[step.profile.length - 1];
+
     setEngineEval({
       eval: step.evaluation ?? 0,
       bar: step.bar ?? 0.5,
-      lines: [],
+      lines: latestProfilePoint?.lines ?? [],
     });
   }
 
@@ -1222,6 +1233,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisReplayActive(true);
       setEngineAutoUpdate(false);
       setAnalysisTotalPlies(0);
+      setAnalysisSelectedPosition(null);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const response = await fetch("/api/analysis-replay/start", {
@@ -1229,7 +1241,10 @@ export const ChessBoard: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(analysisSettings),
+        body: JSON.stringify({
+          ...analysisSettings,
+          multiPV: 3,
+        }),
       });
 
       if (!response.ok) {
@@ -1308,6 +1323,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisReplayError(null);
       setAnalysisReplayFinished(false);
       setAnalysisTotalPlies(0);
+      setAnalysisSelectedPosition(null);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const response = await fetch("/api/new-game", {
@@ -1467,6 +1483,23 @@ export const ChessBoard: React.FC = () => {
 
   function hideMovePreview() {
     setHoverPreview(null);
+  }
+
+  function selectAnalysisPosition(
+    position: string | undefined,
+    san: string | undefined,
+    ply: number
+  ) {
+    if (!analysisReplayActive || !position || position.length !== 64) {
+      return;
+    }
+
+    const moveLabel = san ? ` · ${san}` : "";
+    setAnalysisSelectedPosition({
+      position,
+      label: `${ply}. Halbzug${moveLabel}`,
+      ply,
+    });
   }
 
   function handleGameEndState(gameState: string | null | undefined) {
@@ -2213,6 +2246,7 @@ export const ChessBoard: React.FC = () => {
         <svg
           className="analysis-profile-chart"
           viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="none"
           role="img"
           aria-label="Bewertungsverlauf der analysierten Partie"
         >
@@ -2261,6 +2295,131 @@ export const ChessBoard: React.FC = () => {
         {analysisReplayError && (
           <div className="analysis-profile-error">{analysisReplayError}</div>
         )}
+      </div>
+    );
+  };
+
+  const renderAnalysisPositionBoard = () => {
+    if (!analysisSelectedPosition) {
+      return (
+        <div className="analysis-detail-placeholder">
+          Zug in der MoveList anklicken, um die Stellung hier festzuhalten.
+        </div>
+      );
+    }
+
+    const squares: ReactElement[] = [];
+
+    for (let i = 0; i < 64; i++) {
+      const rankFromTop = Math.floor(i / 8);
+      const fileFromLeft = i % 8;
+      const pieceChar = analysisSelectedPosition.position.charAt(i);
+      const pieceSymbol = getPieceSymbolFromPositionChar(pieceChar);
+      const isLight = (rankFromTop + fileFromLeft) % 2 === 0;
+
+      squares.push(
+        <div
+          key={i}
+          className={[
+            "analysis-position-square",
+            isLight ? "analysis-position-square-light" : "analysis-position-square-dark",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          {pieceSymbol && (
+            <span
+              className={[
+                "analysis-position-piece",
+                isWhitePositionPiece(pieceChar)
+                  ? "analysis-position-piece-white"
+                  : "analysis-position-piece-black",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {pieceSymbol}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    return <div className="analysis-position-board">{squares}</div>;
+  };
+
+  const renderAnalysisLinesForSelection = () => {
+    if (!analysisSelectedPosition) {
+      return (
+        <div className="analysis-detail-placeholder">
+          Nach Auswahl eines Zuges erscheinen hier die gespeicherten Engine-Varianten.
+        </div>
+      );
+    }
+
+    const selectedPoint = analysisProfile.find(
+      (point) => point.ply === analysisSelectedPosition.ply
+    );
+
+    if (!selectedPoint) {
+      return (
+        <div className="analysis-detail-placeholder">
+          Für diesen Halbzug liegt noch keine Bewertung vor.
+        </div>
+      );
+    }
+
+    const lines = selectedPoint.lines ?? [];
+
+    if (lines.length === 0) {
+      return (
+        <div className="analysis-detail-placeholder">
+          Für diese Stellung wurden keine Engine-Varianten geliefert.
+        </div>
+      );
+    }
+
+    return (
+      <div className="analysis-lines-list">
+        {lines.map((line, index) => (
+          <div className="analysis-line-card" key={`${index}-${line.moves}`}>
+            <div className="analysis-line-header">
+              <strong>#{index + 1}</strong>
+              <span>Eval {line.eval.toFixed(2)}</span>
+              <span>depth {line.depth}</span>
+            </div>
+            <div className="analysis-line-moves">
+              {line.moves || "—"}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderAnalysisDetails = () => {
+    return (
+      <div className="analysis-detail-row">
+        <div className="analysis-position-panel">
+          <div className="analysis-detail-title">
+            {analysisSelectedPosition?.label ?? "Position"}
+          </div>
+          {renderAnalysisPositionBoard()}
+        </div>
+
+        <div className="analysis-lines-panel">
+          <div className="analysis-detail-title">Engine-Varianten</div>
+          {renderAnalysisLinesForSelection()}
+        </div>
+      </div>
+    );
+  };
+
+  const renderAnalysisReplayContent = () => {
+    return (
+      <div className="analysis-replay-content">
+        {renderAnalysisProfile()}
+        {renderAnalysisDetails()}
       </div>
     );
   };
@@ -2414,12 +2573,22 @@ export const ChessBoard: React.FC = () => {
                       "move-entry",
                       "move-entry-white",
                       row.whitePosition ? "move-entry-previewable" : "",
+                      analysisSelectedPosition?.ply === (row.moveNumber - 1) * 2 + 1
+                        ? "move-entry-analysis-selected"
+                        : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
                     onMouseEnter={(e) => showMovePreview(e, row.whitePosition)}
                     onMouseMove={moveMovePreview}
                     onMouseLeave={hideMovePreview}
+                    onClick={() =>
+                      selectAnalysisPosition(
+                        row.whitePosition,
+                        row.white,
+                        (row.moveNumber - 1) * 2 + 1
+                      )
+                    }
                   >
                     {row.white ?? ""}
                   </span>
@@ -2428,12 +2597,22 @@ export const ChessBoard: React.FC = () => {
                       "move-entry",
                       "move-entry-black",
                       row.blackPosition ? "move-entry-previewable" : "",
+                      analysisSelectedPosition?.ply === row.moveNumber * 2
+                        ? "move-entry-analysis-selected"
+                        : "",
                     ]
                       .filter(Boolean)
                       .join(" ")}
                     onMouseEnter={(e) => showMovePreview(e, row.blackPosition)}
                     onMouseMove={moveMovePreview}
                     onMouseLeave={hideMovePreview}
+                    onClick={() =>
+                      selectAnalysisPosition(
+                        row.blackPosition,
+                        row.black,
+                        row.moveNumber * 2
+                      )
+                    }
                   >
                     {row.black ?? ""}
                   </span>
@@ -2514,7 +2693,7 @@ export const ChessBoard: React.FC = () => {
 
               <div className="engine-content-column">
                 {analysisReplayActive ? (
-                  renderAnalysisProfile()
+                  renderAnalysisReplayContent()
                 ) : (
                   <>
                     {showStockfishConfig && (
@@ -2804,18 +2983,6 @@ export const ChessBoard: React.FC = () => {
                     />
                   </label>
 
-                  <label className="analysis-settings-field">
-                    <span>MultiPV</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={256}
-                      value={analysisSettings.multiPV}
-                      onChange={(e) =>
-                        updateAnalysisSettingsNumberField("multiPV", Number(e.target.value))
-                      }
-                    />
-                  </label>
                 </div>
 
                 {analysisReplayError && (
