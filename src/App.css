@@ -1132,10 +1132,24 @@
 }
 
 .analysis-line-card {
+  width: 100%;
   padding: 6px 8px;
+  border: 1px solid transparent;
   border-radius: 5px;
   background: #303030;
+  color: inherit;
+  text-align: left;
   box-sizing: border-box;
+  cursor: pointer;
+}
+
+.analysis-line-card:hover {
+  background: #383838;
+}
+
+.analysis-line-card-selected {
+  border-color: #777777;
+  background: #3a3a3a;
 }
 
 .analysis-line-header {

@@ -91,6 +91,7 @@ interface EngineLine {
   eval: number;
   depth: number;
   moves: string;
+  positions?: string[];
 }
 
 interface EngineEvaluation {
@@ -401,6 +402,57 @@ function mapBackendPiecesToLocalPieces(backendPieces: BackendPiece[]): Piece[] {
   });
 }
 
+function pieceTypeFromPositionChar(pieceChar: string): PieceType | null {
+  switch (pieceChar.toLowerCase()) {
+    case "p":
+      return "pawn";
+    case "r":
+      return "rook";
+    case "n":
+      return "knight";
+    case "b":
+      return "bishop";
+    case "q":
+      return "queen";
+    case "k":
+      return "king";
+    default:
+      return null;
+  }
+}
+
+function mapPositionStringToLocalPieces(position: string): Piece[] {
+  if (!position || position.length !== 64) {
+    return [];
+  }
+
+  const result: Piece[] = [];
+
+  for (let index = 0; index < 64; index++) {
+    const pieceChar = position.charAt(index);
+    const type = pieceTypeFromPositionChar(pieceChar);
+
+    if (!type) {
+      continue;
+    }
+
+    const file = (index % 8) + 1;
+    const rank = 8 - Math.floor(index / 8);
+    const color: PieceColor = isWhitePositionPiece(pieceChar) ? "white" : "black";
+    const square = squareName(file, rank);
+
+    result.push({
+      id: `${color}_${type}_${square}_${index}`,
+      color,
+      type,
+      file,
+      rank,
+    });
+  }
+
+  return result;
+}
+
 function formatClockTime(totalSeconds: number | null | undefined): string {
   if (totalSeconds == null) {
     return "--:--";
@@ -556,6 +608,10 @@ export const ChessBoard: React.FC = () => {
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const [analysisSelectedPosition, setAnalysisSelectedPosition] =
     useState<AnalysisPositionSelection | null>(null);
+  const [analysisSelectedLineIndex, setAnalysisSelectedLineIndex] =
+    useState<number | null>(null);
+  const [analysisLineAnimationIndex, setAnalysisLineAnimationIndex] =
+    useState<number>(0);
   const analysisReplayCancelledRef = useRef<boolean>(false);
 
   const squareToPieceMap = useMemo(() => {
@@ -1129,6 +1185,40 @@ export const ChessBoard: React.FC = () => {
     };
   }, [engineAutoUpdate, clock?.gameState]);
 
+  useEffect(() => {
+    setAnalysisLineAnimationIndex(0);
+  }, [analysisSelectedPosition?.ply, analysisSelectedLineIndex]);
+
+  useEffect(() => {
+    if (!analysisReplayActive || !analysisSelectedPosition) {
+      return;
+    }
+
+    const selectedPoint = analysisProfile.find(
+      (point) => point.ply === analysisSelectedPosition.ply
+    );
+    const lines = selectedPoint?.lines ?? [];
+
+    if (lines.length === 0) {
+      return;
+    }
+
+    const lineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines);
+    const positions = lines[lineIndex]?.positions ?? [];
+
+    if (positions.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setAnalysisLineAnimationIndex((prev) => (prev + 1) % positions.length);
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [analysisReplayActive, analysisSelectedPosition?.ply, analysisSelectedLineIndex, analysisProfile]);
+
   function openAnalysisSettingsDialog() {
     setAnalysisReplayError(null);
     setAnalysisReplayStatus(null);
@@ -1159,11 +1249,11 @@ export const ChessBoard: React.FC = () => {
   }
 
   function applyAnalysisReplayStep(step: AnalysisReplayStep) {
-    if (step.board?.pieces) {
+    if (step.board?.pieces && !analysisReplayActiveRef.current) {
       setPieces(mapBackendPiecesToLocalPieces(step.board.pieces));
     }
 
-    if (step.from && step.to) {
+    if (step.from && step.to && !analysisReplayActiveRef.current) {
       setLastMove({ from: step.from, to: step.to });
     }
 
@@ -1234,7 +1324,10 @@ export const ChessBoard: React.FC = () => {
       setEngineAutoUpdate(false);
       setAnalysisTotalPlies(0);
       setAnalysisSelectedPosition(null);
+      setAnalysisSelectedLineIndex(null);
+      setAnalysisLineAnimationIndex(0);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
+      selectFirstAnalysisPosition();
 
       const response = await fetch("/api/analysis-replay/start", {
         method: "POST",
@@ -1324,6 +1417,8 @@ export const ChessBoard: React.FC = () => {
       setAnalysisReplayFinished(false);
       setAnalysisTotalPlies(0);
       setAnalysisSelectedPosition(null);
+      setAnalysisSelectedLineIndex(null);
+      setAnalysisLineAnimationIndex(0);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const response = await fetch("/api/new-game", {
@@ -1490,7 +1585,7 @@ export const ChessBoard: React.FC = () => {
     san: string | undefined,
     ply: number
   ) {
-    if (!analysisReplayActive || !position || position.length !== 64) {
+    if (!analysisReplayActiveRef.current || !position || position.length !== 64) {
       return;
     }
 
@@ -1500,6 +1595,35 @@ export const ChessBoard: React.FC = () => {
       label: `${ply}. Halbzug${moveLabel}`,
       ply,
     });
+    setAnalysisSelectedLineIndex(null);
+    setAnalysisLineAnimationIndex(0);
+    setPieces(mapPositionStringToLocalPieces(position));
+    setLastMove(null);
+  }
+
+  function selectFirstAnalysisPosition() {
+    const firstRow = moves.find((row) => row.whitePosition || row.blackPosition);
+
+    if (!firstRow) {
+      return;
+    }
+
+    if (firstRow.whitePosition) {
+      selectAnalysisPosition(
+        firstRow.whitePosition,
+        firstRow.white,
+        (firstRow.moveNumber - 1) * 2 + 1
+      );
+      return;
+    }
+
+    if (firstRow.blackPosition) {
+      selectAnalysisPosition(
+        firstRow.blackPosition,
+        firstRow.black,
+        firstRow.moveNumber * 2
+      );
+    }
   }
 
   function handleGameEndState(gameState: string | null | undefined) {
@@ -2299,11 +2423,81 @@ export const ChessBoard: React.FC = () => {
     );
   };
 
-  const renderAnalysisPositionBoard = () => {
+  function getDefaultAnalysisLineIndex(point: AnalysisProfilePoint | undefined, lines: EngineLine[]): number {
+    if (!point || lines.length === 0) {
+      return 0;
+    }
+
+    const whiteToMove = point.ply % 2 === 0;
+    let bestIndex = 0;
+    let bestEval = lines[0]?.eval ?? 0;
+
+    for (let index = 1; index < lines.length; index++) {
+      const lineEval = lines[index]?.eval ?? 0;
+
+      if (whiteToMove ? lineEval > bestEval : lineEval < bestEval) {
+        bestEval = lineEval;
+        bestIndex = index;
+      }
+    }
+
+    return bestIndex;
+  }
+
+  function getEffectiveAnalysisLineIndex(
+    point: AnalysisProfilePoint | undefined,
+    lines: EngineLine[]
+  ): number {
+    if (lines.length === 0) {
+      return 0;
+    }
+
+    if (analysisSelectedLineIndex != null
+        && analysisSelectedLineIndex >= 0
+        && analysisSelectedLineIndex < lines.length) {
+      return analysisSelectedLineIndex;
+    }
+
+    return getDefaultAnalysisLineIndex(point, lines);
+  }
+
+  function getSelectedAnalysisPoint(): AnalysisProfilePoint | undefined {
     if (!analysisSelectedPosition) {
+      return undefined;
+    }
+
+    return analysisProfile.find((point) => point.ply === analysisSelectedPosition.ply);
+  }
+
+  function getAnimatedAnalysisPosition(): string | null {
+    const selectedPoint = getSelectedAnalysisPoint();
+    const lines = selectedPoint?.lines ?? [];
+
+    if (!analysisSelectedPosition) {
+      return null;
+    }
+
+    if (lines.length === 0) {
+      return analysisSelectedPosition.position;
+    }
+
+    const lineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines);
+    const positions = lines[lineIndex]?.positions ?? [];
+
+    if (positions.length === 0) {
+      return analysisSelectedPosition.position;
+    }
+
+    return positions[analysisLineAnimationIndex % positions.length] ?? analysisSelectedPosition.position;
+  }
+
+  const renderAnalysisPositionBoard = () => {
+    const animatedPosition = getAnimatedAnalysisPosition();
+
+    if (!animatedPosition) {
       return (
         <div className="analysis-detail-placeholder">
-          Zug in der MoveList anklicken, um die Stellung hier festzuhalten.
+          Zug in der MoveList anklicken, um eine Engine-Fortsetzung abzuspielen.
         </div>
       );
     }
@@ -2313,7 +2507,7 @@ export const ChessBoard: React.FC = () => {
     for (let i = 0; i < 64; i++) {
       const rankFromTop = Math.floor(i / 8);
       const fileFromLeft = i % 8;
-      const pieceChar = analysisSelectedPosition.position.charAt(i);
+      const pieceChar = animatedPosition.charAt(i);
       const pieceSymbol = getPieceSymbolFromPositionChar(pieceChar);
       const isLight = (rankFromTop + fileFromLeft) % 2 === 0;
 
@@ -2357,9 +2551,7 @@ export const ChessBoard: React.FC = () => {
       );
     }
 
-    const selectedPoint = analysisProfile.find(
-      (point) => point.ply === analysisSelectedPosition.ply
-    );
+    const selectedPoint = getSelectedAnalysisPoint();
 
     if (!selectedPoint) {
       return (
@@ -2379,20 +2571,39 @@ export const ChessBoard: React.FC = () => {
       );
     }
 
+    const effectiveLineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines);
+
     return (
       <div className="analysis-lines-list">
-        {lines.map((line, index) => (
-          <div className="analysis-line-card" key={`${index}-${line.moves}`}>
-            <div className="analysis-line-header">
-              <strong>#{index + 1}</strong>
-              <span>Eval {line.eval.toFixed(2)}</span>
-              <span>depth {line.depth}</span>
-            </div>
-            <div className="analysis-line-moves">
-              {line.moves || "—"}
-            </div>
-          </div>
-        ))}
+        {lines.map((line, index) => {
+          const isSelected = index === effectiveLineIndex;
+
+          return (
+            <button
+              type="button"
+              className={[
+                "analysis-line-card",
+                isSelected ? "analysis-line-card-selected" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              key={`${index}-${line.moves}`}
+              onClick={() => {
+                setAnalysisSelectedLineIndex(index);
+                setAnalysisLineAnimationIndex(0);
+              }}
+            >
+              <div className="analysis-line-header">
+                <strong>#{index + 1}</strong>
+                <span>Eval {line.eval.toFixed(2)}</span>
+                <span>depth {line.depth}</span>
+              </div>
+              <div className="analysis-line-moves">
+                {line.moves || "—"}
+              </div>
+            </button>
+          );
+        })}
       </div>
     );
   };
@@ -2402,7 +2613,7 @@ export const ChessBoard: React.FC = () => {
       <div className="analysis-detail-row">
         <div className="analysis-position-panel">
           <div className="analysis-detail-title">
-            {analysisSelectedPosition?.label ?? "Position"}
+            {analysisSelectedPosition ? `Engine-Fortsetzung ab ${analysisSelectedPosition.label}` : "Engine-Fortsetzung"}
           </div>
           {renderAnalysisPositionBoard()}
         </div>
@@ -2529,7 +2740,7 @@ export const ChessBoard: React.FC = () => {
               onClick={reopenGameEndDialog}
               title="Optionen nach der abgeschlossenen Analyse öffnen"
             >
-              Analyse-Optionen
+              Optionen
             </button>
           )}
 
