@@ -136,6 +136,10 @@ interface ClockState {
   blackRunning: boolean;
   gameState: string | null;
   timeControl: string | null;
+  whitePlayerName: string | null;
+  blackPlayerName: string | null;
+  whitePlayerEngineName: string | null;
+  blackPlayerEngineName: string | null;
 }
 
 interface GameSettings {
@@ -451,6 +455,37 @@ function mapPositionStringToLocalPieces(position: string): Piece[] {
   }
 
   return result;
+}
+
+function formatPlayerDisplayName(
+  name: string | null | undefined,
+  fallback: string
+): string {
+  const trimmed = name?.trim();
+
+  if (!trimmed || trimmed === "ChessGame" || trimmed === "Simulation") {
+    return fallback;
+  }
+
+  return trimmed;
+}
+
+function getDisplayedWhitePlayerName(
+  clock: ClockState | null,
+  whiteComputerEnabled: boolean
+): string {
+  return whiteComputerEnabled
+    ? formatPlayerDisplayName(clock?.whitePlayerEngineName, "White Engine")
+    : formatPlayerDisplayName(clock?.whitePlayerName, "White");
+}
+
+function getDisplayedBlackPlayerName(
+  clock: ClockState | null,
+  blackComputerEnabled: boolean
+): string {
+  return blackComputerEnabled
+    ? formatPlayerDisplayName(clock?.blackPlayerEngineName, "Black Engine")
+    : formatPlayerDisplayName(clock?.blackPlayerName, "Black");
 }
 
 function formatClockTime(totalSeconds: number | null | undefined): string {
@@ -1077,14 +1112,14 @@ export const ChessBoard: React.FC = () => {
               <span>Move time s</span>
               <input
                 type="number"
-                min={0}
+                min={1}
                 max={3600}
-                value={settings.moveOverhead}
+                value={Math.max(1, settings.moveOverhead)}
                 onChange={(e) =>
                   updateStockfishConfigField(
                     role,
                     "moveOverhead",
-                    Number(e.target.value)
+                    Math.max(1, Number(e.target.value))
                   )
                 }
               />
@@ -2770,6 +2805,40 @@ export const ChessBoard: React.FC = () => {
         <div className="board-layout">
           <section className="moves-panel">
             <h2 className="panel-title">Moves</h2>
+
+            <div className="player-names-panel">
+              <div
+                className={[
+                  "player-name-row",
+                  "player-name-row-white",
+                  clock?.sideToMove === "white" ? "player-name-row-active" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                title={getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
+              >
+                <span className="player-name-color">White</span>
+                <span className="player-name-value">
+                  {getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
+                </span>
+              </div>
+
+              <div
+                className={[
+                  "player-name-row",
+                  "player-name-row-black",
+                  clock?.sideToMove === "black" ? "player-name-row-active" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                title={getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
+              >
+                <span className="player-name-color">Black</span>
+                <span className="player-name-value">
+                  {getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
+                </span>
+              </div>
+            </div>
 
             <div className="moves-list">
               {moves.length === 0 && (

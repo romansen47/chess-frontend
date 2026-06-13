@@ -328,7 +328,7 @@
 
 /* Linkes Panel: Züge */
 .moves-panel {
-  flex: 0 0 170px;
+  flex: 0 0 210px;
   height: calc(8 * 80px + 24px);
   min-width: 0;
   background: #2b2b2b;
@@ -362,9 +362,53 @@
   padding-bottom: 4px;
 }
 
+/* Spieleranzeige im linken Panel */
+.player-names-panel {
+  margin: 0 0 8px 0;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.player-name-row-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.player-name-color {
+  flex: 0 0 38px;
+  font-size: 0.68rem;
+  color: #bbbbbb;
+}
+
+.player-name-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.74rem;
+  color: #f5f5f5;
+}
+
+.player-name-row-black .player-name-value {
+  color: #dddddd;
+}
+
 /* Zugliste */
 .moves-list {
-  max-height: calc(8 * 80px + 24px - 70px);
+  max-height: calc(8 * 80px + 24px - 112px);
   overflow-y: auto;
 }
 
