@@ -1033,6 +1033,10 @@
   shape-rendering: crispEdges;
 }
 
+.analysis-profile-bar-clickable {
+  cursor: pointer;
+}
+
 .analysis-profile-bar-positive {
   fill: #ffffff;
 }
@@ -1043,6 +1047,11 @@
 
 .analysis-profile-bar-latest {
   filter: brightness(1.12);
+}
+
+.analysis-profile-bar-selected {
+  stroke: #d6e600;
+  stroke-width: 1.2;
 }
 
 .analysis-profile-bar:hover {

@@ -488,6 +488,28 @@ function getDisplayedBlackPlayerName(
     : formatPlayerDisplayName(clock?.blackPlayerName, "Black");
 }
 
+function getAnalysisWhitePlayerName(
+  clock: ClockState | null,
+  storedAnalysisName: string | null
+): string {
+  return (
+    storedAnalysisName
+    || formatPlayerDisplayName(clock?.whitePlayerEngineName, "")
+    || formatPlayerDisplayName(clock?.whitePlayerName, "White")
+  );
+}
+
+function getAnalysisBlackPlayerName(
+  clock: ClockState | null,
+  storedAnalysisName: string | null
+): string {
+  return (
+    storedAnalysisName
+    || formatPlayerDisplayName(clock?.blackPlayerEngineName, "")
+    || formatPlayerDisplayName(clock?.blackPlayerName, "Black")
+  );
+}
+
 function formatClockTime(totalSeconds: number | null | undefined): string {
   if (totalSeconds == null) {
     return "--:--";
@@ -647,6 +669,10 @@ export const ChessBoard: React.FC = () => {
     useState<number | null>(null);
   const [analysisLineAnimationIndex, setAnalysisLineAnimationIndex] =
     useState<number>(0);
+  const [analysisWhitePlayerName, setAnalysisWhitePlayerName] =
+    useState<string | null>(null);
+  const [analysisBlackPlayerName, setAnalysisBlackPlayerName] =
+    useState<string | null>(null);
   const analysisReplayCancelledRef = useRef<boolean>(false);
 
   const squareToPieceMap = useMemo(() => {
@@ -944,6 +970,28 @@ export const ChessBoard: React.FC = () => {
       setEvalError("Fehler beim Laden der Engine-Evaluation.");
     } finally {
       setIsLoadingEval(false);
+    }
+  }
+
+  async function stopLiveEvaluation() {
+    try {
+      await fetch("/api/eval/stop", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      console.warn("[stopLiveEvaluation] backend stop failed", e);
+    }
+  }
+
+  function toggleEngineAutoUpdate() {
+    const nextValue = !engineAutoUpdateRef.current;
+    setEngineAutoUpdate(nextValue);
+
+    if (!nextValue) {
+      void stopLiveEvaluation();
     }
   }
 
@@ -1354,6 +1402,9 @@ export const ChessBoard: React.FC = () => {
       updatePossibleTargets([]);
       setHoverPreview(null);
       setPromotionContext(null);
+      setAnalysisWhitePlayerName(getDisplayedWhitePlayerName(clock, whiteComputerEnabledRef.current));
+      setAnalysisBlackPlayerName(getDisplayedBlackPlayerName(clock, blackComputerEnabledRef.current));
+      await stopLiveEvaluation();
       disablePlayerEngines();
       setAnalysisReplayActive(true);
       setEngineAutoUpdate(false);
@@ -1454,6 +1505,8 @@ export const ChessBoard: React.FC = () => {
       setAnalysisSelectedPosition(null);
       setAnalysisSelectedLineIndex(null);
       setAnalysisLineAnimationIndex(0);
+      setAnalysisWhitePlayerName(null);
+      setAnalysisBlackPlayerName(null);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const response = await fetch("/api/new-game", {
@@ -1636,6 +1689,33 @@ export const ChessBoard: React.FC = () => {
     setLastMove(null);
   }
 
+  function getAnalysisMoveSelectionForPly(ply: number): { position: string | undefined; san: string | undefined; ply: number } | null {
+    if (ply <= 0) {
+      return null;
+    }
+
+    const moveNumber = Math.ceil(ply / 2);
+    const row = moves.find((candidate) => candidate.moveNumber === moveNumber);
+
+    if (!row) {
+      return null;
+    }
+
+    return ply % 2 === 1
+      ? { position: row.whitePosition, san: row.white, ply }
+      : { position: row.blackPosition, san: row.black, ply };
+  }
+
+  function selectAnalysisPositionByPly(ply: number) {
+    const selection = getAnalysisMoveSelectionForPly(ply);
+
+    if (!selection) {
+      return;
+    }
+
+    selectAnalysisPosition(selection.position, selection.san, selection.ply);
+  }
+
   function selectFirstAnalysisPosition() {
     const firstRow = moves.find((row) => row.whitePosition || row.blackPosition);
 
@@ -1667,6 +1747,8 @@ export const ChessBoard: React.FC = () => {
     }
 
     setGameEndState(gameState);
+    setEngineAutoUpdate(false);
+    void stopLiveEvaluation();
     setClock((prev) =>
       prev
         ? {
@@ -2423,18 +2505,33 @@ export const ChessBoard: React.FC = () => {
             const barHeight = Math.max(1.5, Math.abs(zeroY - y));
             const isPositive = point.evaluation > 0;
             const isLatest = point.ply === latest?.ply;
+            const isSelected = point.ply === analysisSelectedPosition?.ply;
+            const hasMoveSelection = !!getAnalysisMoveSelectionForPly(point.ply)?.position;
 
             return (
               <rect
                 key={point.ply}
                 className={`analysis-profile-bar ${
                   isPositive ? "analysis-profile-bar-positive" : "analysis-profile-bar-negative"
-                }${isLatest ? " analysis-profile-bar-latest" : ""}`}
+                }${isLatest ? " analysis-profile-bar-latest" : ""}${isSelected ? " analysis-profile-bar-selected" : ""}${hasMoveSelection ? " analysis-profile-bar-clickable" : ""}`}
                 x={x}
                 y={top}
                 width={barWidth}
                 height={barHeight}
                 rx={0}
+                role={hasMoveSelection ? "button" : undefined}
+                tabIndex={hasMoveSelection ? 0 : undefined}
+                onClick={hasMoveSelection ? () => selectAnalysisPositionByPly(point.ply) : undefined}
+                onKeyDown={
+                  hasMoveSelection
+                    ? (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          selectAnalysisPositionByPly(point.ply);
+                        }
+                      }
+                    : undefined
+                }
               >
                 <title>{formatEvaluation(point)}</title>
               </rect>
@@ -2720,7 +2817,7 @@ export const ChessBoard: React.FC = () => {
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                onClick={() => setEngineAutoUpdate((prev) => !prev)}
+                onClick={toggleEngineAutoUpdate}
                 aria-pressed={engineAutoUpdate}
                 title="Automatische Engine-Auswertung ein-/ausschalten"
               >
@@ -2815,11 +2912,11 @@ export const ChessBoard: React.FC = () => {
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                title={getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
+                title={analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName) : getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
               >
                 <span className="player-name-color">White</span>
                 <span className="player-name-value">
-                  {getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
+                  {analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName) : getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
                 </span>
               </div>
 
@@ -2831,11 +2928,11 @@ export const ChessBoard: React.FC = () => {
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                title={getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
+                title={analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName) : getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
               >
                 <span className="player-name-color">Black</span>
                 <span className="player-name-value">
-                  {getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
+                  {analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName) : getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
                 </span>
               </div>
             </div>
