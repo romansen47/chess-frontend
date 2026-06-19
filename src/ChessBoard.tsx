@@ -1105,8 +1105,14 @@ export const ChessBoard: React.FC = () => {
     setEngineAutoUpdate(nextValue);
 
     if (!nextValue) {
+      setEngineEval(null);
+      setEvalError(null);
+      setIsLoadingEval(false);
       void stopLiveEvaluation();
+      return;
     }
+
+    void loadEvaluation();
   }
 
   async function loadStockfishConfig() {
@@ -1214,7 +1220,6 @@ export const ChessBoard: React.FC = () => {
     role: EngineSlotRole,
     title: string,
     version: number,
-    hint: string,
     allowMultiPV: boolean
   ) {
     if (!stockfishConfig) {
@@ -1360,7 +1365,6 @@ export const ChessBoard: React.FC = () => {
           </label>
         </div>
 
-        <div className="stockfish-config-hint">{hint}</div>
       </div>
     );
   }
@@ -3186,7 +3190,7 @@ export const ChessBoard: React.FC = () => {
 
           <section className="engine-panel">
             <div className="engine-panel-main">
-              {engineEval ? (
+              {engineAutoUpdate && engineEval && !clock?.gameState && (
                 <div className="engine-bar-wrapper">
                   <div
                     className="engine-bar-white"
@@ -3197,8 +3201,6 @@ export const ChessBoard: React.FC = () => {
                     style={{ height: `${(1 - engineEval.bar) * 100}%` }}
                   />
                 </div>
-              ) : (
-                <div className="engine-bar-wrapper engine-bar-wrapper-empty" />
               )}
 
               <div className="engine-content-column">
@@ -3226,7 +3228,6 @@ export const ChessBoard: React.FC = () => {
                                   "whitePlayer",
                                   "White player engine",
                                   stockfishConfig.whitePlayerVersion,
-                                  "Für echte Computerzüge von Weiß. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
                                   false
                                 )}
 
@@ -3234,7 +3235,6 @@ export const ChessBoard: React.FC = () => {
                                   "blackPlayer",
                                   "Black player engine",
                                   stockfishConfig.blackPlayerVersion,
-                                  "Für echte Computerzüge von Schwarz. Depth = 0 bedeutet: nutze Move time. MultiPV wird serverseitig auf 1 fixiert.",
                                   false
                                 )}
                               </div>
@@ -3243,7 +3243,6 @@ export const ChessBoard: React.FC = () => {
                                 "evaluation",
                                 "Evaluation engine",
                                 stockfishConfig.evaluationVersion,
-                                "Für die Evaluation. Änderungen hier leeren serverseitig den Evaluation-Cache.",
                                 true
                               )}
                             </div>
@@ -3282,7 +3281,7 @@ export const ChessBoard: React.FC = () => {
                       <div className="engine-error">Error: {evalError}</div>
                     )}
 
-                    {engineEval && (
+                    {engineAutoUpdate && engineEval && !clock?.gameState && (
                       <div className="engine-lines">
                         {engineEval.lines.length === 0 && (
                           <div className="engine-empty">No engine lines.</div>
@@ -3300,7 +3299,7 @@ export const ChessBoard: React.FC = () => {
                       </div>
                     )}
 
-                    {!engineEval && !isLoadingEval && !evalError && (
+                    {engineAutoUpdate && !engineEval && !isLoadingEval && !evalError && !clock?.gameState && (
                       <div className="engine-placeholder-text">
                         Engine output will appear here.
                       </div>
