@@ -1274,14 +1274,14 @@ export const ChessBoard: React.FC = () => {
               <span>Move time s</span>
               <input
                 type="number"
-                min={1}
+                min={0}
                 max={3600}
-                value={Math.max(1, settings.moveOverhead)}
+                value={settings.moveOverhead}
                 onChange={(e) =>
                   updateStockfishConfigField(
                     role,
                     "moveOverhead",
-                    Math.max(1, Number(e.target.value))
+                    Math.max(0, Number(e.target.value))
                   )
                 }
               />
