@@ -4,6 +4,8 @@ type PieceColor = "white" | "black";
 type PieceType = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
 type GameSound = "move" | "capture" | "notify";
 
+const DEFAULT_ANALYSIS_ENGINE_PATH = "/usr/games/stockfish";
+
 const GAME_SOUND_SOURCES: Record<GameSound, string[]> = {
   move: [
     "/sounds/move.mp3",
@@ -177,6 +179,7 @@ interface GameSettings {
 }
 
 interface AnalysisReplaySettings {
+  enginePath: string;
   moveTimeSeconds: number;
   depth: number;
   threads: number;
@@ -599,7 +602,30 @@ function formatClockTime(totalSeconds: number | null | undefined): string {
   return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 }
 
-function formatGameState(gameState: string | null | undefined): string {
+function formatLostOnTime(clock: ClockState | null | undefined): string {
+  if (clock?.whiteTime === 0 && clock.blackTime > 0) {
+    return "Schwarz gewinnt durch Zeitüberschreitung von Weiß.";
+  }
+
+  if (clock?.blackTime === 0 && clock.whiteTime > 0) {
+    return "Weiß gewinnt durch Zeitüberschreitung von Schwarz.";
+  }
+
+  if (clock?.sideToMove === "white") {
+    return "Schwarz gewinnt durch Zeitüberschreitung von Weiß.";
+  }
+
+  if (clock?.sideToMove === "black") {
+    return "Weiß gewinnt durch Zeitüberschreitung von Schwarz.";
+  }
+
+  return "Partie durch Zeitüberschreitung beendet.";
+}
+
+function formatGameState(
+  gameState: string | null | undefined,
+  clock?: ClockState | null
+): string {
   switch (gameState) {
     case "WHITE_MATED":
       return "Schwarz gewinnt durch Matt.";
@@ -612,7 +638,7 @@ function formatGameState(gameState: string | null | undefined): string {
     case "BLACK_RESIGNED":
       return "Weiß gewinnt durch Aufgabe von Schwarz.";
     case "LOST_ON_TIME":
-      return "Die Partie wurde durch Zeitüberschreitung beendet.";
+      return formatLostOnTime(clock);
     case "DRAW_BY_50_MOVES_RULE":
       return "Remis durch die 50-Züge-Regel.";
     case "DRAW_BY_THREEFOLD_REPETITION":
@@ -635,6 +661,7 @@ function createDefaultGameSettings(): GameSettings {
 
 function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
   return {
+    enginePath: DEFAULT_ANALYSIS_ENGINE_PATH,
     moveTimeSeconds: 5,
     depth: 0,
     threads: 1,
@@ -1131,6 +1158,15 @@ export const ChessBoard: React.FC = () => {
       console.log("[loadStockfishConfig] response", data);
 
       setStockfishConfig(data);
+
+      const evaluationEnginePath = data.evaluation?.enginePath;
+      if (evaluationEnginePath) {
+        setAnalysisSettings((prev) =>
+          prev.enginePath === DEFAULT_ANALYSIS_ENGINE_PATH
+            ? { ...prev, enginePath: evaluationEnginePath }
+            : prev
+        );
+      }
     } catch (e) {
       console.error("[loadStockfishConfig] error", e);
       setStockfishConfigError(
@@ -1438,7 +1474,7 @@ export const ChessBoard: React.FC = () => {
   }
 
   function updateAnalysisSettingsNumberField(
-    key: keyof AnalysisReplaySettings,
+    key: Exclude<keyof AnalysisReplaySettings, "enginePath">,
     value: number
   ) {
     const safeValue = Number.isFinite(value) ? value : 0;
@@ -1446,6 +1482,16 @@ export const ChessBoard: React.FC = () => {
     setAnalysisSettings((prev) => ({
       ...prev,
       [key]: key === "contempt" ? safeValue : Math.max(0, safeValue),
+    }));
+  }
+
+  function updateAnalysisSettingsTextField(
+    key: Extract<keyof AnalysisReplaySettings, "enginePath">,
+    value: string
+  ) {
+    setAnalysisSettings((prev) => ({
+      ...prev,
+      [key]: value,
     }));
   }
 
@@ -1539,10 +1585,7 @@ export const ChessBoard: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...analysisSettings,
-          multiPV: 3,
-        }),
+        body: JSON.stringify(analysisSettings),
       });
 
       if (!response.ok) {
@@ -3433,10 +3476,20 @@ export const ChessBoard: React.FC = () => {
                 <h2>Analyse</h2>
                 <p className="analysis-settings-description">
                   Die beendete Partie wird von der Ausgangsstellung aus nachgespielt.
-                  Nach jedem Halbzug bewertet die DeepAnalysisUciEngine die neue Stellung.
+                  Nach jedem Halbzug bewertet die gewählte Analyse-Engine die neue Stellung.
                 </p>
 
                 <div className="analysis-settings-form">
+                  <label className="analysis-settings-field analysis-settings-field-wide">
+                    <span>Engine path</span>
+                    <input
+                      type="text"
+                      value={analysisSettings.enginePath}
+                      onChange={(e) =>
+                        updateAnalysisSettingsTextField("enginePath", e.target.value)
+                      }
+                    />
+                  </label>
                   <label className="analysis-settings-field">
                     <span>Time per move (seconds)</span>
                     <input
@@ -3492,6 +3545,45 @@ export const ChessBoard: React.FC = () => {
                     />
                   </label>
 
+                  <label className="analysis-settings-field">
+                    <span>MultiPV</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={500}
+                      value={analysisSettings.multiPV}
+                      onChange={(e) =>
+                        updateAnalysisSettingsNumberField("multiPV", Number(e.target.value))
+                      }
+                    />
+                  </label>
+
+                  <label className="analysis-settings-field">
+                    <span>Contempt</span>
+                    <input
+                      type="number"
+                      min={-100}
+                      max={100}
+                      value={analysisSettings.contempt}
+                      onChange={(e) =>
+                        updateAnalysisSettingsNumberField("contempt", Number(e.target.value))
+                      }
+                    />
+                  </label>
+
+                  <label className="analysis-settings-field">
+                    <span>UCI Elo</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={4000}
+                      value={analysisSettings.uciElo}
+                      onChange={(e) =>
+                        updateAnalysisSettingsNumberField("uciElo", Number(e.target.value))
+                      }
+                    />
+                  </label>
+
                 </div>
 
                 {analysisReplayError && (
@@ -3522,7 +3614,7 @@ export const ChessBoard: React.FC = () => {
             <div className="game-end-dialog">
               <div className="game-end-dialog-content">
                 <h2>Game Over</h2>
-                <p>{formatGameState(gameEndState)}</p>
+                <p>{formatGameState(gameEndState, clock)}</p>
 
                 <div className="game-end-dialog-actions">
                   <button
