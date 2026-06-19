@@ -2,6 +2,31 @@ import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 
 type PieceColor = "white" | "black";
 type PieceType = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
+type GameSound = "move" | "capture" | "notify";
+
+const GAME_SOUND_SOURCES: Record<GameSound, string[]> = {
+  move: [
+    "/sounds/move.mp3",
+    "/sounds/move.wav",
+    "/sounds/move.ogg",
+    "/sounds/move-self.mp3",
+    "/sounds/move-self.wav",
+    "/sounds/move-self.ogg",
+  ],
+  capture: [
+    "/sounds/capture.mp3",
+    "/sounds/capture.wav",
+    "/sounds/capture.ogg",
+  ],
+  notify: [
+    "/sounds/notify.mp3",
+    "/sounds/notify.wav",
+    "/sounds/notify.ogg",
+    "/sounds/game-end.mp3",
+    "/sounds/game-end.wav",
+    "/sounds/game-end.ogg",
+  ],
+};
 
 interface Piece {
   id: string;
@@ -457,6 +482,58 @@ function mapPositionStringToLocalPieces(position: string): Piece[] {
   return result;
 }
 
+function getPieceTypeAtSquareFromPosition(
+  position: string | null | undefined,
+  square: string
+): PieceType | null {
+  if (!position || position.length !== 64) {
+    return null;
+  }
+
+  const coords = getSquareCoords(square);
+
+  if (!coords) {
+    return null;
+  }
+
+  const index = (8 - coords.rank) * 8 + (coords.file - 1);
+  return pieceTypeFromPositionChar(position.charAt(index));
+}
+
+function getPromotionTypeForLocalMove(
+  movingPiece: Piece | undefined,
+  to: string,
+  requestedPromotion: PieceType | null | undefined,
+  resultingPosition: string | null | undefined
+): PieceType | null {
+  if (!movingPiece || movingPiece.type !== "pawn") {
+    return null;
+  }
+
+  const targetCoords = getSquareCoords(to);
+
+  if (!targetCoords) {
+    return null;
+  }
+
+  const reachesPromotionRank =
+    (movingPiece.color === "white" && targetCoords.rank === 8) ||
+    (movingPiece.color === "black" && targetCoords.rank === 1);
+
+  if (!reachesPromotionRank) {
+    return null;
+  }
+
+  if (requestedPromotion && requestedPromotion !== "pawn") {
+    return requestedPromotion;
+  }
+
+  const promotedType = getPieceTypeAtSquareFromPosition(resultingPosition, to);
+
+  return promotedType && promotedType !== "pawn" ? promotedType : null;
+}
+
+
 function formatPlayerDisplayName(
   name: string | null | undefined,
   fallback: string
@@ -674,6 +751,7 @@ export const ChessBoard: React.FC = () => {
   const [analysisBlackPlayerName, setAnalysisBlackPlayerName] =
     useState<string | null>(null);
   const analysisReplayCancelledRef = useRef<boolean>(false);
+  const soundCacheRef = useRef<Map<string, HTMLAudioElement>>(new Map());
 
   const squareToPieceMap = useMemo(() => {
     const map = new Map<string, Piece>();
@@ -697,6 +775,42 @@ export const ChessBoard: React.FC = () => {
   function setComputerThinkingForSide(side: PieceColor | null, value: boolean) {
     activeComputerMoveSideRef.current = value ? side : null;
     setComputerThinking(value);
+  }
+
+  async function playGameSound(sound: GameSound) {
+    const sources = GAME_SOUND_SOURCES[sound] ?? [];
+
+    for (const source of sources) {
+      let audio = soundCacheRef.current.get(source);
+
+      if (!audio) {
+        audio = new Audio(source);
+        audio.preload = "auto";
+        soundCacheRef.current.set(source, audio);
+      }
+
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+        await audio.play();
+        return;
+      } catch (error) {
+        console.warn(`[playGameSound] could not play ${source}`, error);
+      }
+    }
+  }
+
+  function playMoveResultSound(result: MoveResult) {
+    const san = result.san ?? "";
+    const sound: GameSound = san.includes("x") ? "capture" : "move";
+
+    void playGameSound(sound);
+
+    if (result.gameState) {
+      window.setTimeout(() => {
+        void playGameSound("notify");
+      }, 160);
+    }
   }
 
   function invalidateComputerMoveSequences() {
@@ -1404,9 +1518,10 @@ export const ChessBoard: React.FC = () => {
       setPromotionContext(null);
       setAnalysisWhitePlayerName(getDisplayedWhitePlayerName(clock, whiteComputerEnabledRef.current));
       setAnalysisBlackPlayerName(getDisplayedBlackPlayerName(clock, blackComputerEnabledRef.current));
+      setAnalysisReplayActive(true);
       await stopLiveEvaluation();
       disablePlayerEngines();
-      setAnalysisReplayActive(true);
+      setShowGameEndDialog(false);
       setEngineAutoUpdate(false);
       setAnalysisTotalPlies(0);
       setAnalysisSelectedPosition(null);
@@ -1556,7 +1671,12 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
-  function animateMoveLocally(from: string, to: string) {
+  function animateMoveLocally(
+    from: string,
+    to: string,
+    requestedPromotion?: PieceType | null,
+    resultingPosition?: string | null
+  ) {
     const targetCoords = getSquareCoords(to);
 
     if (!targetCoords) {
@@ -1565,6 +1685,12 @@ export const ChessBoard: React.FC = () => {
 
     setPieces((prev) => {
       const movingPiece = prev.find((p) => squareName(p.file, p.rank) === from);
+      const promotionType = getPromotionTypeForLocalMove(
+        movingPiece,
+        to,
+        requestedPromotion,
+        resultingPosition
+      );
       const castlingSquares = getCastlingSquares(movingPiece, from, to);
 
       if (castlingSquares) {
@@ -1596,7 +1722,12 @@ export const ChessBoard: React.FC = () => {
 
       return withoutCaptured.map((p) =>
         squareName(p.file, p.rank) === from
-          ? { ...p, file: targetCoords.file, rank: targetCoords.rank }
+          ? {
+              ...p,
+              type: promotionType ?? p.type,
+              file: targetCoords.file,
+              rank: targetCoords.rank,
+            }
           : p
       );
     });
@@ -1819,9 +1950,10 @@ export const ChessBoard: React.FC = () => {
       }
 
       if (data.from && data.to) {
-        animateMoveLocally(data.from, data.to);
+        animateMoveLocally(data.from, data.to, null, data.position);
         setLastMove({ from: data.from, to: data.to });
         addMoveToMoveList(data);
+        playMoveResultSound(data);
       }
 
       if (handleGameEndState(data.gameState)) {
@@ -1970,12 +2102,13 @@ export const ChessBoard: React.FC = () => {
       }
 
       if (!options?.localMoveAlreadyApplied) {
-        animateMoveLocally(from, to);
+        animateMoveLocally(from, to, promotion, data.position);
       }
       setLastMove({ from, to });
       setSelectedSquare(null);
       updatePossibleTargets([]);
       addMoveToMoveList(data);
+      playMoveResultSound(data);
 
       if (handleGameEndState(data.gameState)) {
         await synchronizeAfterMoveSequence();
