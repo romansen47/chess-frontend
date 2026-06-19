@@ -2781,6 +2781,65 @@ export const ChessBoard: React.FC = () => {
     return analysisProfile.find((point) => point.ply === analysisSelectedPosition.ply);
   }
 
+  function splitAnalysisMoveText(moves: string): string[] {
+    if (!moves || !moves.trim()) {
+      return [];
+    }
+
+    const tokens = moves.trim().split(/\s+/);
+    const result: string[] = [];
+
+    for (const token of tokens) {
+      if (token === "e.p." && result.length > 0) {
+        result[result.length - 1] = `${result[result.length - 1]} ${token}`;
+      } else {
+        result.push(token);
+      }
+    }
+
+    return result;
+  }
+
+  function getHighlightedAnalysisMoveIndex(line: EngineLine, isSelected: boolean): number {
+    if (!isSelected) {
+      return -1;
+    }
+
+    const positions = line.positions ?? [];
+    if (positions.length <= 1) {
+      return -1;
+    }
+
+    const currentPositionIndex = analysisLineAnimationIndex % positions.length;
+    return currentPositionIndex > 0 ? currentPositionIndex - 1 : -1;
+  }
+
+  function renderAnalysisLineMoves(line: EngineLine, isSelected: boolean): ReactElement | string {
+    const moves = splitAnalysisMoveText(line.moves);
+    if (moves.length === 0) {
+      return "—";
+    }
+
+    const highlightedMoveIndex = getHighlightedAnalysisMoveIndex(line, isSelected);
+
+    return (
+      <>
+        {moves.map((move, moveIndex) => (
+          <span
+            key={`${moveIndex}-${move}`}
+            className={
+              moveIndex === highlightedMoveIndex
+                ? "analysis-line-move analysis-line-move-current"
+                : "analysis-line-move"
+            }
+          >
+            {move}
+          </span>
+        ))}
+      </>
+    );
+  }
+
   function getAnimatedAnalysisPosition(): string | null {
     const selectedPoint = getSelectedAnalysisPoint();
     const lines = selectedPoint?.lines ?? [];
@@ -2911,7 +2970,7 @@ export const ChessBoard: React.FC = () => {
                 <span>depth {line.depth}</span>
               </div>
               <div className="analysis-line-moves">
-                {line.moves || "—"}
+                {renderAnalysisLineMoves(line, isSelected)}
               </div>
             </button>
           );
