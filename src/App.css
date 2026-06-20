@@ -290,7 +290,7 @@
   font-size: 64px;
   line-height: 80px;
   text-align: center;
-  transition: transform 180ms ease-out;
+  transition: transform 120ms ease-out;
 }
 
 /* Figurendarstellung mit Animation */
