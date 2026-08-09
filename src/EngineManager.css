@@ -1,0 +1,319 @@
+.engine-manager-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+  box-sizing: border-box;
+}
+
+.engine-manager-dialog {
+  width: min(1180px, 96vw);
+  height: min(780px, 92vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #4b4b4b;
+  border-radius: 10px;
+  background: #202020;
+  color: #f2f2f2;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.engine-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.engine-manager-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.engine-manager-subtitle,
+.engine-manager-instance-id,
+.engine-manager-log-header span {
+  margin-top: 3px;
+  color: #a9a9a9;
+  font-size: 0.72rem;
+}
+
+.engine-manager-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.engine-manager-header button,
+.engine-manager-terminate {
+  border: 1px solid #5b5b5b;
+  border-radius: 5px;
+  padding: 6px 10px;
+  background: #333;
+  color: #f5f5f5;
+  cursor: pointer;
+}
+
+.engine-manager-header button:hover {
+  background: #404040;
+}
+
+.engine-manager-error {
+  padding: 8px 16px;
+  border-bottom: 1px solid #6a3434;
+  background: #4b2525;
+  color: #ffd2d2;
+  font-size: 0.78rem;
+}
+
+.engine-manager-body {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+}
+
+.engine-manager-instance-list {
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+  border-right: 1px solid #3a3a3a;
+  background: #191919;
+}
+
+.engine-manager-instance {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding: 9px;
+  text-align: left;
+  border: 1px solid #363636;
+  border-radius: 6px;
+  background: #242424;
+  color: #f2f2f2;
+  cursor: pointer;
+}
+
+.engine-manager-instance:hover,
+.engine-manager-instance-selected {
+  border-color: #686868;
+  background: #303030;
+}
+
+.engine-manager-instance-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.engine-manager-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #777;
+}
+
+.engine-manager-status-running {
+  background: #62d36b;
+  box-shadow: 0 0 6px rgba(98, 211, 107, 0.6);
+}
+
+.engine-manager-instance-meta,
+.engine-manager-instance-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b7b7b7;
+  font-size: 0.7rem;
+}
+
+.engine-manager-instance-path {
+  color: #8f8f8f;
+  font-family: monospace;
+}
+
+.engine-manager-details {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+}
+
+.engine-manager-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.engine-manager-terminate {
+  border-color: #824848;
+  background: #5a2d2d;
+}
+
+.engine-manager-terminate:hover:not(:disabled) {
+  background: #713838;
+}
+
+.engine-manager-terminate:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.engine-manager-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 10px;
+}
+
+.engine-manager-facts div {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #383838;
+  border-radius: 5px;
+  background: #252525;
+}
+
+.engine-manager-facts dt {
+  margin-bottom: 3px;
+  color: #999;
+  font-size: 0.66rem;
+}
+
+.engine-manager-facts dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+
+.engine-manager-path-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.72rem;
+}
+
+.engine-manager-path-row span {
+  color: #999;
+}
+
+.engine-manager-path-row code {
+  overflow: hidden;
+  padding: 5px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 4px;
+  background: #171717;
+  color: #ddd;
+}
+
+.engine-manager-log-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.engine-manager-log {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 6px 0;
+  border: 1px solid #393939;
+  border-radius: 6px;
+  background: #111;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.7rem;
+}
+
+.engine-manager-log-line {
+  display: grid;
+  grid-template-columns: 78px 18px minmax(0, 1fr);
+  gap: 5px;
+  padding: 2px 8px;
+  line-height: 1.35;
+}
+
+.engine-manager-log-line:hover {
+  background: #1e1e1e;
+}
+
+.engine-manager-log-time {
+  color: #777;
+}
+
+.engine-manager-log-direction {
+  text-align: center;
+  color: #bdbdbd;
+}
+
+.engine-manager-log-message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.engine-manager-log-command .engine-manager-log-message {
+  color: #f2d28b;
+}
+
+.engine-manager-log-response .engine-manager-log-message {
+  color: #9fd4ff;
+}
+
+.engine-manager-log-system .engine-manager-log-message {
+  color: #a8a8a8;
+  font-style: italic;
+}
+
+.engine-manager-empty {
+  padding: 12px;
+  color: #888;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 900px) {
+  .engine-manager-body {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .engine-manager-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.engine-manager-history-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px;
+  background: rgba(0, 0, 0, 0.62);
+  box-sizing: border-box;
+}
+
+.engine-manager-history-dialog {
+  width: min(1080px, 92vw);
+  height: min(700px, 86vh);
+}

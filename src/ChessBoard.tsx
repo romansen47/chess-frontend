@@ -1,4 +1,5 @@
 import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import EngineManager from "./EngineManager";
 
 type PieceColor = "white" | "black";
 type PieceType = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
@@ -724,6 +725,7 @@ export const ChessBoard: React.FC = () => {
 
   const [showStockfishConfig, setShowStockfishConfig] =
     useState<boolean>(false);
+  const [showEngineManager, setShowEngineManager] = useState<boolean>(false);
   const [stockfishConfig, setStockfishConfig] =
     useState<StockfishSettings | null>(null);
   const [isSavingStockfishConfig, setIsSavingStockfishConfig] =
@@ -3132,10 +3134,22 @@ export const ChessBoard: React.FC = () => {
               >
                 Engine Settings
               </button>
+
+              <button
+                className="top-engine-button engine-settings"
+                onClick={() => setShowEngineManager(true)}
+                title="Engine-Prozesse und UCI-Protokoll anzeigen"
+              >
+                Engine Manager
+              </button>
             </>
           )}
         </div>
       </header>
+
+      {showEngineManager && (
+        <EngineManager onClose={() => setShowEngineManager(false)} />
+      )}
 
       <main className="app-main">
         <div className="board-layout">
