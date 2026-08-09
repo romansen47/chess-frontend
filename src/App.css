@@ -944,6 +944,7 @@
 .game-settings-dialog-actions {
   display: flex;
   justify-content: center;
+  gap: 10px;
   margin-top: 16px;
 }
 
