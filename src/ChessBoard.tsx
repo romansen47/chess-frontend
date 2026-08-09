@@ -118,6 +118,7 @@ interface DragState {
 interface EngineLine {
   eval: number;
   depth: number;
+  mateDistance?: number | null;
   moves: string;
   positions?: string[];
 }
@@ -226,6 +227,24 @@ interface AnalysisReplayStep {
 function squareName(file: number, rank: number): string {
   const fileChar = String.fromCharCode("a".charCodeAt(0) + file - 1);
   return `${fileChar}${rank}`;
+}
+
+function formatEngineScore(evaluation: number): string {
+  if (Math.abs(evaluation) >= 99) {
+    return evaluation > 0 ? "Mate für Weiß" : "Mate für Schwarz";
+  }
+
+  return `Eval ${evaluation.toFixed(2)}`;
+}
+
+function formatEngineLineScore(line: EngineLine): string {
+  if (line.mateDistance !== undefined && line.mateDistance !== null) {
+    const winner = line.eval > 0 ? "Weiß" : "Schwarz";
+    const distance = Math.abs(line.mateDistance);
+    return distance > 0 ? `Mate für ${winner} in ${distance}` : `Mate für ${winner}`;
+  }
+
+  return formatEngineScore(line.eval);
 }
 
 function getPieceSymbol(piece: Piece): string {
@@ -2653,7 +2672,7 @@ export const ChessBoard: React.FC = () => {
     const formatEvaluation = (point: AnalysisProfilePoint) => {
       const san = point.san ? `${point.san} · ` : "";
       const depth = point.depth ? ` · depth ${point.depth}` : "";
-      return `${point.ply}. Halbzug · ${san}Eval ${point.evaluation.toFixed(2)}${depth}`;
+      return `${point.ply}. Halbzug · ${san}${formatEngineScore(point.evaluation)}${depth}`;
     };
 
     return (
@@ -2661,7 +2680,7 @@ export const ChessBoard: React.FC = () => {
         <div className="analysis-profile-header">
           <strong>Analyseverlauf</strong>
           <span>
-            {latest?.ply ?? 0} Halbzüge · Eval {(latest?.evaluation ?? 0).toFixed(2)}
+            {latest?.ply ?? 0} Halbzüge · {formatEngineScore(latest?.evaluation ?? 0)}
             {latest?.depth ? ` · depth ${latest.depth}` : ""}
           </span>
         </div>
@@ -2968,7 +2987,7 @@ export const ChessBoard: React.FC = () => {
             >
               <div className="analysis-line-header">
                 <strong>#{index + 1}</strong>
-                <span>Eval {line.eval.toFixed(2)}</span>
+                <span>{formatEngineLineScore(line)}</span>
                 <span>depth {line.depth}</span>
               </div>
               <div className="analysis-line-moves">
@@ -3406,7 +3425,7 @@ export const ChessBoard: React.FC = () => {
                         {engineEval.lines.map((line, idx) => (
                           <div key={idx} className="engine-line">
                             <div className="engine-line-header">
-                              #{idx + 1} · {line.eval.toFixed(2)} · depth{" "}
+                              #{idx + 1} · {formatEngineLineScore(line)} · depth{" "}
                               {line.depth}
                             </div>
                             <div className="engine-line-moves">{line.moves}</div>
