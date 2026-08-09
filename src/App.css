@@ -534,6 +534,24 @@
   box-sizing: border-box;
 }
 
+.engine-lines-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 2px 7px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #bdbdbd;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.engine-lines-summary span:last-child {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
 .engine-line {
   padding: 4px 2px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);

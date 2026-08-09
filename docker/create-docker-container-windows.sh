@@ -31,4 +31,4 @@ echo "Starting container $CONTAINER_NAME..."
 docker.exe run -d -p 80:80 -p 443:443 --name "$CONTAINER_NAME" "$IMAGE_NAME"
 
 echo "The container was successfully created and started."
-echo "Access through https://localhost/"
+echo "Access through https://127.0.0.1/"

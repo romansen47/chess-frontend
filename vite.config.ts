@@ -1,13 +1,15 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Vite-Konfiguration mit Proxy auf dein Spring-Boot-Backend
+// Explizit IPv4 verwenden. Unter Windows/WSL kann "localhost" beim
+// Verbindungsaufbau deutlich langsamer sein als 127.0.0.1.
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: "127.0.0.1",
     proxy: {
       "/api": {
-        target: "http://localhost:8080",
+        target: "http://127.0.0.1:8080",
         changeOrigin: true,
       },
     },

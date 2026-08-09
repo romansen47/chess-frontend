@@ -140,6 +140,7 @@ interface EngineLine {
 interface EngineEvaluation {
   eval: number;
   bar: number;
+  engineName?: string | null;
   lines: EngineLine[];
 }
 
@@ -233,6 +234,7 @@ interface AnalysisReplayStep {
   evaluation: number;
   bar: number;
   depth: number;
+  engineName?: string | null;
   board: BoardResponse | null;
   profile: AnalysisProfilePoint[];
   message: string | null;
@@ -1585,6 +1587,7 @@ export const ChessBoard: React.FC = () => {
     setEngineEval({
       eval: step.evaluation ?? 0,
       bar: step.bar ?? 0.5,
+      engineName: step.engineName ?? null,
       lines: latestProfilePoint?.lines ?? [],
     });
   }
@@ -3133,37 +3136,43 @@ export const ChessBoard: React.FC = () => {
     const effectiveLineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines);
 
     return (
-      <div className="analysis-lines-list">
-        {lines.map((line, index) => {
-          const isSelected = index === effectiveLineIndex;
+      <>
+        <div className="engine-lines-summary">
+          <span>{engineEval?.engineName || "Analysis engine"}</span>
+          <span>depth {lines[0].depth}</span>
+        </div>
 
-          return (
-            <button
-              type="button"
-              className={[
-                "analysis-line-card",
-                isSelected ? "analysis-line-card-selected" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              key={`${index}-${line.moves}`}
-              onClick={() => {
-                setAnalysisSelectedLineIndex(index);
-                setAnalysisLineAnimationIndex(0);
-              }}
-            >
-              <div className="analysis-line-header">
-                <strong>#{index + 1}</strong>
-                <span>{formatEngineLineScore(line)}</span>
-                <span>depth {line.depth}</span>
-              </div>
-              <div className="analysis-line-moves">
-                {renderAnalysisLineMoves(line, isSelected)}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+        <div className="analysis-lines-list">
+          {lines.map((line, index) => {
+            const isSelected = index === effectiveLineIndex;
+
+            return (
+              <button
+                type="button"
+                className={[
+                  "analysis-line-card",
+                  isSelected ? "analysis-line-card-selected" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                key={`${index}-${line.moves}`}
+                onClick={() => {
+                  setAnalysisSelectedLineIndex(index);
+                  setAnalysisLineAnimationIndex(0);
+                }}
+              >
+                <div className="analysis-line-header">
+                  <strong>#{index + 1}</strong>
+                  <span>{formatEngineLineScore(line)}</span>
+                </div>
+                <div className="analysis-line-moves">
+                  {renderAnalysisLineMoves(line, isSelected)}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </>
     );
   };
 
@@ -3652,6 +3661,13 @@ export const ChessBoard: React.FC = () => {
 
                     {engineAutoUpdate && engineEval && !clock?.gameState && (
                       <div className="engine-lines">
+                        {engineEval.lines.length > 0 && (
+                          <div className="engine-lines-summary">
+                            <span>{engineEval.engineName || "Evaluation engine"}</span>
+                            <span>depth {engineEval.lines[0].depth}</span>
+                          </div>
+                        )}
+
                         {engineEval.lines.length === 0 && (
                           <div className="engine-empty">No engine lines.</div>
                         )}
@@ -3659,8 +3675,7 @@ export const ChessBoard: React.FC = () => {
                         {engineEval.lines.map((line, idx) => (
                           <div key={idx} className="engine-line">
                             <div className="engine-line-header">
-                              #{idx + 1} · {formatEngineLineScore(line)} · depth{" "}
-                              {line.depth}
+                              #{idx + 1} · {formatEngineLineScore(line)}
                             </div>
                             <div className="engine-line-moves">{line.moves}</div>
                           </div>
