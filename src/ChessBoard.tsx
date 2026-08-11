@@ -80,6 +80,8 @@ interface UciGameResponse {
   sideToMove: string | null;
   position: string;
   moves: UciGameMove[];
+  whitePlayerName: string | null;
+  blackPlayerName: string | null;
 }
 
 interface BackendPiece {
@@ -1642,8 +1644,12 @@ export const ChessBoard: React.FC = () => {
       updatePossibleTargets([]);
       setHoverPreview(null);
       setPromotionContext(null);
-      setAnalysisWhitePlayerName(uciAnalysisLoaded ? "UCI import" : getDisplayedWhitePlayerName(clock, whiteComputerEnabledRef.current));
-      setAnalysisBlackPlayerName(uciAnalysisLoaded ? "UCI import" : getDisplayedBlackPlayerName(clock, blackComputerEnabledRef.current));
+      setAnalysisWhitePlayerName(uciAnalysisLoaded
+        ? analysisWhitePlayerName || "White"
+        : getDisplayedWhitePlayerName(clock, whiteComputerEnabledRef.current));
+      setAnalysisBlackPlayerName(uciAnalysisLoaded
+        ? analysisBlackPlayerName || "Black"
+        : getDisplayedBlackPlayerName(clock, blackComputerEnabledRef.current));
       setAnalysisReplayActive(true);
       await stopLiveEvaluation();
       disablePlayerEngines();
@@ -1728,7 +1734,11 @@ export const ChessBoard: React.FC = () => {
     try {
       setLoadError(null);
 
-      const response = await fetch("/api/game/uci");
+      const params = new URLSearchParams({
+        whiteComputer: String(whiteComputerEnabledRef.current),
+        blackComputer: String(blackComputerEnabledRef.current),
+      });
+      const response = await fetch(`/api/game/pgn?${params.toString()}`);
       if (!response.ok) {
         const message = await response.text();
         throw new Error(message || `HTTP ${response.status}`);
@@ -1738,14 +1748,14 @@ export const ChessBoard: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "game.uci";
+      link.download = "game.pgn";
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("[saveUciGame] error", error);
-      setLoadError("UCI-Datei konnte nicht gespeichert werden.");
+      setLoadError("PGN-Datei konnte nicht gespeichert werden.");
     }
   }
 
@@ -1789,7 +1799,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
 
       const content = await file.text();
-      const response = await fetch("/api/game/uci", {
+      const response = await fetch("/api/game/pgn", {
         method: "POST",
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
@@ -1808,6 +1818,8 @@ export const ChessBoard: React.FC = () => {
 
       setUciAnalysisLoaded(true);
       setMoves(moveRows);
+      setAnalysisWhitePlayerName(formatPlayerDisplayName(imported.whitePlayerName, "White"));
+      setAnalysisBlackPlayerName(formatPlayerDisplayName(imported.blackPlayerName, "Black"));
       setAnalysisTotalPlies(Math.max(0, imported.totalPlies ?? importedMoves.length));
       setGameEndState(null);
       setShowGameEndDialog(false);
@@ -1832,7 +1844,7 @@ export const ChessBoard: React.FC = () => {
     } catch (error) {
       console.error("[handleUciFileSelected] error", error);
       setUciAnalysisLoaded(hadImportedGame);
-      setLoadError(error instanceof Error ? error.message : "UCI-Datei konnte nicht geladen werden.");
+      setLoadError(error instanceof Error ? error.message : "PGN-Datei konnte nicht geladen werden.");
     } finally {
       setIsLoadingMoves(false);
     }
@@ -3317,23 +3329,23 @@ export const ChessBoard: React.FC = () => {
               <button
                 className="top-engine-button analysis-repeat"
                 onClick={openAnalysisSettingsDialog}
-                title="Geladene UCI-Partie erneut analysieren"
+                title="Geladene PGN-Partie erneut analysieren"
               >
                 Analyse erneut
               </button>
               <button
                 className="top-engine-button new-game"
                 onClick={saveUciGame}
-                title="Geladene Partie als UCI-Zugliste speichern"
+                title="Geladene Partie als PGN speichern"
               >
-                Save UCI
+                Save PGN
               </button>
               <button
                 className="top-engine-button new-game"
                 onClick={openUciFilePicker}
-                title="Andere UCI-Zugliste laden"
+                title="Andere PGN-Datei laden"
               >
-                Load UCI
+                Load PGN
               </button>
               <button
                 className="top-engine-button new-game"
@@ -3350,24 +3362,24 @@ export const ChessBoard: React.FC = () => {
               <button
                 className="top-engine-button new-game"
                 onClick={saveUciGame}
-                title="Aktuelle Partie als UCI-Zugliste speichern"
+                title="Aktuelle Partie als PGN speichern"
               >
-                Save UCI
+                Save PGN
               </button>
 
               <button
                 className="top-engine-button new-game"
                 onClick={openUciFilePicker}
-                title="UCI-Zugliste zur Analyse laden"
+                title="PGN-Partie zur Analyse laden"
               >
-                Load UCI
+                Load PGN
               </button>
 
               {uciAnalysisLoaded && (
                 <button
                   className="top-engine-button analysis-repeat"
                   onClick={openAnalysisSettingsDialog}
-                  title="Geladene UCI-Partie analysieren"
+                  title="Geladene PGN-Partie analysieren"
                 >
                   Analyse
                 </button>
@@ -3408,7 +3420,7 @@ export const ChessBoard: React.FC = () => {
       <input
         ref={uciFileInputRef}
         type="file"
-        accept=".uci,.txt,text/plain"
+        accept=".pgn,.txt,application/x-chess-pgn,text/plain"
         style={{ display: "none" }}
         onChange={handleUciFileSelected}
       />
@@ -3427,11 +3439,11 @@ export const ChessBoard: React.FC = () => {
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                title={analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName) : uciAnalysisLoaded ? "UCI import" : getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
+                title={analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName) : uciAnalysisLoaded ? analysisWhitePlayerName || "White" : getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
               >
                 <span className="player-name-color">White</span>
                 <span className="player-name-value">
-                  {analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName) : uciAnalysisLoaded ? "UCI import" : getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
+                  {analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName) : uciAnalysisLoaded ? analysisWhitePlayerName || "White" : getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
                 </span>
               </div>
 
@@ -3443,11 +3455,11 @@ export const ChessBoard: React.FC = () => {
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                title={analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName) : uciAnalysisLoaded ? "UCI import" : getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
+                title={analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName) : uciAnalysisLoaded ? analysisBlackPlayerName || "Black" : getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
               >
                 <span className="player-name-color">Black</span>
                 <span className="player-name-value">
-                  {analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName) : uciAnalysisLoaded ? "UCI import" : getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
+                  {analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName) : uciAnalysisLoaded ? analysisBlackPlayerName || "Black" : getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
                 </span>
               </div>
             </div>
@@ -3804,7 +3816,7 @@ export const ChessBoard: React.FC = () => {
                     onClick={openUciFilePicker}
                     disabled={isStartingNewGame}
                   >
-                    Load UCI
+                    Load PGN
                   </button>
                   <button
                     className="game-settings-dialog-button"
@@ -3969,14 +3981,14 @@ export const ChessBoard: React.FC = () => {
                     className="game-end-dialog-button"
                     onClick={saveUciGame}
                   >
-                    Save UCI
+                    Save PGN
                   </button>
 
                   <button
                     className="game-end-dialog-button"
                     onClick={openUciFilePicker}
                   >
-                    Load UCI
+                    Load PGN
                   </button>
 
                   <button
