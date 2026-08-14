@@ -3401,15 +3401,16 @@ export const ChessBoard: React.FC = () => {
                 Engine Settings
               </button>
 
-              <button
-                className="top-engine-button engine-settings"
-                onClick={() => setShowEngineManager(true)}
-                title="Engine-Prozesse und UCI-Protokoll anzeigen"
-              >
-                Engine Manager
-              </button>
             </>
           )}
+
+          <button
+            className="top-engine-button engine-settings"
+            onClick={() => setShowEngineManager(true)}
+            title="Engine-Prozesse und UCI-Protokoll anzeigen"
+          >
+            Engine Manager
+          </button>
         </div>
       </header>
 
