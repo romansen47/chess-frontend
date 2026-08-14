@@ -116,7 +116,7 @@
 .engine-config-option {
   min-height: 58px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(90px, 150px);
+  grid-template-columns: minmax(0, 1fr) minmax(76px, 112px);
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
@@ -148,6 +148,19 @@
   text-transform: uppercase;
 }
 
+.engine-config-option input[type="number"],
+.engine-config-option input[type="text"],
+.engine-config-option select,
+.engine-config-option > button {
+  width: 100%;
+  max-width: 112px;
+  justify-self: end;
+}
+
+.engine-config-option input[type="number"] {
+  max-width: 96px;
+}
+
 .engine-config-option input[type="checkbox"] {
   width: 20px;
   height: 20px;
@@ -170,6 +183,15 @@
 @media (max-width: 900px) {
   .engine-config-option {
     grid-template-columns: 1fr;
+  }
+
+  .engine-config-option input[type="number"],
+  .engine-config-option input[type="text"],
+  .engine-config-option select,
+  .engine-config-option > button {
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
   }
 
   .engine-config-option input[type="checkbox"] {
