@@ -1031,13 +1031,15 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
-  function disablePlayerEngines() {
+  async function disablePlayerEngines() {
     whiteComputerEnabledRef.current = false;
     blackComputerEnabledRef.current = false;
     setWhiteComputerEnabled(false);
     setBlackComputerEnabled(false);
-    void cancelPlayerEngine("white");
-    void cancelPlayerEngine("black");
+    await Promise.all([
+      cancelPlayerEngine("white"),
+      cancelPlayerEngine("black"),
+    ]);
   }
 
   async function loadBoardFromBackend() {
@@ -1694,7 +1696,7 @@ export const ChessBoard: React.FC = () => {
         : getDisplayedBlackPlayerName(clock, blackComputerEnabledRef.current));
       setAnalysisReplayActive(true);
       await stopLiveEvaluation();
-      disablePlayerEngines();
+      await disablePlayerEngines();
       setShowGameEndDialog(false);
       setEngineAutoUpdate(false);
       setAnalysisTotalPlies(0);
@@ -1873,7 +1875,7 @@ export const ChessBoard: React.FC = () => {
       updatePossibleTargets([]);
       setPromotionContext(null);
       setHoverPreview(null);
-      disablePlayerEngines();
+      await disablePlayerEngines();
       await stopLiveEvaluation();
       setEngineAutoUpdate(false);
       setEngineEval(null);
@@ -1949,7 +1951,7 @@ export const ChessBoard: React.FC = () => {
       setIsStartingNewGame(true);
       setLoadError(null);
       setGameSettingsError(null);
-      disablePlayerEngines();
+      await disablePlayerEngines();
       analysisReplayCancelledRef.current = true;
       setAnalysisReplayActive(false);
       setIsAnalysisReplayRunning(false);
