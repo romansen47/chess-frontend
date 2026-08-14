@@ -3255,55 +3255,6 @@ export const ChessBoard: React.FC = () => {
         <h1>Chess Frontend</h1>
 
         <div className="top-engine-controls">
-          {!analysisReplayActive && !uciAnalysisLoaded && (
-            <>
-              <button
-                className={[
-                  "top-engine-button",
-                  "auto-toggle",
-                  engineAutoUpdate ? "top-engine-button-pressed" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={toggleEngineAutoUpdate}
-                aria-pressed={engineAutoUpdate}
-                title="Automatische Engine-Auswertung ein-/ausschalten"
-              >
-                Evaluation
-              </button>
-
-              <button
-                className={[
-                  "top-engine-button",
-                  "computer-toggle",
-                  whiteComputerEnabled ? "top-engine-button-pressed" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabledRef.current)}
-                aria-pressed={whiteComputerEnabled}
-                title="Computer spielt Weiß ein-/ausschalten"
-              >
-                White CPU
-              </button>
-
-              <button
-                className={[
-                  "top-engine-button",
-                  "computer-toggle",
-                  blackComputerEnabled ? "top-engine-button-pressed" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => updateBlackComputerEnabled(!blackComputerEnabledRef.current)}
-                aria-pressed={blackComputerEnabled}
-                title="Computer spielt Schwarz ein-/ausschalten"
-              >
-                Black CPU
-              </button>
-            </>
-          )}
-
           {analysisReplayActive && isAnalysisReplayRunning && (
             <button
               className="top-engine-button analysis-repeat"
@@ -3546,33 +3497,55 @@ export const ChessBoard: React.FC = () => {
 
             {!analysisReplayActive && !uciAnalysisLoaded && (
               <div className="clock-area">
-                <div
+                <button
+                  type="button"
                   className={[
                     "clock-box",
                     clock?.sideToMove === "white" ? "clock-active" : "",
                     clock?.whiteRunning ? "clock-running" : "",
+                    whiteComputerEnabled ? "clock-computer-enabled" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
+                  onClick={() =>
+                    updateWhiteComputerEnabled(!whiteComputerEnabledRef.current)
+                  }
+                  aria-pressed={whiteComputerEnabled}
+                  title={
+                    whiteComputerEnabled
+                      ? "Weiße Spieler-Engine ausschalten"
+                      : "Weiße Spieler-Engine einschalten"
+                  }
                 >
                   <div className="clock-time">
                     {formatClockTime(clock?.whiteTime)}
                   </div>
-                </div>
+                </button>
 
-                <div
+                <button
+                  type="button"
                   className={[
                     "clock-box",
                     clock?.sideToMove === "black" ? "clock-active" : "",
                     clock?.blackRunning ? "clock-running" : "",
+                    blackComputerEnabled ? "clock-computer-enabled" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
+                  onClick={() =>
+                    updateBlackComputerEnabled(!blackComputerEnabledRef.current)
+                  }
+                  aria-pressed={blackComputerEnabled}
+                  title={
+                    blackComputerEnabled
+                      ? "Schwarze Spieler-Engine ausschalten"
+                      : "Schwarze Spieler-Engine einschalten"
+                  }
                 >
                   <div className="clock-time">
                     {formatClockTime(clock?.blackTime)}
                   </div>
-                </div>
+                </button>
 
                 {clockError && <div className="clock-error">{clockError}</div>}
               </div>
@@ -3581,17 +3554,41 @@ export const ChessBoard: React.FC = () => {
 
           <section className="engine-panel">
             <div className="engine-panel-main">
-              {engineAutoUpdate && engineEval && !clock?.gameState && (
-                <div className="engine-bar-wrapper">
+              {!analysisReplayActive && !uciAnalysisLoaded && (
+                <button
+                  type="button"
+                  className={[
+                    "engine-bar-wrapper",
+                    engineAutoUpdate ? "engine-bar-enabled" : "engine-bar-disabled",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={toggleEngineAutoUpdate}
+                  aria-pressed={engineAutoUpdate}
+                  aria-label={
+                    engineAutoUpdate
+                      ? "Evaluation-Engine ausschalten"
+                      : "Evaluation-Engine einschalten"
+                  }
+                  title={
+                    engineAutoUpdate
+                      ? "Evaluation-Engine ausschalten"
+                      : "Evaluation-Engine einschalten · Bewertung 0.0"
+                  }
+                >
                   <div
                     className="engine-bar-white"
-                    style={{ height: `${engineEval.bar * 100}%` }}
+                    style={{
+                      height: `${(engineAutoUpdate && engineEval ? engineEval.bar : 0.5) * 100}%`,
+                    }}
                   />
                   <div
                     className="engine-bar-black"
-                    style={{ height: `${(1 - engineEval.bar) * 100}%` }}
+                    style={{
+                      height: `${(1 - (engineAutoUpdate && engineEval ? engineEval.bar : 0.5)) * 100}%`,
+                    }}
                   />
-                </div>
+                </button>
               )}
 
               <div className="engine-content-column">

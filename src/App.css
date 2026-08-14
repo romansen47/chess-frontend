@@ -52,14 +52,6 @@
   white-space: nowrap;
 }
 
-.top-engine-button.auto-toggle {
-  min-width: 96px;
-}
-
-.top-engine-button.computer-toggle {
-  min-width: 88px;
-}
-
 .top-engine-button.new-game {
   min-width: 88px;
 }
@@ -75,20 +67,6 @@
 .top-engine-button:hover {
   background: #444;
   color: #ffffff;
-}
-
-.top-engine-button.top-engine-button-pressed {
-  background: #202020;
-  color: #ffffff;
-  border-color: #777;
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.75),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-  transform: translateY(1px);
-}
-
-.top-engine-button.top-engine-button-pressed:hover {
-  background: #252525;
 }
 
 .top-engine-button:disabled {
@@ -146,6 +124,7 @@
   flex: 1 1 0;
   min-width: 0;
 
+  position: relative;
   border: 1px solid #3f3f3f;
   border-radius: 8px;
   padding: 8px 12px;
@@ -156,6 +135,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  font: inherit;
+  cursor: pointer;
 }
 
 .clock-box:first-child {
@@ -177,6 +159,26 @@
   box-shadow:
     0 6px 16px rgba(0, 0, 0, 0.35),
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.clock-box:hover {
+  filter: brightness(1.06);
+}
+
+.clock-box:focus-visible {
+  outline: 3px solid #d6c26a;
+  outline-offset: 2px;
+}
+
+.clock-box.clock-computer-enabled::after {
+  content: "CPU";
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.72;
 }
 
 .clock-box:first-child .clock-label {
@@ -486,15 +488,29 @@
 
   border: 1px solid #666;
   border-radius: 4px;
+  padding: 0;
   overflow: hidden;
+  background: #111111;
 
   display: flex;
   flex-direction: column-reverse;
   box-sizing: border-box;
+
+  appearance: none;
+  cursor: pointer;
 }
 
-.engine-bar-wrapper-empty {
-  background: #111111;
+.engine-bar-wrapper:hover {
+  border-color: #999;
+}
+
+.engine-bar-wrapper:focus-visible {
+  outline: 3px solid #d6c26a;
+  outline-offset: 2px;
+}
+
+.engine-bar-wrapper.engine-bar-disabled {
+  opacity: 0.78;
 }
 
 .engine-bar-white,
