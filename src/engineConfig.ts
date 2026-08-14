@@ -1,4 +1,5 @@
 export type UciOptionType = "spin" | "check" | "combo" | "button" | "string";
+export type EngineConfigType = "PLAYER" | "EVALUATION";
 
 export interface UciOptionConfig {
   type: UciOptionType;
@@ -12,6 +13,7 @@ export interface UciOptionConfig {
 export interface ManagedEngineConfig {
   id: string | null;
   name: string;
+  type: EngineConfigType;
   engine: string;
   engineName: string;
   engineAuthor: string;

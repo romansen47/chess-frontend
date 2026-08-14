@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
   EngineConfigOverview,
+  EngineConfigType,
   ManagedEngineConfig,
   UciOptionConfig,
 } from "./engineConfig";
@@ -38,10 +39,15 @@ function optionHint(option: UciOptionConfig): string {
   return parts.join(" · ");
 }
 
+function typeLabel(type: EngineConfigType): string {
+  return type === "PLAYER" ? "Player Engines" : "Evaluation Engines";
+}
+
 export default function EngineConfigManager({
   overview,
   onOverviewChange,
 }: EngineConfigManagerProps) {
+  const [activeType, setActiveType] = useState<EngineConfigType>("PLAYER");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<ManagedEngineConfig | null>(null);
   const [newEnginePath, setNewEnginePath] = useState("");
@@ -52,7 +58,11 @@ export default function EngineConfigManager({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const configs = overview?.configs ?? [];
+  const allConfigs = overview?.configs ?? [];
+  const configs = useMemo(
+    () => allConfigs.filter((config) => config.type === activeType),
+    [allConfigs, activeType]
+  );
 
   useEffect(() => {
     if (!overview || creating) {
@@ -70,6 +80,23 @@ export default function EngineConfigManager({
     () => configs.find((config) => config.id === selectedId) ?? null,
     [configs, selectedId]
   );
+
+  const isActiveEvaluation =
+    draft?.type === "EVALUATION" &&
+    draft.id !== null &&
+    draft.id === overview?.evaluationConfigId;
+
+  function changeType(type: EngineConfigType) {
+    setActiveType(type);
+    setCreating(false);
+    setSelectedId(null);
+    setDraft(null);
+    setNewEnginePath("");
+    setNewConfigName("");
+    setOptionFilter("");
+    setMessage(null);
+    setError(null);
+  }
 
   function selectExisting(id: string) {
     setCreating(false);
@@ -106,7 +133,11 @@ export default function EngineConfigManager({
       const response = await fetch("/api/engine-configs/inspect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ engine, name: newConfigName.trim() || null }),
+        body: JSON.stringify({
+          engine,
+          name: newConfigName.trim() || null,
+          type: activeType,
+        }),
       });
       if (!response.ok) {
         throw new Error(await response.text() || `HTTP ${response.status}`);
@@ -172,11 +203,12 @@ export default function EngineConfigManager({
   async function reloadOverview(preferredId?: string | null) {
     const next = await fetchEngineConfigOverview();
     onOverviewChange(next);
-    const id = preferredId && next.configs.some((config) => config.id === preferredId)
+    const typedConfigs = next.configs.filter((config) => config.type === activeType);
+    const id = preferredId && typedConfigs.some((config) => config.id === preferredId)
       ? preferredId
-      : next.configs[0]?.id ?? null;
+      : typedConfigs[0]?.id ?? null;
     setSelectedId(id);
-    const selected = next.configs.find((config) => config.id === id);
+    const selected = typedConfigs.find((config) => config.id === id);
     setDraft(selected ? copyConfig(selected) : null);
     return next;
   }
@@ -205,7 +237,7 @@ export default function EngineConfigManager({
       const saved = (await response.json()) as ManagedEngineConfig;
       setCreating(false);
       await reloadOverview(saved.id);
-      setMessage("Engine configuration saved.");
+      setMessage(`${saved.type === "PLAYER" ? "Player" : "Evaluation"} configuration saved.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Engine configuration could not be saved.");
     } finally {
@@ -239,23 +271,27 @@ export default function EngineConfigManager({
     }
   }
 
-  async function changeEvaluationConfig(configId: string) {
+  async function useForEvaluation() {
+    if (!draft?.id || draft.type !== "EVALUATION") {
+      return;
+    }
+
     try {
       setBusy(true);
       setError(null);
       const response = await fetch("/api/engine-configs/evaluation", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ configId }),
+        body: JSON.stringify({ configId: draft.id }),
       });
       if (!response.ok) {
         throw new Error(await response.text() || `HTTP ${response.status}`);
       }
       const next = (await response.json()) as EngineConfigOverview;
       onOverviewChange(next);
-      setMessage("Live evaluation configuration changed.");
+      setMessage("Evaluation configuration activated.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Evaluation configuration could not be changed.");
+      setError(e instanceof Error ? e.message : "Evaluation configuration could not be activated.");
     } finally {
       setBusy(false);
     }
@@ -368,28 +404,36 @@ export default function EngineConfigManager({
         <button type="button" onClick={beginCreate} disabled={busy}>New Config</button>
       </div>
 
-      {overview && configs.length > 0 && (
+      <div className="engine-config-type-tabs" role="tablist" aria-label="Engine configuration type">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeType === "PLAYER"}
+          className={activeType === "PLAYER" ? "active" : ""}
+          onClick={() => changeType("PLAYER")}
+          disabled={busy}
+        >
+          Player Engines
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeType === "EVALUATION"}
+          className={activeType === "EVALUATION" ? "active" : ""}
+          onClick={() => changeType("EVALUATION")}
+          disabled={busy}
+        >
+          Evaluation Engines
+        </button>
+      </div>
+
+      {overview && configs.length > 0 && !creating && (
         <div className="engine-config-toolbar">
           <label>
-            <span>Configuration</span>
+            <span>{typeLabel(activeType)}</span>
             <select
               value={selectedId ?? ""}
               onChange={(event) => selectExisting(event.target.value)}
-              disabled={creating || busy}
-            >
-              {configs.map((config) => (
-                <option key={config.id ?? config.name} value={config.id ?? ""}>
-                  {config.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span>Live evaluation</span>
-            <select
-              value={overview.evaluationConfigId}
-              onChange={(event) => void changeEvaluationConfig(event.target.value)}
               disabled={busy}
             >
               {configs.map((config) => (
@@ -399,18 +443,30 @@ export default function EngineConfigManager({
               ))}
             </select>
           </label>
+          {activeType === "EVALUATION" && selectedId === overview.evaluationConfigId && (
+            <span className="engine-config-active-badge">Active evaluation</span>
+          )}
+        </div>
+      )}
+
+      {overview && configs.length === 0 && !creating && (
+        <div className="engine-config-empty">
+          No {activeType === "PLAYER" ? "player" : "evaluation"} configurations yet.
         </div>
       )}
 
       {creating && !draft && (
         <div className="engine-config-inspect-step">
           <div className="engine-config-step-title">1. Select engine executable</div>
+          <div className="engine-config-purpose">
+            Purpose: <strong>{activeType === "PLAYER" ? "Player engine" : "Evaluation engine"}</strong>
+          </div>
           <label>
             <span>Config name</span>
             <input
               value={newConfigName}
               onChange={(event) => setNewConfigName(event.target.value)}
-              placeholder="e.g. Lc0 CUDA"
+              placeholder={activeType === "PLAYER" ? "e.g. Stockfish 18 Player" : "e.g. Stockfish 18 Evaluation"}
             />
           </label>
           <label>
@@ -445,6 +501,9 @@ export default function EngineConfigManager({
             <div className="engine-config-engine-id">
               <strong>{draft.engineName}</strong>
               {draft.engineAuthor && <span>{draft.engineAuthor}</span>}
+              <span className="engine-config-type-badge">
+                {draft.type === "PLAYER" ? "Player" : "Evaluation"}
+              </span>
             </div>
           </div>
 
@@ -498,6 +557,14 @@ export default function EngineConfigManager({
           </div>
 
           <div className="engine-config-actions">
+            {draft.type === "EVALUATION" && draft.id && !isActiveEvaluation && (
+              <button type="button" onClick={() => void useForEvaluation()} disabled={busy}>
+                Use for Evaluation
+              </button>
+            )}
+            {isActiveEvaluation && (
+              <span className="engine-config-active-badge">Active evaluation</span>
+            )}
             <button type="button" onClick={() => void saveDraft()} disabled={busy || !draft.name.trim()}>
               {busy ? "Saving…" : draft.id ? "Save Config" : "Create Config"}
             </button>

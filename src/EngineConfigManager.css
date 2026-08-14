@@ -214,3 +214,51 @@
     margin-left: 0;
   }
 }
+
+.engine-config-type-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+  padding-bottom: 8px;
+}
+
+.engine-config-type-tabs button {
+  min-width: 150px;
+  opacity: 0.72;
+}
+
+.engine-config-type-tabs button.active {
+  opacity: 1;
+  font-weight: 700;
+  border-color: rgba(220, 190, 90, 0.8);
+}
+
+.engine-config-active-badge,
+.engine-config-type-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid rgba(127, 127, 127, 0.4);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.engine-config-type-badge::before {
+  content: "·";
+  margin-right: 7px;
+  opacity: 0.7;
+}
+
+.engine-config-purpose,
+.engine-config-empty {
+  width: 100%;
+  font-size: 0.82rem;
+  opacity: 0.8;
+}
+
+.engine-config-empty {
+  padding: 10px 2px;
+}

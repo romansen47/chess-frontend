@@ -3615,11 +3615,13 @@ export const ChessBoard: React.FC = () => {
                       }
                       disabled={!engineConfigOverview}
                     >
-                      {(engineConfigOverview?.configs ?? []).map((config) => (
-                        <option key={config.id ?? config.name} value={config.id ?? ""}>
-                          {config.name}
-                        </option>
-                      ))}
+                      {(engineConfigOverview?.configs ?? [])
+                        .filter((config) => config.type === "PLAYER")
+                        .map((config) => (
+                          <option key={config.id ?? config.name} value={config.id ?? ""}>
+                            {config.name}
+                          </option>
+                        ))}
                     </select>
                   </label>
 
@@ -3635,11 +3637,13 @@ export const ChessBoard: React.FC = () => {
                       }
                       disabled={!engineConfigOverview}
                     >
-                      {(engineConfigOverview?.configs ?? []).map((config) => (
-                        <option key={config.id ?? config.name} value={config.id ?? ""}>
-                          {config.name}
-                        </option>
-                      ))}
+                      {(engineConfigOverview?.configs ?? [])
+                        .filter((config) => config.type === "PLAYER")
+                        .map((config) => (
+                          <option key={config.id ?? config.name} value={config.id ?? ""}>
+                            {config.name}
+                          </option>
+                        ))}
                     </select>
                   </label>
 
