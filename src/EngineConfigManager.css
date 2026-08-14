@@ -1,0 +1,216 @@
+.engine-config-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 10px;
+  background: rgba(127, 127, 127, 0.06);
+}
+
+.engine-config-manager-header,
+.engine-config-toolbar,
+.engine-config-actions,
+.engine-config-engine-id,
+.engine-config-options-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.engine-config-manager-header {
+  justify-content: space-between;
+}
+
+.engine-config-manager-header > div,
+.engine-config-engine-id,
+.engine-config-options-header {
+  flex-wrap: wrap;
+}
+
+.engine-config-version {
+  margin-left: 10px;
+  opacity: 0.65;
+  font-size: 0.82rem;
+}
+
+.engine-config-toolbar {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.engine-config-toolbar label,
+.engine-config-inspect-step label,
+.engine-config-identity label,
+.engine-config-search-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 220px;
+  flex: 1;
+}
+
+.engine-config-toolbar label > span,
+.engine-config-inspect-step label > span,
+.engine-config-identity label > span,
+.engine-config-search-settings label > span {
+  font-size: 0.78rem;
+  opacity: 0.72;
+}
+
+.engine-config-toolbar select,
+.engine-config-inspect-step input,
+.engine-config-identity input,
+.engine-config-search-settings input,
+.engine-config-option input,
+.engine-config-option select {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.engine-config-inspect-step,
+.engine-config-identity,
+.engine-config-search-settings {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.engine-config-step-title {
+  width: 100%;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.engine-config-engine-id {
+  width: 100%;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.engine-config-engine-id span::before {
+  content: "·";
+  margin-right: 12px;
+}
+
+.engine-config-options-header {
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.engine-config-options-header > span {
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+.engine-config-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 8px;
+  max-height: 480px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.engine-config-option {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 150px);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(127, 127, 127, 0.25);
+  border-radius: 7px;
+}
+
+.engine-config-option-label {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.engine-config-option-label strong {
+  overflow-wrap: anywhere;
+}
+
+.engine-config-option-meta {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: 0.7rem;
+  opacity: 0.68;
+}
+
+.engine-config-option-type {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.engine-config-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  justify-self: end;
+}
+
+.engine-config-actions {
+  justify-content: flex-end;
+}
+
+.engine-config-delete {
+  opacity: 0.85;
+}
+
+.engine-config-message {
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .engine-config-option {
+    grid-template-columns: 1fr;
+  }
+
+  .engine-config-option input[type="checkbox"] {
+    justify-self: start;
+  }
+}
+
+.engine-config-options-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.engine-config-option-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.engine-config-option-tools input {
+  min-width: 190px;
+}
+
+.engine-config-no-options {
+  grid-column: 1 / -1;
+  padding: 18px;
+  text-align: center;
+  opacity: 0.65;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 700px) {
+  .engine-config-options-header,
+  .engine-config-option-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .engine-config-option-tools {
+    width: 100%;
+    margin-left: 0;
+  }
+}

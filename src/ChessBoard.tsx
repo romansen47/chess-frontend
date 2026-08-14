@@ -1,5 +1,8 @@
 import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import EngineManager from "./EngineManager";
+import EngineConfigManager from "./EngineConfigManager";
+import { fetchEngineConfigOverview } from "./engineConfig";
+import type { EngineConfigOverview } from "./engineConfig";
 
 type PieceColor = "white" | "black";
 type PieceType = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
@@ -146,34 +149,6 @@ interface EngineEvaluation {
   lines: EngineLine[];
 }
 
-interface UciEngineSettings {
-  depth: number;
-  threads: number;
-  hashSize: number;
-  multiPV: number;
-  contempt: number;
-  moveOverhead: number;
-  uciElo: number;
-}
-
-interface UciEngineSlotSettings {
-  displayName: string;
-  enginePath: string;
-  settings: UciEngineSettings;
-}
-
-type EngineSlotRole = "whitePlayer" | "blackPlayer" | "evaluation";
-
-interface StockfishSettings {
-  whitePlayer: UciEngineSlotSettings;
-  blackPlayer: UciEngineSlotSettings;
-  evaluation: UciEngineSlotSettings;
-  version: number;
-  whitePlayerVersion: number;
-  blackPlayerVersion: number;
-  evaluationVersion: number;
-}
-
 interface ClockState {
   whiteTime: number;
   blackTime: number;
@@ -194,6 +169,8 @@ interface GameSettings {
   incrementForBlackSeconds: number;
   additionalTimeAfter40MovesSeconds: number;
   startingColor: string;
+  whiteEngineConfigId: string | null;
+  blackEngineConfigId: string | null;
   version: number;
 }
 
@@ -719,6 +696,8 @@ function createDefaultGameSettings(): GameSettings {
     incrementForBlackSeconds: 0,
     additionalTimeAfter40MovesSeconds: 0,
     startingColor: "WHITE",
+    whiteEngineConfigId: null,
+    blackEngineConfigId: null,
     version: 0,
   };
 }
@@ -786,8 +765,10 @@ export const ChessBoard: React.FC = () => {
   const [isComputerThinking, setIsComputerThinkingState] =
     useState<boolean>(false);
 
-  const [showStockfishConfig, setShowStockfishConfig] =
-    useState<boolean>(false);
+  const [showEngineConfig, setShowEngineConfig] = useState<boolean>(false);
+  const [engineConfigOverview, setEngineConfigOverview] =
+    useState<EngineConfigOverview | null>(null);
+  const [engineConfigLoadError, setEngineConfigLoadError] = useState<string | null>(null);
   const [showEngineManager, setShowEngineManager] = useState<boolean>(false);
   const [showDataMenu, setShowDataMenu] = useState<boolean>(false);
   const [isTerminatingProgram, setIsTerminatingProgram] = useState<boolean>(false);
@@ -795,14 +776,6 @@ export const ChessBoard: React.FC = () => {
   const [uciAnalysisLoaded, setUciAnalysisLoadedState] = useState<boolean>(false);
   const uciAnalysisLoadedRef = useRef<boolean>(false);
   const uciFileInputRef = useRef<HTMLInputElement | null>(null);
-  const [stockfishConfig, setStockfishConfig] =
-    useState<StockfishSettings | null>(null);
-  const [isSavingStockfishConfig, setIsSavingStockfishConfig] =
-    useState<boolean>(false);
-  const [stockfishConfigMessage, setStockfishConfigMessage] =
-    useState<string | null>(null);
-  const [stockfishConfigError, setStockfishConfigError] =
-    useState<string | null>(null);
 
   const [clock, setClock] = useState<ClockState | null>(null);
   const [clockError, setClockError] = useState<string | null>(null);
@@ -1113,7 +1086,7 @@ export const ChessBoard: React.FC = () => {
   }
 
   useEffect(() => {
-    loadStockfishConfig();
+    loadEngineConfigs();
     loadGameSettings();
     loadClock();
 
@@ -1261,269 +1234,37 @@ export const ChessBoard: React.FC = () => {
     void loadEvaluation();
   }
 
-  async function loadStockfishConfig() {
+  async function loadEngineConfigs() {
     try {
-      console.log("[loadStockfishConfig] start");
+      const data = await fetchEngineConfigOverview();
+      setEngineConfigOverview(data);
+      setEngineConfigLoadError(null);
 
-      setStockfishConfigError(null);
-
-      const response = await fetch("/api/stockfish/settings");
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data: StockfishSettings = await response.json();
-      console.log("[loadStockfishConfig] response", data);
-
-      setStockfishConfig(data);
-
-      const evaluationEnginePath = data.evaluation?.enginePath;
-      if (evaluationEnginePath) {
+      const evaluationConfig = data.configs.find(
+        (config) => config.id === data.evaluationConfigId
+      );
+      if (evaluationConfig?.engine) {
         setAnalysisSettings((prev) =>
           prev.enginePath === DEFAULT_ANALYSIS_ENGINE_PATH
-            ? { ...prev, enginePath: evaluationEnginePath }
+            ? { ...prev, enginePath: evaluationConfig.engine }
             : prev
         );
       }
+      return data;
     } catch (e) {
-      console.error("[loadStockfishConfig] error", e);
-      setStockfishConfigError(
-        "Stockfish-Konfiguration konnte nicht geladen werden."
-      );
-    }
-  }
-
-  function updateStockfishEnginePath(role: EngineSlotRole, enginePath: string) {
-    setStockfishConfig((prev) =>
-      prev
-        ? {
-            ...prev,
-            [role]: {
-              ...prev[role],
-              enginePath,
-            },
-          }
-        : prev
-    );
-  }
-
-  function updateStockfishConfigField<K extends keyof UciEngineSettings>(
-    role: EngineSlotRole,
-    key: K,
-    value: UciEngineSettings[K]
-  ) {
-    setStockfishConfig((prev) =>
-      prev
-        ? {
-            ...prev,
-            [role]: {
-              ...prev[role],
-              settings: {
-                ...prev[role].settings,
-                [key]: value,
-              },
-            },
-          }
-        : prev
-    );
-  }
-
-  async function saveStockfishConfig() {
-    if (!stockfishConfig) {
-      return;
-    }
-
-    try {
-      console.log("[saveStockfishConfig] start", stockfishConfig);
-
-      setIsSavingStockfishConfig(true);
-      setStockfishConfigMessage(null);
-      setStockfishConfigError(null);
-
-      const response = await fetch("/api/stockfish/settings", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(stockfishConfig),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data: StockfishSettings = await response.json();
-      console.log("[saveStockfishConfig] response", data);
-
-      setStockfishConfig(data);
-      setStockfishConfigMessage("Engine settings saved.");
-      setEngineEval(null);
-
-      if (engineAutoUpdateRef.current) {
-        await loadEvaluation();
-      }
-    } catch (e) {
-      console.error("[saveStockfishConfig] error", e);
-      setStockfishConfigError(
-        "Stockfish-Konfiguration konnte nicht gespeichert werden."
-      );
-    } finally {
-      setIsSavingStockfishConfig(false);
-    }
-  }
-
-  function renderStockfishSlotSection(
-    role: EngineSlotRole,
-    title: string,
-    version: number,
-    allowMultiPV: boolean
-  ) {
-    if (!stockfishConfig) {
+      console.error("[loadEngineConfigs] error", e);
+      setEngineConfigLoadError("Engine configurations could not be loaded.");
       return null;
     }
+  }
 
-    const slot = stockfishConfig[role];
-    const settings = slot.settings;
-
-    const sectionClassName = allowMultiPV
-      ? "stockfish-config-section stockfish-config-section-evaluation"
-      : "stockfish-config-section stockfish-config-section-player";
-
-    return (
-      <div className={sectionClassName}>
-        <div className="stockfish-config-section-title">
-          {title} · version {version}
-        </div>
-
-        <label className="stockfish-config-field stockfish-config-field-wide">
-          <span>Engine path</span>
-          <input
-            value={slot.enginePath}
-            onChange={(e) => updateStockfishEnginePath(role, e.target.value)}
-          />
-        </label>
-
-        <div className="stockfish-config-grid">
-          <label className="stockfish-config-field">
-            <span>Depth</span>
-            <input
-              type="number"
-              min={0}
-              max={64}
-              value={settings.depth}
-              onChange={(e) =>
-                updateStockfishConfigField(role, "depth", Number(e.target.value))
-              }
-            />
-          </label>
-
-          {allowMultiPV ? (
-            <label className="stockfish-config-field">
-              <span>MultiPV</span>
-              <input
-                type="number"
-                min={1}
-                max={256}
-                value={settings.multiPV}
-                onChange={(e) =>
-                  updateStockfishConfigField(role, "multiPV", Number(e.target.value))
-                }
-              />
-            </label>
-          ) : (
-            <label className="stockfish-config-field">
-              <span>Move time s</span>
-              <input
-                type="number"
-                min={0}
-                max={3600}
-                value={settings.moveOverhead}
-                onChange={(e) =>
-                  updateStockfishConfigField(
-                    role,
-                    "moveOverhead",
-                    Math.max(0, Number(e.target.value))
-                  )
-                }
-              />
-            </label>
-          )}
-
-          <label className="stockfish-config-field">
-            <span>Threads</span>
-            <input
-              type="number"
-              min={allowMultiPV ? 1 : 0}
-              max={256}
-              value={settings.threads}
-              onChange={(e) =>
-                updateStockfishConfigField(role, "threads", Number(e.target.value))
-              }
-            />
-          </label>
-
-          <label className="stockfish-config-field">
-            <span>Hash MB</span>
-            <input
-              type="number"
-              min={1}
-              max={262144}
-              value={settings.hashSize}
-              onChange={(e) =>
-                updateStockfishConfigField(role, "hashSize", Number(e.target.value))
-              }
-            />
-          </label>
-
-          <label className="stockfish-config-field">
-            <span>Contempt</span>
-            <input
-              type="number"
-              min={-1000}
-              max={1000}
-              value={settings.contempt}
-              onChange={(e) =>
-                updateStockfishConfigField(role, "contempt", Number(e.target.value))
-              }
-            />
-          </label>
-
-          {allowMultiPV && (
-            <label className="stockfish-config-field">
-              <span>Move time s</span>
-              <input
-                type="number"
-                min={0}
-                max={3600}
-                value={settings.moveOverhead}
-                onChange={(e) =>
-                  updateStockfishConfigField(
-                    role,
-                    "moveOverhead",
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </label>
-          )}
-
-          <label className="stockfish-config-field">
-            <span>UCI Elo</span>
-            <input
-              type="number"
-              min={0}
-              max={4000}
-              value={settings.uciElo}
-              onChange={(e) =>
-                updateStockfishConfigField(role, "uciElo", Number(e.target.value))
-              }
-            />
-          </label>
-        </div>
-
-      </div>
-    );
+  function handleEngineConfigOverviewChange(data: EngineConfigOverview) {
+    setEngineConfigOverview(data);
+    setEngineConfigLoadError(null);
+    setEngineEval(null);
+    if (engineAutoUpdateRef.current) {
+      void loadEvaluation();
+    }
   }
 
   useEffect(() => {
@@ -1683,7 +1424,7 @@ export const ChessBoard: React.FC = () => {
       setIsAnalysisReplayRunning(true);
       setShowAnalysisSettingsDialog(false);
       setShowGameEndDialog(false);
-      setShowStockfishConfig(false);
+      setShowEngineConfig(false);
       setSelectedSquare(null);
       updatePossibleTargets([]);
       setHoverPreview(null);
@@ -2001,6 +1742,10 @@ export const ChessBoard: React.FC = () => {
         blackRunning: false,
         gameState: null,
         timeControl: formatTimeControlFromSettings(appliedSettings),
+        whitePlayerName: null,
+        blackPlayerName: null,
+        whitePlayerEngineName: null,
+        blackPlayerEngineName: null,
       });
 
       await requestComputerMoveIfEnabled("white");
@@ -3461,10 +3206,10 @@ export const ChessBoard: React.FC = () => {
           {!analysisReplayActive && (
             <button
               className="top-engine-button engine-settings"
-              onClick={() => setShowStockfishConfig((prev) => !prev)}
-              title="Engine-Einstellungen anzeigen"
+              onClick={() => setShowEngineConfig((prev) => !prev)}
+              title="Engine-Konfigurationen verwalten"
             >
-              Engine Settings
+              Engine Configs
             </button>
           )}
 
@@ -3709,73 +3454,16 @@ export const ChessBoard: React.FC = () => {
                   renderAnalysisReplayContent()
                 ) : (
                   <>
-                    {showStockfishConfig && (
-                      <div className="stockfish-config-panel">
-                        <div className="stockfish-config-header">
-                          <strong>Engine configuration</strong>
-
-                          {stockfishConfig && (
-                            <span className="stockfish-config-version">
-                              version {stockfishConfig.version}
-                            </span>
-                          )}
-                        </div>
-
-                        {stockfishConfig ? (
-                          <>
-                            <div className="stockfish-config-sections">
-                              <div className="stockfish-player-config-sections">
-                                {renderStockfishSlotSection(
-                                  "whitePlayer",
-                                  "White player engine",
-                                  stockfishConfig.whitePlayerVersion,
-                                  false
-                                )}
-
-                                {renderStockfishSlotSection(
-                                  "blackPlayer",
-                                  "Black player engine",
-                                  stockfishConfig.blackPlayerVersion,
-                                  false
-                                )}
-                              </div>
-
-                              {renderStockfishSlotSection(
-                                "evaluation",
-                                "Evaluation engine",
-                                stockfishConfig.evaluationVersion,
-                                true
-                              )}
-                            </div>
-
-                            <button
-                              className="stockfish-save-button"
-                              onClick={saveStockfishConfig}
-                              disabled={isSavingStockfishConfig}
-                            >
-                              {isSavingStockfishConfig
-                                ? "Saving..."
-                                : "Save engine settings"}
-                            </button>
-                          </>
-                        ) : (
-                          <div className="engine-empty">
-                            Engine settings are loading…
-                          </div>
+                    {showEngineConfig && (
+                      <>
+                        <EngineConfigManager
+                          overview={engineConfigOverview}
+                          onOverviewChange={handleEngineConfigOverviewChange}
+                        />
+                        {engineConfigLoadError && (
+                          <div className="engine-error">{engineConfigLoadError}</div>
                         )}
-
-                        {stockfishConfigMessage && (
-                          <div className="stockfish-config-message">
-                            {stockfishConfigMessage}
-                          </div>
-                        )}
-
-                        {stockfishConfigError && (
-                          <div className="engine-error">
-                            {stockfishConfigError}
-                          </div>
-                        )}
-                      </div>
+                      </>
                     )}
 
                     {evalError && (
@@ -3913,6 +3601,46 @@ export const ChessBoard: React.FC = () => {
                         )
                       }
                     />
+                  </label>
+
+                  <label className="game-settings-field">
+                    <span>White engine config</span>
+                    <select
+                      value={gameSettings.whiteEngineConfigId ?? ""}
+                      onChange={(e) =>
+                        setGameSettings((prev) => ({
+                          ...prev,
+                          whiteEngineConfigId: e.target.value,
+                        }))
+                      }
+                      disabled={!engineConfigOverview}
+                    >
+                      {(engineConfigOverview?.configs ?? []).map((config) => (
+                        <option key={config.id ?? config.name} value={config.id ?? ""}>
+                          {config.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="game-settings-field">
+                    <span>Black engine config</span>
+                    <select
+                      value={gameSettings.blackEngineConfigId ?? ""}
+                      onChange={(e) =>
+                        setGameSettings((prev) => ({
+                          ...prev,
+                          blackEngineConfigId: e.target.value,
+                        }))
+                      }
+                      disabled={!engineConfigOverview}
+                    >
+                      {(engineConfigOverview?.configs ?? []).map((config) => (
+                        <option key={config.id ?? config.name} value={config.id ?? ""}>
+                          {config.name}
+                        </option>
+                      ))}
+                    </select>
                   </label>
 
                 </div>
