@@ -1196,6 +1196,11 @@ export const ChessBoard: React.FC = () => {
   }
 
   async function loadEvaluation() {
+    if (!engineAutoUpdateRef.current) {
+      console.log("[loadEvaluation] skipped because evaluation is disabled");
+      return;
+    }
+
     try {
       console.log("[loadEvaluation] start");
 
@@ -1210,6 +1215,10 @@ export const ChessBoard: React.FC = () => {
 
       const data: EngineEvaluation = await response.json();
       console.log("[loadEvaluation] response", data);
+
+      if (!engineAutoUpdateRef.current) {
+        return;
+      }
 
       if (data.lines && data.lines.length > 0) {
         setEngineEval(data);
@@ -1349,7 +1358,9 @@ export const ChessBoard: React.FC = () => {
       setStockfishConfigMessage("Engine settings saved.");
       setEngineEval(null);
 
-      await loadEvaluation();
+      if (engineAutoUpdateRef.current) {
+        await loadEvaluation();
+      }
     } catch (e) {
       console.error("[saveStockfishConfig] error", e);
       setStockfishConfigError(
