@@ -789,6 +789,9 @@ export const ChessBoard: React.FC = () => {
   const [showStockfishConfig, setShowStockfishConfig] =
     useState<boolean>(false);
   const [showEngineManager, setShowEngineManager] = useState<boolean>(false);
+  const [showDataMenu, setShowDataMenu] = useState<boolean>(false);
+  const [isTerminatingProgram, setIsTerminatingProgram] = useState<boolean>(false);
+  const dataMenuRef = useRef<HTMLDivElement | null>(null);
   const [uciAnalysisLoaded, setUciAnalysisLoadedState] = useState<boolean>(false);
   const uciAnalysisLoadedRef = useRef<boolean>(false);
   const uciFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1130,6 +1133,34 @@ export const ChessBoard: React.FC = () => {
       window.clearInterval(intervalId);
     };
   }, []);
+
+  useEffect(() => {
+    if (!showDataMenu) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+
+      if (target instanceof Node && !dataMenuRef.current?.contains(target)) {
+        setShowDataMenu(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowDataMenu(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showDataMenu]);
 
   async function loadPossibleMoves(from: string): Promise<string[]> {
     console.log("[loadPossibleMoves] for", from);
@@ -1712,6 +1743,55 @@ export const ChessBoard: React.FC = () => {
     setGameSettingsError(null);
     setShowGameEndDialog(false);
     setShowGameSettingsDialog(true);
+  }
+
+  async function terminateProgram() {
+    const confirmed = window.confirm(
+      "Terminate Program?\n\nThe chess server and, in development mode, the frontend server will be stopped."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setShowDataMenu(false);
+    setIsTerminatingProgram(true);
+    setLoadError(null);
+
+    try {
+      const response = await fetch("/api/program/terminate", {
+        method: "POST",
+        headers: {
+          "X-Chess-Terminate": "terminate",
+        },
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+
+      if (import.meta.env.DEV) {
+        try {
+          await fetch("/__chess/terminate", {
+            method: "POST",
+            headers: {
+              "X-Chess-Terminate": "terminate",
+            },
+          });
+        } catch (error) {
+          console.warn("[terminateProgram] frontend dev server termination failed", error);
+        }
+      }
+
+      window.setTimeout(() => {
+        window.location.replace("about:blank");
+      }, 100);
+    } catch (error) {
+      console.error("[terminateProgram] error", error);
+      setIsTerminatingProgram(false);
+      setLoadError("Programm konnte nicht beendet werden.");
+    }
   }
 
   function updateGameSettingsNumberField(
@@ -3276,83 +3356,103 @@ export const ChessBoard: React.FC = () => {
           )}
 
           {analysisReplayActive && analysisReplayFinished && uciAnalysisLoaded && (
-            <>
-              <button
-                className="top-engine-button analysis-repeat"
-                onClick={openAnalysisSettingsDialog}
-                title="Geladene PGN-Partie erneut analysieren"
-              >
-                Analyse erneut
-              </button>
-              <button
-                className="top-engine-button new-game"
-                onClick={saveUciGame}
-                title="Geladene Partie als PGN speichern"
-              >
-                Save PGN
-              </button>
-              <button
-                className="top-engine-button new-game"
-                onClick={openUciFilePicker}
-                title="Andere PGN-Datei laden"
-              >
-                Load PGN
-              </button>
-              <button
-                className="top-engine-button new-game"
-                onClick={openGameSettingsDialog}
-                title="Neue Partie konfigurieren"
-              >
-                New Game
-              </button>
-            </>
+            <button
+              className="top-engine-button analysis-repeat"
+              onClick={openAnalysisSettingsDialog}
+              title="Geladene PGN-Partie erneut analysieren"
+            >
+              Analyse erneut
+            </button>
           )}
 
-          {!analysisReplayActive && (
-            <>
-              <button
-                className="top-engine-button new-game"
-                onClick={saveUciGame}
-                title="Aktuelle Partie als PGN speichern"
-              >
-                Save PGN
-              </button>
+          {!analysisReplayActive && uciAnalysisLoaded && (
+            <button
+              className="top-engine-button analysis-repeat"
+              onClick={openAnalysisSettingsDialog}
+              title="Geladene PGN-Partie analysieren"
+            >
+              Analyse
+            </button>
+          )}
 
-              <button
-                className="top-engine-button new-game"
-                onClick={openUciFilePicker}
-                title="PGN-Partie zur Analyse laden"
-              >
-                Load PGN
-              </button>
+          <div className="data-menu" ref={dataMenuRef}>
+            <button
+              className={[
+                "top-engine-button",
+                "data-menu-trigger",
+                showDataMenu ? "data-menu-trigger-open" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setShowDataMenu((prev) => !prev)}
+              title="Partie laden, speichern, neu starten oder Programm beenden"
+              aria-haspopup="menu"
+              aria-expanded={showDataMenu}
+              disabled={isTerminatingProgram}
+            >
+              Data
+            </button>
 
-              {uciAnalysisLoaded && (
+            {showDataMenu && (
+              <div className="data-menu-popup" role="menu">
                 <button
-                  className="top-engine-button analysis-repeat"
-                  onClick={openAnalysisSettingsDialog}
-                  title="Geladene PGN-Partie analysieren"
+                  className="data-menu-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setShowDataMenu(false);
+                    openGameSettingsDialog();
+                  }}
+                  disabled={analysisReplayActive && !analysisReplayFinished}
                 >
-                  Analyse
+                  New Game
                 </button>
-              )}
 
-              <button
-                className="top-engine-button new-game"
-                onClick={openGameSettingsDialog}
-                title="Neue Partie konfigurieren"
-              >
-                New Game
-              </button>
+                <button
+                  className="data-menu-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setShowDataMenu(false);
+                    void saveUciGame();
+                  }}
+                  disabled={analysisReplayActive && !analysisReplayFinished}
+                >
+                  Save PGN
+                </button>
 
-              <button
-                className="top-engine-button engine-settings"
-                onClick={() => setShowStockfishConfig((prev) => !prev)}
-                title="Engine-Einstellungen anzeigen"
-              >
-                Engine Settings
-              </button>
+                <button
+                  className="data-menu-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setShowDataMenu(false);
+                    openUciFilePicker();
+                  }}
+                  disabled={analysisReplayActive && !analysisReplayFinished}
+                >
+                  Load PGN
+                </button>
 
-            </>
+                <div className="data-menu-separator" role="separator" />
+
+                <button
+                  className="data-menu-item data-menu-item-danger"
+                  role="menuitem"
+                  onClick={() => void terminateProgram()}
+                  disabled={isTerminatingProgram}
+                >
+                  {isTerminatingProgram ? "Terminating..." : "Terminate Program"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {!analysisReplayActive && (
+            <button
+              className="top-engine-button engine-settings"
+              onClick={() => setShowStockfishConfig((prev) => !prev)}
+              title="Engine-Einstellungen anzeigen"
+            >
+              Engine Settings
+            </button>
           )}
 
           <button

@@ -52,10 +52,6 @@
   white-space: nowrap;
 }
 
-.top-engine-button.new-game {
-  min-width: 88px;
-}
-
 .top-engine-button.engine-settings {
   min-width: 116px;
 }
@@ -72,6 +68,89 @@
 .top-engine-button:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.data-menu {
+  position: relative;
+}
+
+.top-engine-button.data-menu-trigger {
+  min-width: 88px;
+}
+
+.top-engine-button.data-menu-trigger::after {
+  content: "▾";
+  margin-left: 6px;
+  font-size: 0.68rem;
+}
+
+.top-engine-button.data-menu-trigger-open::after {
+  content: "▴";
+}
+
+.top-engine-button.data-menu-trigger-open {
+  background: #4a4a4a;
+  color: #ffffff;
+}
+
+.data-menu-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 2000;
+
+  width: 184px;
+  padding: 5px;
+  border: 1px solid #555555;
+  border-radius: 6px;
+  background: #292929;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+
+  box-sizing: border-box;
+}
+
+.data-menu-item {
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #dddddd;
+
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.data-menu-item:hover:not(:disabled),
+.data-menu-item:focus-visible:not(:disabled) {
+  outline: none;
+  background: #414141;
+  color: #ffffff;
+}
+
+.data-menu-item:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.data-menu-separator {
+  height: 1px;
+  margin: 5px 4px;
+  background: #4b4b4b;
+}
+
+.data-menu-item-danger {
+  color: #ffaaaa;
+}
+
+.data-menu-item-danger:hover:not(:disabled),
+.data-menu-item-danger:focus-visible:not(:disabled) {
+  background: #5b3030;
+  color: #ffffff;
 }
 
 .app-main {
