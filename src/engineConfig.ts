@@ -1,5 +1,5 @@
 export type UciOptionType = "spin" | "check" | "combo" | "button" | "string";
-export type EngineConfigType = "PLAYER" | "EVALUATION";
+export type EngineConfigType = "PLAYER" | "EVALUATION" | "DEEP_ANALYSIS";
 
 export interface UciOptionConfig {
   type: UciOptionType;
@@ -26,6 +26,7 @@ export interface EngineConfigOverview {
   configs: ManagedEngineConfig[];
   evaluationConfigId: string;
   defaultPlayerConfigId: string;
+  defaultDeepAnalysisConfigId: string;
   version: number;
 }
 

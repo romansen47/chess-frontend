@@ -8,8 +8,6 @@ type PieceColor = "white" | "black";
 type PieceType = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
 type GameSound = "move" | "capture" | "notify";
 
-const DEFAULT_ANALYSIS_ENGINE_PATH = "/usr/games/stockfish";
-
 const GAME_SOUND_SOURCES: Record<GameSound, string[]> = {
   move: [
     "/sounds/move.mp3",
@@ -175,14 +173,7 @@ interface GameSettings {
 }
 
 interface AnalysisReplaySettings {
-  enginePath: string;
-  moveTimeSeconds: number;
-  depth: number;
-  threads: number;
-  hashSize: number;
-  multiPV: number;
-  contempt: number;
-  uciElo: number;
+  engineConfigId: string | null;
 }
 
 interface AnalysisProfilePoint {
@@ -704,14 +695,7 @@ function createDefaultGameSettings(): GameSettings {
 
 function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
   return {
-    enginePath: DEFAULT_ANALYSIS_ENGINE_PATH,
-    moveTimeSeconds: 5,
-    depth: 0,
-    threads: 1,
-    hashSize: 256,
-    multiPV: 3,
-    contempt: 0,
-    uciElo: 0,
+    engineConfigId: null,
   };
 }
 
@@ -823,6 +807,19 @@ export const ChessBoard: React.FC = () => {
     useState<string | null>(null);
   const analysisReplayCancelledRef = useRef<boolean>(false);
   const soundCacheRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+
+  const deepAnalysisEngineConfigs = useMemo(
+    () => (engineConfigOverview?.configs ?? []).filter(
+      (config) => config.type === "DEEP_ANALYSIS"
+    ),
+    [engineConfigOverview]
+  );
+  const selectedDeepAnalysisConfig = useMemo(
+    () => deepAnalysisEngineConfigs.find(
+      (config) => config.id === analysisSettings.engineConfigId
+    ) ?? null,
+    [deepAnalysisEngineConfigs, analysisSettings.engineConfigId]
+  );
 
   const squareToPieceMap = useMemo(() => {
     const map = new Map<string, Piece>();
@@ -1240,16 +1237,23 @@ export const ChessBoard: React.FC = () => {
       setEngineConfigOverview(data);
       setEngineConfigLoadError(null);
 
-      const evaluationConfig = data.configs.find(
-        (config) => config.id === data.evaluationConfigId
+      const deepAnalysisConfigs = data.configs.filter(
+        (config) => config.type === "DEEP_ANALYSIS"
       );
-      if (evaluationConfig?.engine) {
-        setAnalysisSettings((prev) =>
-          prev.enginePath === DEFAULT_ANALYSIS_ENGINE_PATH
-            ? { ...prev, enginePath: evaluationConfig.engine }
-            : prev
+      setAnalysisSettings((prev) => {
+        const currentStillExists = deepAnalysisConfigs.some(
+          (config) => config.id === prev.engineConfigId
         );
-      }
+        if (currentStillExists) {
+          return prev;
+        }
+        const preferred = deepAnalysisConfigs.find(
+          (config) => config.id === data.defaultDeepAnalysisConfigId
+        );
+        return {
+          engineConfigId: preferred?.id ?? deepAnalysisConfigs[0]?.id ?? null,
+        };
+      });
       return data;
     } catch (e) {
       console.error("[loadEngineConfigs] error", e);
@@ -1261,6 +1265,20 @@ export const ChessBoard: React.FC = () => {
   function handleEngineConfigOverviewChange(data: EngineConfigOverview) {
     setEngineConfigOverview(data);
     setEngineConfigLoadError(null);
+    const deepAnalysisConfigs = data.configs.filter(
+      (config) => config.type === "DEEP_ANALYSIS"
+    );
+    setAnalysisSettings((prev) => {
+      if (deepAnalysisConfigs.some((config) => config.id === prev.engineConfigId)) {
+        return prev;
+      }
+      const preferred = deepAnalysisConfigs.find(
+        (config) => config.id === data.defaultDeepAnalysisConfigId
+      );
+      return {
+        engineConfigId: preferred?.id ?? deepAnalysisConfigs[0]?.id ?? null,
+      };
+    });
     setEngineEval(null);
     if (engineAutoUpdateRef.current) {
       void loadEvaluation();
@@ -1335,28 +1353,6 @@ export const ChessBoard: React.FC = () => {
     setShowGameEndDialog(true);
   }
 
-  function updateAnalysisSettingsNumberField(
-    key: Exclude<keyof AnalysisReplaySettings, "enginePath">,
-    value: number
-  ) {
-    const safeValue = Number.isFinite(value) ? value : 0;
-
-    setAnalysisSettings((prev) => ({
-      ...prev,
-      [key]: key === "contempt" ? safeValue : Math.max(0, safeValue),
-    }));
-  }
-
-  function updateAnalysisSettingsTextField(
-    key: Extract<keyof AnalysisReplaySettings, "enginePath">,
-    value: string
-  ) {
-    setAnalysisSettings((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  }
-
   function applyAnalysisReplayStep(step: AnalysisReplayStep) {
     if (step.board?.pieces && !analysisReplayActiveRef.current) {
       setPieces(mapBackendPiecesToLocalPieces(step.board.pieces));
@@ -1418,6 +1414,9 @@ export const ChessBoard: React.FC = () => {
 
   async function startAnalysisReplay() {
     try {
+      if (!analysisSettings.engineConfigId) {
+        throw new Error("No deep analysis engine configuration is available.");
+      }
       setAnalysisReplayError(null);
       setAnalysisReplayStatus("Analyse wird vorbereitet…");
       setAnalysisReplayFinished(false);
@@ -3203,15 +3202,13 @@ export const ChessBoard: React.FC = () => {
             )}
           </div>
 
-          {!analysisReplayActive && (
-            <button
-              className="top-engine-button engine-settings"
-              onClick={() => setShowEngineConfig((prev) => !prev)}
-              title="Engine-Konfigurationen verwalten"
-            >
-              Engine Configs
-            </button>
-          )}
+          <button
+            className="top-engine-button engine-settings"
+            onClick={() => setShowEngineConfig((prev) => !prev)}
+            title="Engine-Konfigurationen verwalten"
+          >
+            Engine Configs
+          </button>
 
           <button
             className="top-engine-button engine-settings"
@@ -3450,22 +3447,22 @@ export const ChessBoard: React.FC = () => {
               )}
 
               <div className="engine-content-column">
+                {showEngineConfig && (
+                  <>
+                    <EngineConfigManager
+                      overview={engineConfigOverview}
+                      onOverviewChange={handleEngineConfigOverviewChange}
+                    />
+                    {engineConfigLoadError && (
+                      <div className="engine-error">{engineConfigLoadError}</div>
+                    )}
+                  </>
+                )}
+
                 {analysisReplayActive ? (
                   renderAnalysisReplayContent()
                 ) : (
                   <>
-                    {showEngineConfig && (
-                      <>
-                        <EngineConfigManager
-                          overview={engineConfigOverview}
-                          onOverviewChange={handleEngineConfigOverviewChange}
-                        />
-                        {engineConfigLoadError && (
-                          <div className="engine-error">{engineConfigLoadError}</div>
-                        )}
-                      </>
-                    )}
-
                     {evalError && (
                       <div className="engine-error">Error: {evalError}</div>
                     )}
@@ -3684,109 +3681,46 @@ export const ChessBoard: React.FC = () => {
 
                 <div className="analysis-settings-form">
                   <label className="analysis-settings-field analysis-settings-field-wide">
-                    <span>Engine path</span>
-                    <input
-                      type="text"
-                      value={analysisSettings.enginePath}
+                    <span>Deep analysis engine config</span>
+                    <select
+                      value={analysisSettings.engineConfigId ?? ""}
                       onChange={(e) =>
-                        updateAnalysisSettingsTextField("enginePath", e.target.value)
+                        setAnalysisSettings({ engineConfigId: e.target.value || null })
                       }
-                    />
-                  </label>
-                  <label className="analysis-settings-field">
-                    <span>Time per move (seconds)</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={3600}
-                      value={analysisSettings.moveTimeSeconds}
-                      onChange={(e) =>
-                        updateAnalysisSettingsNumberField(
-                          "moveTimeSeconds",
-                          Number(e.target.value)
-                        )
-                      }
-                    />
+                      disabled={!engineConfigOverview || deepAnalysisEngineConfigs.length === 0}
+                    >
+                      {deepAnalysisEngineConfigs.map((config) => (
+                        <option key={config.id ?? config.name} value={config.id ?? ""}>
+                          {config.name}
+                        </option>
+                      ))}
+                    </select>
                   </label>
 
-                  <label className="analysis-settings-field">
-                    <span>Depth</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={64}
-                      value={analysisSettings.depth}
-                      onChange={(e) =>
-                        updateAnalysisSettingsNumberField("depth", Number(e.target.value))
-                      }
-                    />
-                  </label>
-
-                  <label className="analysis-settings-field">
-                    <span>Threads</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={256}
-                      value={analysisSettings.threads}
-                      onChange={(e) =>
-                        updateAnalysisSettingsNumberField("threads", Number(e.target.value))
-                      }
-                    />
-                  </label>
-
-                  <label className="analysis-settings-field">
-                    <span>Hash MB</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={262144}
-                      value={analysisSettings.hashSize}
-                      onChange={(e) =>
-                        updateAnalysisSettingsNumberField("hashSize", Number(e.target.value))
-                      }
-                    />
-                  </label>
-
-                  <label className="analysis-settings-field">
-                    <span>MultiPV</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={500}
-                      value={analysisSettings.multiPV}
-                      onChange={(e) =>
-                        updateAnalysisSettingsNumberField("multiPV", Number(e.target.value))
-                      }
-                    />
-                  </label>
-
-                  <label className="analysis-settings-field">
-                    <span>Contempt</span>
-                    <input
-                      type="number"
-                      min={-100}
-                      max={100}
-                      value={analysisSettings.contempt}
-                      onChange={(e) =>
-                        updateAnalysisSettingsNumberField("contempt", Number(e.target.value))
-                      }
-                    />
-                  </label>
-
-                  <label className="analysis-settings-field">
-                    <span>UCI Elo</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={4000}
-                      value={analysisSettings.uciElo}
-                      onChange={(e) =>
-                        updateAnalysisSettingsNumberField("uciElo", Number(e.target.value))
-                      }
-                    />
-                  </label>
-
+                  {selectedDeepAnalysisConfig ? (
+                    <div className="analysis-settings-config-summary">
+                      <div>
+                        <span>Engine</span>
+                        <strong>{selectedDeepAnalysisConfig.engineName}</strong>
+                      </div>
+                      <div>
+                        <span>Search</span>
+                        <strong>
+                          {selectedDeepAnalysisConfig.depth > 0
+                            ? `depth ${selectedDeepAnalysisConfig.depth}`
+                            : `${selectedDeepAnalysisConfig.moveTimeSeconds}s per position`}
+                        </strong>
+                      </div>
+                      <div className="analysis-settings-config-path">
+                        <span>Executable</span>
+                        <strong>{selectedDeepAnalysisConfig.engine}</strong>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="analysis-settings-empty">
+                      No Deep Analysis configuration is available. Create one under Engine Configs first.
+                    </div>
+                  )}
                 </div>
 
                 {analysisReplayError && (
@@ -3804,7 +3738,7 @@ export const ChessBoard: React.FC = () => {
                   <button
                     className="analysis-settings-dialog-button"
                     onClick={startAnalysisReplay}
-                    disabled={isAnalysisReplayRunning}
+                    disabled={isAnalysisReplayRunning || !analysisSettings.engineConfigId}
                   >
                     {isAnalysisReplayRunning ? "Starting..." : "OK"}
                   </button>

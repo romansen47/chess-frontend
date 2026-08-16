@@ -40,7 +40,36 @@ function optionHint(option: UciOptionConfig): string {
 }
 
 function typeLabel(type: EngineConfigType): string {
-  return type === "PLAYER" ? "Player Engines" : "Evaluation Engines";
+  switch (type) {
+    case "PLAYER":
+      return "Player Engines";
+    case "EVALUATION":
+      return "Evaluation Engines";
+    case "DEEP_ANALYSIS":
+      return "Deep Analysis Engines";
+  }
+}
+
+function purposeLabel(type: EngineConfigType): string {
+  switch (type) {
+    case "PLAYER":
+      return "Player engine";
+    case "EVALUATION":
+      return "Evaluation engine";
+    case "DEEP_ANALYSIS":
+      return "Deep analysis engine";
+  }
+}
+
+function shortTypeLabel(type: EngineConfigType): string {
+  switch (type) {
+    case "PLAYER":
+      return "Player";
+    case "EVALUATION":
+      return "Evaluation";
+    case "DEEP_ANALYSIS":
+      return "Deep Analysis";
+  }
 }
 
 export default function EngineConfigManager({
@@ -237,7 +266,7 @@ export default function EngineConfigManager({
       const saved = (await response.json()) as ManagedEngineConfig;
       setCreating(false);
       await reloadOverview(saved.id);
-      setMessage(`${saved.type === "PLAYER" ? "Player" : "Evaluation"} configuration saved.`);
+      setMessage(`${shortTypeLabel(saved.type)} configuration saved.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Engine configuration could not be saved.");
     } finally {
@@ -425,6 +454,16 @@ export default function EngineConfigManager({
         >
           Evaluation Engines
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeType === "DEEP_ANALYSIS"}
+          className={activeType === "DEEP_ANALYSIS" ? "active" : ""}
+          onClick={() => changeType("DEEP_ANALYSIS")}
+          disabled={busy}
+        >
+          Deep Analysis Engines
+        </button>
       </div>
 
       {overview && configs.length > 0 && !creating && (
@@ -451,7 +490,7 @@ export default function EngineConfigManager({
 
       {overview && configs.length === 0 && !creating && (
         <div className="engine-config-empty">
-          No {activeType === "PLAYER" ? "player" : "evaluation"} configurations yet.
+          No {shortTypeLabel(activeType).toLowerCase()} configurations yet.
         </div>
       )}
 
@@ -459,14 +498,14 @@ export default function EngineConfigManager({
         <div className="engine-config-inspect-step">
           <div className="engine-config-step-title">1. Select engine executable</div>
           <div className="engine-config-purpose">
-            Purpose: <strong>{activeType === "PLAYER" ? "Player engine" : "Evaluation engine"}</strong>
+            Purpose: <strong>{purposeLabel(activeType)}</strong>
           </div>
           <label>
             <span>Config name</span>
             <input
               value={newConfigName}
               onChange={(event) => setNewConfigName(event.target.value)}
-              placeholder={activeType === "PLAYER" ? "e.g. Stockfish 18 Player" : "e.g. Stockfish 18 Evaluation"}
+              placeholder={`e.g. Stockfish 18 ${shortTypeLabel(activeType)}`}
             />
           </label>
           <label>
@@ -502,7 +541,7 @@ export default function EngineConfigManager({
               <strong>{draft.engineName}</strong>
               {draft.engineAuthor && <span>{draft.engineAuthor}</span>}
               <span className="engine-config-type-badge">
-                {draft.type === "PLAYER" ? "Player" : "Evaluation"}
+                {shortTypeLabel(draft.type)}
               </span>
             </div>
           </div>
@@ -519,12 +558,21 @@ export default function EngineConfigManager({
               />
             </label>
             <label>
-              <span>Move time s (0 = player clock)</span>
+              <span>
+                {draft.type === "DEEP_ANALYSIS"
+                  ? "Move time s (when Depth = 0)"
+                  : "Move time s (0 = player clock)"}
+              </span>
               <input
                 type="number"
-                min={0}
+                min={draft.type === "DEEP_ANALYSIS" ? 1 : 0}
                 value={draft.moveTimeSeconds}
-                onChange={(event) => updateDraft({ moveTimeSeconds: Math.max(0, Number(event.target.value)) })}
+                onChange={(event) => updateDraft({
+                  moveTimeSeconds: Math.max(
+                    draft.type === "DEEP_ANALYSIS" ? 1 : 0,
+                    Number(event.target.value)
+                  ),
+                })}
               />
             </label>
           </div>
