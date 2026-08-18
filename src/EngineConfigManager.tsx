@@ -570,388 +570,499 @@ export default function EngineConfigManager({
     : [];
 
   return (
-    <div className="engine-config-manager">
-      <div className="engine-config-manager-header">
-        <div>
-          <strong>Engine Settings</strong>
-          {overview && <span className="engine-config-version">version {overview.version}</span>}
-        </div>
-        <div className="engine-config-header-actions">
+    <div className="engine-config-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="engine-config-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Engine Settings"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="engine-config-dialog-header">
+          <div>
+            <h2>Engine Settings</h2>
+            <div className="engine-config-dialog-subtitle">
+              Engines und wiederverwendbare Profile
+              {overview && <span> · Version {overview.version}</span>}
+            </div>
+          </div>
+          <div className="engine-config-header-actions">
+            <button
+              type="button"
+              className="engine-config-reset"
+              onClick={() => void resetEngineSettings()}
+              disabled={busy}
+            >
+              Reset Engines &amp; Profiles
+            </button>
+            <button type="button" onClick={onClose} disabled={busy}>Schließen</button>
+          </div>
+        </header>
+
+        {error && <div className="engine-config-error-banner">{error}</div>}
+        {message && <div className="engine-config-message-banner">{message}</div>}
+
+        <div className="engine-config-tabs" role="tablist" aria-label="Engine settings area">
           <button
             type="button"
-            className="engine-config-reset"
-            onClick={() => void resetEngineSettings()}
+            role="tab"
+            aria-selected={mode === "ENGINES"}
+            className={mode === "ENGINES" ? "active" : ""}
+            onClick={() => changeMode("ENGINES")}
             disabled={busy}
           >
-            Reset Engines &amp; Profiles
+            Engines
+            <span className="engine-config-tab-count">{engines.length}</span>
           </button>
-          <button type="button" onClick={onClose} disabled={busy}>Close</button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "PROFILES"}
+            className={mode === "PROFILES" ? "active" : ""}
+            onClick={() => changeMode("PROFILES")}
+            disabled={busy}
+          >
+            Profiles
+            <span className="engine-config-tab-count">{profiles.length}</span>
+          </button>
         </div>
-      </div>
 
-      <div className="engine-config-type-tabs" role="tablist" aria-label="Engine settings area">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "ENGINES"}
-          className={mode === "ENGINES" ? "active" : ""}
-          onClick={() => changeMode("ENGINES")}
-          disabled={busy}
-        >
-          Engines
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "PROFILES"}
-          className={mode === "PROFILES" ? "active" : ""}
-          onClick={() => changeMode("PROFILES")}
-          disabled={busy}
-        >
-          Profiles
-        </button>
-      </div>
-
-      {mode === "ENGINES" && (
-        <>
-          <div className="engine-config-manager-header engine-config-section-header">
-            <div>
-              <strong>Defined Engines</strong>
-              <span className="engine-config-subtitle">Executable and UCI option schema</span>
-            </div>
-            <button type="button" onClick={beginCreateEngine} disabled={busy}>New Engine</button>
-          </div>
-
-          {engines.length > 0 && !creatingEngine && (
-            <div className="engine-config-toolbar">
-              <label>
-                <span>Engine</span>
-                <select
-                  value={selectedEngineId ?? ""}
-                  onChange={(event) => selectExistingEngine(event.target.value)}
-                  disabled={busy}
-                >
-                  {engines.map((engine) => (
-                    <option key={engine.id ?? engine.name} value={engine.id ?? ""}>
-                      {engine.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-
-          {creatingEngine && !engineDraft && (
-            <div className="engine-config-inspect-step">
-              <div className="engine-config-step-title">1. Define engine executable</div>
-              <label>
-                <span>Engine name</span>
-                <input
-                  value={newEngineName}
-                  onChange={(event) => setNewEngineName(event.target.value)}
-                  placeholder="e.g. Stockfish 18"
-                />
-              </label>
-              <label>
-                <span>Engine path</span>
-                <input
-                  value={newEnginePath}
-                  onChange={(event) => setNewEnginePath(event.target.value)}
-                  placeholder="/usr/games/stockfish18 or /opt/lc0/lc0"
-                />
-              </label>
-              <button type="button" onClick={() => void inspectEngine()} disabled={busy}>
-                {busy ? "Inspecting…" : "Inspect Engine (uci)"}
+        <div className="engine-config-body">
+          <aside className="engine-config-sidebar">
+            <div className="engine-config-sidebar-header">
+              <div>
+                <strong>{mode === "ENGINES" ? "Defined Engines" : "Engine Profiles"}</strong>
+                <span>
+                  {mode === "ENGINES"
+                    ? "Executable und UCI-Definition"
+                    : "Engine und kontextbezogene Werte"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={mode === "ENGINES" ? beginCreateEngine : beginCreateProfile}
+                disabled={busy}
+              >
+                {mode === "ENGINES" ? "New Engine" : "New Profile"}
               </button>
             </div>
-          )}
 
-          {engineDraft && (
-            <div className="engine-config-editor">
-              <div className="engine-config-step-title">
-                {engineDraft.id ? "Engine definition" : "2. Review engine definition"}
-              </div>
-              <div className="engine-config-identity">
-                <label>
-                  <span>Engine name</span>
-                  <input
-                    value={engineDraft.name}
-                    onChange={(event) => setEngineDraft({ ...engineDraft, name: event.target.value })}
-                  />
-                </label>
-                <label>
-                  <span>Executable</span>
-                  <input value={engineDraft.engine} readOnly />
-                </label>
-                <div className="engine-config-engine-id">
-                  <strong>{engineDraft.engineName}</strong>
-                  {engineDraft.engineAuthor && <span>{engineDraft.engineAuthor}</span>}
-                </div>
-              </div>
-
-              <div className="engine-config-options-header">
-                <div>
-                  <div className="engine-config-step-title">
-                    UCI Option Schema ({Object.keys(engineDraft.options).length})
-                  </div>
-                  <span>These values describe the engine. Profiles store the concrete values.</span>
-                </div>
-                <div className="engine-config-option-tools">
-                  <input
-                    type="search"
-                    value={optionFilter}
-                    onChange={(event) => setOptionFilter(event.target.value)}
-                    placeholder="Filter options"
-                  />
-                </div>
-              </div>
-
-              <div className="engine-config-options">
-                {visibleEngineOptions.map(([name, option]) => (
-                  <div className="engine-config-option engine-config-option-readonly" key={name}>
-                    <div className="engine-config-option-label">
-                      <strong>{name}</strong>
-                      <div className="engine-config-option-meta">
-                        <span className="engine-config-option-type">{option.type}</span>
-                        {optionHint(option) && <span>{optionHint(option)}</span>}
-                      </div>
-                    </div>
-                    <span className="engine-config-option-default">
-                      {option.type === "button" ? "action" : option.defaultValue === "" ? "<empty>" : option.defaultValue ?? "–"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="engine-config-actions">
-                <button type="button" onClick={() => void saveEngine()} disabled={busy || !engineDraft.name.trim()}>
-                  {busy ? "Saving…" : engineDraft.id ? "Save Engine" : "Create Engine"}
-                </button>
-                {engineDraft.id && (
-                  <button
-                    type="button"
-                    className="engine-config-delete"
-                    onClick={() => void deleteSelectedEngine()}
-                    disabled={busy}
-                  >
-                    Delete Engine
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {mode === "PROFILES" && (
-        <>
-          <div className="engine-config-manager-header engine-config-section-header">
-            <div>
-              <strong>Engine Profiles</strong>
-              <span className="engine-config-subtitle">Engine + context-specific settings</span>
-            </div>
-            <button type="button" onClick={beginCreateProfile} disabled={busy}>New Profile</button>
-          </div>
-
-          {profiles.length > 0 && !creatingProfile && (
-            <div className="engine-config-toolbar">
-              <label>
-                <span>Profile</span>
-                <select
-                  value={selectedProfileId ?? ""}
-                  onChange={(event) => selectExistingProfile(event.target.value)}
-                  disabled={busy}
-                >
-                  {profiles.map((profile) => (
-                    <option key={profile.id ?? profile.name} value={profile.id ?? ""}>
-                      {profile.name} · {purposeLabel(profile.type)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {selectedProfileId === overview?.evaluationConfigId && (
-                <span className="engine-config-active-badge">Active evaluation</span>
+            <div className="engine-config-nav-list">
+              {mode === "ENGINES" && engines.length === 0 && (
+                <div className="engine-config-empty">Noch keine Engine definiert.</div>
               )}
-            </div>
-          )}
-
-          {creatingProfile && !profileDraft && (
-            <div className="engine-config-inspect-step">
-              <div className="engine-config-step-title">1. Select a defined engine</div>
-              {engines.length === 0 ? (
-                <div className="engine-config-empty">
-                  No engine is defined yet. Create an engine under Engines first.
-                </div>
-              ) : (
-                <>
-                  <label>
-                    <span>Engine</span>
-                    <select
-                      value={newProfileEngineId}
-                      onChange={(event) => setNewProfileEngineId(event.target.value)}
-                      disabled={busy}
-                    >
-                      <option value="">Select engine…</option>
-                      {engines.map((engine) => (
-                        <option key={engine.id ?? engine.name} value={engine.id ?? ""}>
-                          {engine.name} · {engine.engineName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={chooseEngineForProfile}
-                    disabled={busy || !newProfileEngineId}
-                  >
-                    Continue
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-
-          {profileDraft && profileEngine && (
-            <div className="engine-config-editor">
-              <div className="engine-config-step-title">
-                {profileDraft.id ? "Profile settings" : "2. Configure profile"}
-              </div>
-              <div className="engine-config-identity">
-                <label>
-                  <span>Profile name</span>
-                  <input
-                    value={profileDraft.name}
-                    onChange={(event) => setProfileDraft({ ...profileDraft, name: event.target.value })}
-                  />
-                </label>
-                <label>
-                  <span>Engine</span>
-                  <input value={profileEngine.name} readOnly />
-                </label>
-                <label>
-                  <span>Purpose</span>
-                  <select
-                    value={profileDraft.type}
-                    disabled={busy || profileDraft.id !== null}
-                    onChange={(event) => {
-                      const type = event.target.value as EngineConfigType;
-                      setProfileDraft({
-                        ...profileDraft,
-                        type,
-                        moveTimeSeconds: type === "DEEP_ANALYSIS"
-                          ? Math.max(1, profileDraft.moveTimeSeconds || 5)
-                          : profileDraft.moveTimeSeconds,
-                      });
-                    }}
-                  >
-                    <option value="PLAYER">Player</option>
-                    <option value="EVALUATION">Evaluation</option>
-                    <option value="DEEP_ANALYSIS">Deep Analysis</option>
-                  </select>
-                </label>
-                <div className="engine-config-engine-id">
-                  <strong>{profileEngine.engineName}</strong>
-                  {profileEngine.engineAuthor && <span>{profileEngine.engineAuthor}</span>}
-                  <span className="engine-config-type-badge">{purposeLabel(profileDraft.type)}</span>
-                </div>
-              </div>
-
-              <div className="engine-config-search-settings">
-                <div className="engine-config-step-title">Search</div>
-                <label>
-                  <span>Depth (0 = time/clock)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={profileDraft.depth}
-                    onChange={(event) => setProfileDraft({
-                      ...profileDraft,
-                      depth: Math.max(0, Number(event.target.value)),
-                    })}
-                  />
-                </label>
-                <label>
-                  <span>
-                    {profileDraft.type === "DEEP_ANALYSIS"
-                      ? "Move time s (when Depth = 0)"
-                      : "Move time s (0 = player clock)"}
-                  </span>
-                  <input
-                    type="number"
-                    min={profileDraft.type === "DEEP_ANALYSIS" ? 1 : 0}
-                    value={profileDraft.moveTimeSeconds}
-                    onChange={(event) => setProfileDraft({
-                      ...profileDraft,
-                      moveTimeSeconds: Math.max(
-                        profileDraft.type === "DEEP_ANALYSIS" ? 1 : 0,
-                        Number(event.target.value)
-                      ),
-                    })}
-                  />
-                </label>
-              </div>
-
-              <div className="engine-config-options-header">
-                <div>
-                  <div className="engine-config-step-title">
-                    Profile UCI Options ({Object.keys(profileDraft.optionValues).length})
-                  </div>
-                  <span>The option schema comes from {profileEngine.name}; this profile stores only its values.</span>
-                </div>
-                <div className="engine-config-option-tools">
-                  <input
-                    type="search"
-                    value={optionFilter}
-                    onChange={(event) => setOptionFilter(event.target.value)}
-                    placeholder="Filter options"
-                  />
-                  <button type="button" onClick={resetProfileOptionsToDefaults} disabled={busy}>
-                    Reset defaults
-                  </button>
-                </div>
-              </div>
-
-              <div className="engine-config-options">
-                {visibleProfileOptions.map(([name, option]) => renderProfileOption(name, option))}
-                {visibleProfileOptions.length === 0 && (
-                  <div className="engine-config-no-options">No matching UCI options.</div>
-                )}
-              </div>
-
-              <div className="engine-config-actions">
-                {profileDraft.type === "EVALUATION" && profileDraft.id && !isActiveEvaluation && (
-                  <button type="button" onClick={() => void useForEvaluation()} disabled={busy}>
-                    Use for Evaluation
-                  </button>
-                )}
-                {isActiveEvaluation && (
-                  <span className="engine-config-active-badge">Active evaluation</span>
-                )}
+              {mode === "ENGINES" && engines.map((engine) => (
                 <button
                   type="button"
-                  onClick={() => void saveProfile()}
-                  disabled={busy || !profileDraft.name.trim()}
+                  key={engine.id ?? engine.name}
+                  className={`engine-config-nav-item${
+                    !creatingEngine && selectedEngineId === engine.id
+                      ? " engine-config-nav-item-selected"
+                      : ""
+                  }`}
+                  onClick={() => engine.id && selectExistingEngine(engine.id)}
+                  disabled={busy || !engine.id}
                 >
-                  {busy ? "Saving…" : profileDraft.id ? "Save Profile" : "Create Profile"}
+                  <span className="engine-config-nav-title">{engine.name}</span>
+                  <span className="engine-config-nav-meta">
+                    {engine.engineName || "UCI Engine"}
+                    {engine.engineAuthor ? ` · ${engine.engineAuthor}` : ""}
+                  </span>
+                  <span className="engine-config-nav-path">{engine.engine}</span>
                 </button>
-                {profileDraft.id && (
+              ))}
+
+              {mode === "PROFILES" && profiles.length === 0 && (
+                <div className="engine-config-empty">Noch kein Profil definiert.</div>
+              )}
+              {mode === "PROFILES" && profiles.map((profile) => {
+                const engine = engines.find((candidate) => candidate.id === profile.engineId);
+                const isEvaluation = profile.id === overview?.evaluationConfigId;
+                return (
                   <button
                     type="button"
-                    className="engine-config-delete"
-                    onClick={() => void deleteSelectedProfile()}
-                    disabled={busy}
+                    key={profile.id ?? profile.name}
+                    className={`engine-config-nav-item${
+                      !creatingProfile && selectedProfileId === profile.id
+                        ? " engine-config-nav-item-selected"
+                        : ""
+                    }`}
+                    onClick={() => profile.id && selectExistingProfile(profile.id)}
+                    disabled={busy || !profile.id}
                   >
-                    Delete Profile
+                    <span className="engine-config-nav-title-row">
+                      <span className="engine-config-nav-title">{profile.name}</span>
+                      {isEvaluation && <span className="engine-config-nav-active-dot" title="Active evaluation" />}
+                    </span>
+                    <span className="engine-config-nav-meta">
+                      {purposeLabel(profile.type)} · {engine?.name ?? "Unknown engine"}
+                    </span>
+                    <span className="engine-config-nav-path">
+                      depth {profile.depth} · move time {profile.moveTimeSeconds}s
+                    </span>
                   </button>
-                )}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </>
-      )}
+          </aside>
 
-      {message && <div className="engine-config-message">{message}</div>}
-      {error && <div className="engine-error">{error}</div>}
+          <main className="engine-config-details">
+            {mode === "ENGINES" && (
+              <>
+                {creatingEngine && !engineDraft && (
+                  <div className="engine-config-create-card">
+                    <div className="engine-config-details-heading">
+                      <div>
+                        <strong>Neue Engine definieren</strong>
+                        <span>Schritt 1 · Executable auswählen und UCI-Definition einlesen</span>
+                      </div>
+                    </div>
+                    <div className="engine-config-form-grid engine-config-form-grid-wide">
+                      <label>
+                        <span>Engine name</span>
+                        <input
+                          value={newEngineName}
+                          onChange={(event) => setNewEngineName(event.target.value)}
+                          placeholder="e.g. Stockfish 18"
+                        />
+                      </label>
+                      <label>
+                        <span>Engine path</span>
+                        <input
+                          value={newEnginePath}
+                          onChange={(event) => setNewEnginePath(event.target.value)}
+                          placeholder="/usr/games/stockfish18 or /opt/lc0/lc0"
+                        />
+                      </label>
+                    </div>
+                    <div className="engine-config-actions">
+                      <button type="button" onClick={() => void inspectEngine()} disabled={busy}>
+                        {busy ? "Inspecting…" : "Inspect Engine (uci)"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!creatingEngine && !engineDraft && (
+                  <div className="engine-config-details-empty">
+                    <strong>Keine Engine ausgewählt</strong>
+                    <span>Wähle links eine Engine oder lege eine neue Definition an.</span>
+                  </div>
+                )}
+
+                {engineDraft && (
+                  <div className="engine-config-editor">
+                    <div className="engine-config-details-heading">
+                      <div>
+                        <strong>{engineDraft.id ? engineDraft.name : "Engine definition prüfen"}</strong>
+                        <span>
+                          {engineDraft.id
+                            ? "UCI-Metadaten und erkannte Optionsdefinition"
+                            : "Schritt 2 · Erkannte Engine prüfen und speichern"}
+                        </span>
+                      </div>
+                      <span className="engine-config-chip">
+                        {Object.keys(engineDraft.options).length} UCI options
+                      </span>
+                    </div>
+
+                    <div className="engine-config-form-grid">
+                      <label>
+                        <span>Engine name</span>
+                        <input
+                          value={engineDraft.name}
+                          onChange={(event) => setEngineDraft({ ...engineDraft, name: event.target.value })}
+                        />
+                      </label>
+                      <label>
+                        <span>Executable</span>
+                        <input value={engineDraft.engine} readOnly />
+                      </label>
+                    </div>
+
+                    <div className="engine-config-engine-summary">
+                      <div>
+                        <span>UCI name</span>
+                        <strong>{engineDraft.engineName || "–"}</strong>
+                      </div>
+                      <div>
+                        <span>Author</span>
+                        <strong>{engineDraft.engineAuthor || "–"}</strong>
+                      </div>
+                      <div>
+                        <span>Options</span>
+                        <strong>{Object.keys(engineDraft.options).length}</strong>
+                      </div>
+                    </div>
+
+                    <div className="engine-config-options-header">
+                      <div>
+                        <strong>UCI Option Schema</strong>
+                        <span>Diese Werte beschreiben die Engine; Profile speichern die konkreten Werte.</span>
+                      </div>
+                      <div className="engine-config-option-tools">
+                        <input
+                          type="search"
+                          value={optionFilter}
+                          onChange={(event) => setOptionFilter(event.target.value)}
+                          placeholder="Filter options"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="engine-config-options">
+                      {visibleEngineOptions.map(([name, option]) => (
+                        <div className="engine-config-option engine-config-option-readonly" key={name}>
+                          <div className="engine-config-option-label">
+                            <strong>{name}</strong>
+                            <div className="engine-config-option-meta">
+                              <span className="engine-config-option-type">{option.type}</span>
+                              {optionHint(option) && <span>{optionHint(option)}</span>}
+                            </div>
+                          </div>
+                          <span className="engine-config-option-default">
+                            {option.type === "button"
+                              ? "action"
+                              : option.defaultValue === ""
+                                ? "<empty>"
+                                : option.defaultValue ?? "–"}
+                          </span>
+                        </div>
+                      ))}
+                      {visibleEngineOptions.length === 0 && (
+                        <div className="engine-config-no-options">No matching UCI options.</div>
+                      )}
+                    </div>
+
+                    <div className="engine-config-actions engine-config-actions-footer">
+                      {engineDraft.id && (
+                        <button
+                          type="button"
+                          className="engine-config-delete"
+                          onClick={() => void deleteSelectedEngine()}
+                          disabled={busy}
+                        >
+                          Delete Engine
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void saveEngine()}
+                        disabled={busy || !engineDraft.name.trim()}
+                      >
+                        {busy ? "Saving…" : engineDraft.id ? "Save Engine" : "Create Engine"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {mode === "PROFILES" && (
+              <>
+                {creatingProfile && !profileDraft && (
+                  <div className="engine-config-create-card">
+                    <div className="engine-config-details-heading">
+                      <div>
+                        <strong>Neues Profil erstellen</strong>
+                        <span>Schritt 1 · Eine bereits definierte Engine auswählen</span>
+                      </div>
+                    </div>
+                    {engines.length === 0 ? (
+                      <div className="engine-config-empty">
+                        No engine is defined yet. Create an engine under Engines first.
+                      </div>
+                    ) : (
+                      <>
+                        <div className="engine-config-form-grid engine-config-form-grid-wide">
+                          <label>
+                            <span>Engine</span>
+                            <select
+                              value={newProfileEngineId}
+                              onChange={(event) => setNewProfileEngineId(event.target.value)}
+                              disabled={busy}
+                            >
+                              <option value="">Select engine…</option>
+                              {engines.map((engine) => (
+                                <option key={engine.id ?? engine.name} value={engine.id ?? ""}>
+                                  {engine.name} · {engine.engineName}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+                        <div className="engine-config-actions">
+                          <button
+                            type="button"
+                            onClick={chooseEngineForProfile}
+                            disabled={busy || !newProfileEngineId}
+                          >
+                            Continue
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {!creatingProfile && !profileDraft && (
+                  <div className="engine-config-details-empty">
+                    <strong>Kein Profil ausgewählt</strong>
+                    <span>Wähle links ein Profil oder lege ein neues an.</span>
+                  </div>
+                )}
+
+                {profileDraft && profileEngine && (
+                  <div className="engine-config-editor">
+                    <div className="engine-config-details-heading">
+                      <div>
+                        <strong>{profileDraft.id ? profileDraft.name : "Profil konfigurieren"}</strong>
+                        <span>
+                          {profileDraft.id
+                            ? `${profileEngine.name} · ${purposeLabel(profileDraft.type)}`
+                            : `Schritt 2 · Werte für ${profileEngine.name} festlegen`}
+                        </span>
+                      </div>
+                      <div className="engine-config-heading-badges">
+                        <span className="engine-config-chip">{purposeLabel(profileDraft.type)}</span>
+                        {isActiveEvaluation && (
+                          <span className="engine-config-chip engine-config-chip-active">Active evaluation</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="engine-config-form-grid engine-config-profile-grid">
+                      <label>
+                        <span>Profile name</span>
+                        <input
+                          value={profileDraft.name}
+                          onChange={(event) => setProfileDraft({ ...profileDraft, name: event.target.value })}
+                        />
+                      </label>
+                      <label>
+                        <span>Engine</span>
+                        <input value={profileEngine.name} readOnly />
+                      </label>
+                      <label>
+                        <span>Purpose</span>
+                        <select
+                          value={profileDraft.type}
+                          disabled={busy || profileDraft.id !== null}
+                          onChange={(event) => {
+                            const type = event.target.value as EngineConfigType;
+                            setProfileDraft({
+                              ...profileDraft,
+                              type,
+                              moveTimeSeconds: type === "DEEP_ANALYSIS"
+                                ? Math.max(1, profileDraft.moveTimeSeconds || 5)
+                                : profileDraft.moveTimeSeconds,
+                            });
+                          }}
+                        >
+                          <option value="PLAYER">Player</option>
+                          <option value="EVALUATION">Evaluation</option>
+                          <option value="DEEP_ANALYSIS">Deep Analysis</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="engine-config-search-card">
+                      <div className="engine-config-card-title">
+                        <strong>Search</strong>
+                        <span>Suchgrenzen dieses Profils</span>
+                      </div>
+                      <div className="engine-config-form-grid">
+                        <label>
+                          <span>Depth (0 = time/clock)</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={profileDraft.depth}
+                            onChange={(event) => setProfileDraft({
+                              ...profileDraft,
+                              depth: Math.max(0, Number(event.target.value)),
+                            })}
+                          />
+                        </label>
+                        <label>
+                          <span>
+                            {profileDraft.type === "DEEP_ANALYSIS"
+                              ? "Move time s (when Depth = 0)"
+                              : "Move time s (0 = player clock)"}
+                          </span>
+                          <input
+                            type="number"
+                            min={profileDraft.type === "DEEP_ANALYSIS" ? 1 : 0}
+                            value={profileDraft.moveTimeSeconds}
+                            onChange={(event) => setProfileDraft({
+                              ...profileDraft,
+                              moveTimeSeconds: Math.max(
+                                profileDraft.type === "DEEP_ANALYSIS" ? 1 : 0,
+                                Number(event.target.value)
+                              ),
+                            })}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="engine-config-options-header">
+                      <div>
+                        <strong>Profile UCI Options ({Object.keys(profileDraft.optionValues).length})</strong>
+                        <span>Schema von {profileEngine.name}; dieses Profil speichert nur seine Werte.</span>
+                      </div>
+                      <div className="engine-config-option-tools">
+                        <input
+                          type="search"
+                          value={optionFilter}
+                          onChange={(event) => setOptionFilter(event.target.value)}
+                          placeholder="Filter options"
+                        />
+                        <button type="button" onClick={resetProfileOptionsToDefaults} disabled={busy}>
+                          Reset defaults
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="engine-config-options">
+                      {visibleProfileOptions.map(([name, option]) => renderProfileOption(name, option))}
+                      {visibleProfileOptions.length === 0 && (
+                        <div className="engine-config-no-options">No matching UCI options.</div>
+                      )}
+                    </div>
+
+                    <div className="engine-config-actions engine-config-actions-footer">
+                      {profileDraft.id && (
+                        <button
+                          type="button"
+                          className="engine-config-delete"
+                          onClick={() => void deleteSelectedProfile()}
+                          disabled={busy}
+                        >
+                          Delete Profile
+                        </button>
+                      )}
+                      <div className="engine-config-actions-spacer" />
+                      {profileDraft.type === "EVALUATION" && profileDraft.id && !isActiveEvaluation && (
+                        <button type="button" onClick={() => void useForEvaluation()} disabled={busy}>
+                          Use for Evaluation
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void saveProfile()}
+                        disabled={busy || !profileDraft.name.trim()}
+                      >
+                        {busy ? "Saving…" : profileDraft.id ? "Save Profile" : "Create Profile"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </main>
+        </div>
+      </section>
     </div>
   );
 }

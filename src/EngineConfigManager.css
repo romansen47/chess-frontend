@@ -1,137 +1,504 @@
-.engine-config-manager {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 14px;
-  border: 1px solid rgba(127, 127, 127, 0.35);
-  border-radius: 10px;
-  background: rgba(127, 127, 127, 0.06);
-}
-
-.engine-config-manager-header,
-.engine-config-toolbar,
-.engine-config-actions,
-.engine-config-engine-id,
-.engine-config-options-header {
+.engine-config-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 255;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+  box-sizing: border-box;
 }
 
-.engine-config-manager-header {
+.engine-config-dialog {
+  width: min(1180px, 96vw);
+  height: min(780px, 92vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #4b4b4b;
+  border-radius: 10px;
+  background: #202020;
+  color: #f2f2f2;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.engine-config-dialog-header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #3a3a3a;
 }
 
-.engine-config-header-actions {
+.engine-config-dialog-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.engine-config-dialog-subtitle {
+  margin-top: 3px;
+  color: #a9a9a9;
+  font-size: 0.72rem;
+}
+
+.engine-config-header-actions,
+.engine-config-actions,
+.engine-config-option-tools,
+.engine-config-heading-badges {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+.engine-config-dialog button,
+.engine-config-dialog input,
+.engine-config-dialog select {
+  font: inherit;
+}
+
+.engine-config-dialog button {
+  border: 1px solid #5b5b5b;
+  border-radius: 5px;
+  padding: 6px 10px;
+  background: #333;
+  color: #f5f5f5;
+  cursor: pointer;
+}
+
+.engine-config-dialog button:hover:not(:disabled) {
+  background: #404040;
+}
+
+.engine-config-dialog button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .engine-config-reset {
-  opacity: 0.85;
+  border-color: #665f43 !important;
+  color: #efe2ad !important;
 }
 
-.engine-config-manager-header > div,
-.engine-config-engine-id,
-.engine-config-options-header {
-  flex-wrap: wrap;
+.engine-config-reset:hover:not(:disabled) {
+  background: #4a4531 !important;
 }
 
-.engine-config-version {
-  margin-left: 10px;
-  opacity: 0.65;
+.engine-config-error-banner,
+.engine-config-message-banner {
+  padding: 8px 16px;
+  border-bottom: 1px solid;
+  font-size: 0.78rem;
+}
+
+.engine-config-error-banner {
+  border-color: #6a3434;
+  background: #4b2525;
+  color: #ffd2d2;
+}
+
+.engine-config-message-banner {
+  border-color: #46543a;
+  background: #2d3928;
+  color: #d9ebcf;
+}
+
+.engine-config-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 8px 0;
+  border-bottom: 1px solid #3a3a3a;
+  background: #1b1b1b;
+}
+
+.engine-config-tabs button {
+  min-width: 140px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: -1px;
+  padding: 8px 12px;
+  border-radius: 6px 6px 0 0;
+  border-color: transparent;
+  border-bottom-color: #3a3a3a;
+  background: transparent;
+  color: #a9a9a9;
+}
+
+.engine-config-tabs button:hover:not(:disabled) {
+  background: #252525;
+  color: #e5e5e5;
+}
+
+.engine-config-tabs button.active {
+  border-color: #4b4b4b;
+  border-bottom-color: #202020;
+  background: #202020;
+  color: #f2f2f2;
+  font-weight: 600;
+}
+
+.engine-config-tab-count {
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #383838;
+  color: #bcbcbc;
+  font-size: 0.66rem;
+  line-height: 1.35;
+}
+
+.engine-config-body {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+}
+
+.engine-config-sidebar {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #3a3a3a;
+  background: #191919;
+}
+
+.engine-config-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 8px 8px;
+  border-bottom: 1px solid #303030;
+}
+
+.engine-config-sidebar-header > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.engine-config-sidebar-header strong {
+  font-size: 0.8rem;
+}
+
+.engine-config-sidebar-header span {
+  color: #8f8f8f;
+  font-size: 0.68rem;
+}
+
+.engine-config-sidebar-header button {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  font-size: 0.72rem;
+}
+
+.engine-config-nav-list {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+}
+
+.engine-config-nav-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding: 9px !important;
+  text-align: left;
+  border: 1px solid #363636 !important;
+  border-radius: 6px !important;
+  background: #242424 !important;
+  color: #f2f2f2 !important;
+}
+
+.engine-config-nav-item:hover:not(:disabled),
+.engine-config-nav-item-selected {
+  border-color: #686868 !important;
+  background: #303030 !important;
+}
+
+.engine-config-nav-item-selected {
+  box-shadow: inset 3px 0 0 #a99b60;
+}
+
+.engine-config-nav-title-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.engine-config-nav-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
   font-size: 0.82rem;
 }
 
-.engine-config-toolbar {
-  align-items: flex-end;
-  flex-wrap: wrap;
+.engine-config-nav-meta,
+.engine-config-nav-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b7b7b7;
+  font-size: 0.7rem;
 }
 
-.engine-config-toolbar label,
-.engine-config-inspect-step label,
-.engine-config-identity label,
-.engine-config-search-settings label {
+.engine-config-nav-path {
+  color: #8f8f8f;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.engine-config-nav-active-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #62d36b;
+  box-shadow: 0 0 6px rgba(98, 211, 107, 0.6);
+}
+
+.engine-config-details {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+}
+
+.engine-config-editor,
+.engine-config-create-card {
+  min-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  min-width: 220px;
-  flex: 1;
+  gap: 14px;
 }
 
-.engine-config-toolbar label > span,
-.engine-config-inspect-step label > span,
-.engine-config-identity label > span,
-.engine-config-search-settings label > span {
-  font-size: 0.78rem;
-  opacity: 0.72;
+.engine-config-create-card {
+  min-height: 0;
 }
 
-.engine-config-toolbar select,
-.engine-config-inspect-step input,
-.engine-config-identity input,
-.engine-config-search-settings input,
-.engine-config-option input,
-.engine-config-option select {
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.engine-config-inspect-step,
-.engine-config-identity,
-.engine-config-search-settings {
+.engine-config-details-heading {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.engine-config-step-title {
-  width: 100%;
-  font-weight: 700;
+.engine-config-details-heading > div:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.engine-config-details-heading strong {
   font-size: 0.9rem;
 }
 
-.engine-config-engine-id {
-  width: 100%;
-  font-size: 0.8rem;
-  opacity: 0.8;
+.engine-config-details-heading span,
+.engine-config-card-title span,
+.engine-config-options-header > div:first-child > span {
+  color: #999;
+  font-size: 0.7rem;
 }
 
-.engine-config-engine-id span::before {
-  content: "·";
-  margin-right: 12px;
+.engine-config-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid #4a4a4a;
+  border-radius: 999px;
+  background: #292929;
+  color: #bdbdbd !important;
+  font-size: 0.68rem !important;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.engine-config-chip-active {
+  border-color: #426b46;
+  background: #243428;
+  color: #9ce2a4 !important;
+}
+
+.engine-config-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.engine-config-form-grid-wide {
+  grid-template-columns: minmax(180px, 0.8fr) minmax(280px, 1.7fr);
+}
+
+.engine-config-profile-grid {
+  grid-template-columns: minmax(180px, 1.1fr) minmax(180px, 1fr) minmax(150px, 0.7fr);
+}
+
+.engine-config-form-grid label,
+.engine-config-option-tools,
+.engine-config-search-card label {
+  min-width: 0;
+}
+
+.engine-config-form-grid label,
+.engine-config-search-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.engine-config-form-grid label > span,
+.engine-config-search-card label > span {
+  color: #999;
+  font-size: 0.68rem;
+}
+
+.engine-config-dialog input,
+.engine-config-dialog select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 5px 7px;
+  border: 1px solid #4a4a4a;
+  border-radius: 4px;
+  outline: none;
+  background: #171717;
+  color: #e5e5e5;
+  font-size: 0.75rem;
+}
+
+.engine-config-dialog input:focus,
+.engine-config-dialog select:focus {
+  border-color: #777;
+  box-shadow: 0 0 0 1px #777;
+}
+
+.engine-config-dialog input[readonly] {
+  color: #aaa;
+  background: #1d1d1d;
+}
+
+.engine-config-engine-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.engine-config-engine-summary > div {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid #383838;
+  border-radius: 5px;
+  background: #252525;
+}
+
+.engine-config-engine-summary span {
+  display: block;
+  margin-bottom: 3px;
+  color: #999;
+  font-size: 0.66rem;
+}
+
+.engine-config-engine-summary strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+
+.engine-config-search-card {
+  padding: 10px;
+  border: 1px solid #383838;
+  border-radius: 6px;
+  background: #252525;
+}
+
+.engine-config-card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.engine-config-card-title strong {
+  font-size: 0.8rem;
 }
 
 .engine-config-options-header {
+  display: flex;
+  align-items: flex-end;
   justify-content: space-between;
-  align-items: baseline;
+  gap: 12px;
+  padding-top: 2px;
 }
 
-.engine-config-options-header > span {
-  font-size: 0.78rem;
-  opacity: 0.7;
+.engine-config-options-header > div:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.engine-config-options-header strong {
+  font-size: 0.82rem;
+}
+
+.engine-config-option-tools {
+  flex: 0 0 auto;
+}
+
+.engine-config-option-tools input {
+  width: 190px;
+}
+
+.engine-config-option-tools button {
+  white-space: nowrap;
 }
 
 .engine-config-options {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-  gap: 8px;
-  max-height: 480px;
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+  gap: 7px;
+  min-height: 0;
+  max-height: 390px;
   overflow: auto;
-  padding-right: 4px;
+  padding: 1px 4px 1px 0;
 }
 
 .engine-config-option {
-  min-height: 58px;
+  min-width: 0;
+  min-height: 56px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(76px, 112px);
+  grid-template-columns: minmax(0, 1fr) minmax(72px, 108px);
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid rgba(127, 127, 127, 0.25);
-  border-radius: 7px;
+  padding: 8px 9px;
+  border: 1px solid #383838;
+  border-radius: 5px;
+  background: #252525;
+  box-sizing: border-box;
+}
+
+.engine-config-option:hover {
+  border-color: #4b4b4b;
+  background: #292929;
 }
 
 .engine-config-option-label {
@@ -143,17 +510,19 @@
 
 .engine-config-option-label strong {
   overflow-wrap: anywhere;
+  font-size: 0.76rem;
 }
 
 .engine-config-option-meta {
   display: flex;
-  gap: 7px;
+  gap: 6px;
   flex-wrap: wrap;
-  font-size: 0.7rem;
-  opacity: 0.68;
+  color: #8f8f8f;
+  font-size: 0.64rem;
 }
 
 .engine-config-option-type {
+  color: #b0b0b0;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -163,78 +532,139 @@
 .engine-config-option select,
 .engine-config-option > button {
   width: 100%;
-  max-width: 112px;
+  max-width: 108px;
   justify-self: end;
-}
-
-.engine-config-option input[type="number"] {
-  max-width: 96px;
 }
 
 .engine-config-option input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   justify-self: end;
+  accent-color: #777;
+}
+
+.engine-config-option-readonly {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.engine-config-option-default {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #bdbdbd;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.68rem;
+}
+
+.engine-config-no-options {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border: 1px dashed #3b3b3b;
+  border-radius: 6px;
+  color: #888;
+  text-align: center;
+  font-size: 0.76rem;
 }
 
 .engine-config-actions {
   justify-content: flex-end;
 }
 
-.engine-config-delete {
-  opacity: 0.85;
+.engine-config-actions-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #343434;
 }
 
-.engine-config-message {
+.engine-config-actions-spacer {
+  flex: 1;
+}
+
+.engine-config-delete {
+  border-color: #824848 !important;
+  background: #5a2d2d !important;
+}
+
+.engine-config-delete:hover:not(:disabled) {
+  background: #713838 !important;
+}
+
+.engine-config-details-empty,
+.engine-config-empty {
+  color: #888;
+  font-size: 0.76rem;
+}
+
+.engine-config-details-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.engine-config-details-empty strong {
+  color: #aaa;
   font-size: 0.82rem;
-  opacity: 0.85;
+}
+
+.engine-config-empty {
+  padding: 12px;
 }
 
 @media (max-width: 900px) {
-  .engine-config-option {
+  .engine-config-body {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .engine-config-profile-grid,
+  .engine-config-form-grid,
+  .engine-config-form-grid-wide {
     grid-template-columns: 1fr;
   }
 
-  .engine-config-option input[type="number"],
-  .engine-config-option input[type="text"],
-  .engine-config-option select,
-  .engine-config-option > button {
-    width: 100%;
-    max-width: none;
-    justify-self: stretch;
+  .engine-config-engine-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .engine-config-option input[type="checkbox"] {
-    justify-self: start;
-  }
-}
-
-.engine-config-options-header > div:first-child {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.engine-config-option-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
-
-.engine-config-option-tools input {
-  min-width: 190px;
-}
-
-.engine-config-no-options {
-  grid-column: 1 / -1;
-  padding: 18px;
-  text-align: center;
-  opacity: 0.65;
-  font-size: 0.82rem;
 }
 
 @media (max-width: 700px) {
+  .engine-config-backdrop {
+    padding: 10px;
+  }
+
+  .engine-config-dialog {
+    width: 100%;
+    height: 96vh;
+  }
+
+  .engine-config-dialog-header {
+    align-items: flex-start;
+  }
+
+  .engine-config-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .engine-config-tabs button {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .engine-config-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(160px, 32vh) minmax(0, 1fr);
+  }
+
+  .engine-config-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #3a3a3a;
+  }
+
   .engine-config-options-header,
   .engine-config-option-tools {
     align-items: stretch;
@@ -243,88 +673,25 @@
 
   .engine-config-option-tools {
     width: 100%;
-    margin-left: 0;
   }
-}
 
-.engine-config-type-tabs {
-  display: flex;
-  gap: 8px;
-  border-bottom: 1px solid rgba(127, 127, 127, 0.25);
-  padding-bottom: 8px;
-}
+  .engine-config-option-tools input {
+    width: 100%;
+  }
 
-.engine-config-type-tabs button {
-  min-width: 150px;
-  opacity: 0.72;
-}
+  .engine-config-option {
+    grid-template-columns: 1fr;
+  }
 
-.engine-config-type-tabs button.active {
-  opacity: 1;
-  font-weight: 700;
-  border-color: rgba(220, 190, 90, 0.8);
-}
+  .engine-config-option input[type="number"],
+  .engine-config-option input[type="text"],
+  .engine-config-option select,
+  .engine-config-option > button {
+    max-width: none;
+    justify-self: stretch;
+  }
 
-.engine-config-active-badge,
-.engine-config-type-badge {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  padding: 3px 7px;
-  border: 1px solid rgba(127, 127, 127, 0.4);
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.engine-config-type-badge::before {
-  content: "·";
-  margin-right: 7px;
-  opacity: 0.7;
-}
-
-.engine-config-purpose,
-.engine-config-empty {
-  width: 100%;
-  font-size: 0.82rem;
-  opacity: 0.8;
-}
-
-.engine-config-empty {
-  padding: 10px 2px;
-}
-
-.engine-config-section-header {
-  padding-top: 2px;
-}
-
-.engine-config-section-header > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.engine-config-subtitle {
-  font-size: 0.76rem;
-  opacity: 0.68;
-}
-
-.engine-config-identity select,
-.engine-config-inspect-step select {
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.engine-config-option-readonly {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.engine-config-option-default {
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.76rem;
-  opacity: 0.76;
+  .engine-config-option input[type="checkbox"] {
+    justify-self: start;
+  }
 }
