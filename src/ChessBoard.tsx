@@ -682,7 +682,7 @@ function formatGameState(
 
 function createDefaultGameSettings(): GameSettings {
   return {
-    timeForEachPlayerSeconds: 45 * 60,
+    timeForEachPlayerSeconds: 5 * 60,
     incrementForWhiteSeconds: 0,
     incrementForBlackSeconds: 0,
     additionalTimeAfter40MovesSeconds: 0,
@@ -767,7 +767,7 @@ export const ChessBoard: React.FC = () => {
   const [gameEndState, setGameEndStateState] = useState<string | null>(null);
   const gameEndStateRef = useRef<string | null>(null);
   const [showGameSettingsDialog, setShowGameSettingsDialog] =
-    useState<boolean>(true);
+    useState<boolean>(false);
   const [gameSettings, setGameSettings] = useState<GameSettings>(() =>
     createDefaultGameSettings()
   );
@@ -809,7 +809,7 @@ export const ChessBoard: React.FC = () => {
   const soundCacheRef = useRef<Map<string, HTMLAudioElement>>(new Map());
 
   const deepAnalysisEngineConfigs = useMemo(
-    () => (engineConfigOverview?.configs ?? []).filter(
+    () => (engineConfigOverview?.profiles ?? []).filter(
       (config) => config.type === "DEEP_ANALYSIS"
     ),
     [engineConfigOverview]
@@ -1237,7 +1237,7 @@ export const ChessBoard: React.FC = () => {
       setEngineConfigOverview(data);
       setEngineConfigLoadError(null);
 
-      const deepAnalysisConfigs = data.configs.filter(
+      const deepAnalysisConfigs = data.profiles.filter(
         (config) => config.type === "DEEP_ANALYSIS"
       );
       setAnalysisSettings((prev) => {
@@ -1257,7 +1257,7 @@ export const ChessBoard: React.FC = () => {
       return data;
     } catch (e) {
       console.error("[loadEngineConfigs] error", e);
-      setEngineConfigLoadError("Engine configurations could not be loaded.");
+      setEngineConfigLoadError("Engine settings could not be loaded.");
       return null;
     }
   }
@@ -1265,7 +1265,7 @@ export const ChessBoard: React.FC = () => {
   function handleEngineConfigOverviewChange(data: EngineConfigOverview) {
     setEngineConfigOverview(data);
     setEngineConfigLoadError(null);
-    const deepAnalysisConfigs = data.configs.filter(
+    const deepAnalysisConfigs = data.profiles.filter(
       (config) => config.type === "DEEP_ANALYSIS"
     );
     setAnalysisSettings((prev) => {
@@ -1415,7 +1415,7 @@ export const ChessBoard: React.FC = () => {
   async function startAnalysisReplay() {
     try {
       if (!analysisSettings.engineConfigId) {
-        throw new Error("No deep analysis engine configuration is available.");
+        throw new Error("No deep analysis engine profile is available.");
       }
       setAnalysisReplayError(null);
       setAnalysisReplayStatus("Analyse wird vorbereitet…");
@@ -3205,9 +3205,9 @@ export const ChessBoard: React.FC = () => {
           <button
             className="top-engine-button engine-settings"
             onClick={() => setShowEngineConfig((prev) => !prev)}
-            title="Engine-Konfigurationen verwalten"
+            title="Engines und Profile verwalten"
           >
-            Engine Configs
+            Engine Settings
           </button>
 
           <button
@@ -3452,6 +3452,7 @@ export const ChessBoard: React.FC = () => {
                     <EngineConfigManager
                       overview={engineConfigOverview}
                       onOverviewChange={handleEngineConfigOverviewChange}
+                      onClose={() => setShowEngineConfig(false)}
                     />
                     {engineConfigLoadError && (
                       <div className="engine-error">{engineConfigLoadError}</div>
@@ -3601,7 +3602,7 @@ export const ChessBoard: React.FC = () => {
                   </label>
 
                   <label className="game-settings-field">
-                    <span>White engine config</span>
+                    <span>White engine profile</span>
                     <select
                       value={gameSettings.whiteEngineConfigId ?? ""}
                       onChange={(e) =>
@@ -3612,7 +3613,7 @@ export const ChessBoard: React.FC = () => {
                       }
                       disabled={!engineConfigOverview}
                     >
-                      {(engineConfigOverview?.configs ?? [])
+                      {(engineConfigOverview?.profiles ?? [])
                         .filter((config) => config.type === "PLAYER")
                         .map((config) => (
                           <option key={config.id ?? config.name} value={config.id ?? ""}>
@@ -3623,7 +3624,7 @@ export const ChessBoard: React.FC = () => {
                   </label>
 
                   <label className="game-settings-field">
-                    <span>Black engine config</span>
+                    <span>Black engine profile</span>
                     <select
                       value={gameSettings.blackEngineConfigId ?? ""}
                       onChange={(e) =>
@@ -3634,7 +3635,7 @@ export const ChessBoard: React.FC = () => {
                       }
                       disabled={!engineConfigOverview}
                     >
-                      {(engineConfigOverview?.configs ?? [])
+                      {(engineConfigOverview?.profiles ?? [])
                         .filter((config) => config.type === "PLAYER")
                         .map((config) => (
                           <option key={config.id ?? config.name} value={config.id ?? ""}>
@@ -3681,7 +3682,7 @@ export const ChessBoard: React.FC = () => {
 
                 <div className="analysis-settings-form">
                   <label className="analysis-settings-field analysis-settings-field-wide">
-                    <span>Deep analysis engine config</span>
+                    <span>Deep analysis engine profile</span>
                     <select
                       value={analysisSettings.engineConfigId ?? ""}
                       onChange={(e) =>
@@ -3718,7 +3719,7 @@ export const ChessBoard: React.FC = () => {
                     </div>
                   ) : (
                     <div className="analysis-settings-empty">
-                      No Deep Analysis configuration is available. Create one under Engine Configs first.
+                      No Deep Analysis profile is available. Create one under Engine Settings first.
                     </div>
                   )}
                 </div>

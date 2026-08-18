@@ -10,20 +10,28 @@ export interface UciOptionConfig {
   vars: string[];
 }
 
-export interface ManagedEngineConfig {
+export interface EngineDefinition {
   id: string | null;
   name: string;
-  type: EngineConfigType;
   engine: string;
   engineName: string;
   engineAuthor: string;
-  depth: number;
-  moveTimeSeconds: number;
   options: Record<string, UciOptionConfig>;
 }
 
+export interface EngineProfile {
+  id: string | null;
+  name: string;
+  type: EngineConfigType;
+  engineId: string;
+  depth: number;
+  moveTimeSeconds: number;
+  optionValues: Record<string, string>;
+}
+
 export interface EngineConfigOverview {
-  configs: ManagedEngineConfig[];
+  engines: EngineDefinition[];
+  profiles: EngineProfile[];
   evaluationConfigId: string;
   defaultPlayerConfigId: string;
   defaultDeepAnalysisConfigId: string;

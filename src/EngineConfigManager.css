@@ -22,6 +22,16 @@
   justify-content: space-between;
 }
 
+.engine-config-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.engine-config-reset {
+  opacity: 0.85;
+}
+
 .engine-config-manager-header > div,
 .engine-config-engine-id,
 .engine-config-options-header {
@@ -283,4 +293,38 @@
 
 .engine-config-empty {
   padding: 10px 2px;
+}
+
+.engine-config-section-header {
+  padding-top: 2px;
+}
+
+.engine-config-section-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.engine-config-subtitle {
+  font-size: 0.76rem;
+  opacity: 0.68;
+}
+
+.engine-config-identity select,
+.engine-config-inspect-step select {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.engine-config-option-readonly {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.engine-config-option-default {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+  opacity: 0.76;
 }
