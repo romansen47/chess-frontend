@@ -167,13 +167,13 @@ interface GameSettings {
   incrementForBlackSeconds: number;
   additionalTimeAfter40MovesSeconds: number;
   startingColor: string;
-  whiteEngineConfigId: string | null;
-  blackEngineConfigId: string | null;
   version: number;
 }
 
 interface AnalysisReplaySettings {
-  engineConfigId: string | null;
+  engineProfileId: string | null;
+  depth: number;
+  moveTimeSeconds: number;
 }
 
 interface AnalysisProfilePoint {
@@ -687,15 +687,15 @@ function createDefaultGameSettings(): GameSettings {
     incrementForBlackSeconds: 0,
     additionalTimeAfter40MovesSeconds: 0,
     startingColor: "WHITE",
-    whiteEngineConfigId: null,
-    blackEngineConfigId: null,
     version: 0,
   };
 }
 
 function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
   return {
-    engineConfigId: null,
+    engineProfileId: null,
+    depth: 0,
+    moveTimeSeconds: 5,
   };
 }
 
@@ -808,17 +808,21 @@ export const ChessBoard: React.FC = () => {
   const analysisReplayCancelledRef = useRef<boolean>(false);
   const soundCacheRef = useRef<Map<string, HTMLAudioElement>>(new Map());
 
-  const deepAnalysisEngineConfigs = useMemo(
-    () => (engineConfigOverview?.profiles ?? []).filter(
-      (config) => config.type === "DEEP_ANALYSIS"
-    ),
+  const analysisEngineProfiles = useMemo(
+    () => engineConfigOverview?.profiles ?? [],
     [engineConfigOverview]
   );
-  const selectedDeepAnalysisConfig = useMemo(
-    () => deepAnalysisEngineConfigs.find(
-      (config) => config.id === analysisSettings.engineConfigId
+  const selectedAnalysisProfile = useMemo(
+    () => analysisEngineProfiles.find(
+      (profile) => profile.id === analysisSettings.engineProfileId
     ) ?? null,
-    [deepAnalysisEngineConfigs, analysisSettings.engineConfigId]
+    [analysisEngineProfiles, analysisSettings.engineProfileId]
+  );
+  const selectedAnalysisEngine = useMemo(
+    () => (engineConfigOverview?.engines ?? []).find(
+      (engine) => engine.id === selectedAnalysisProfile?.engineId
+    ) ?? null,
+    [engineConfigOverview, selectedAnalysisProfile?.engineId]
   );
 
   const squareToPieceMap = useMemo(() => {
@@ -1237,21 +1241,19 @@ export const ChessBoard: React.FC = () => {
       setEngineConfigOverview(data);
       setEngineConfigLoadError(null);
 
-      const deepAnalysisConfigs = data.profiles.filter(
-        (config) => config.type === "DEEP_ANALYSIS"
-      );
       setAnalysisSettings((prev) => {
-        const currentStillExists = deepAnalysisConfigs.some(
-          (config) => config.id === prev.engineConfigId
+        const currentStillExists = data.profiles.some(
+          (profile) => profile.id === prev.engineProfileId
         );
         if (currentStillExists) {
           return prev;
         }
-        const preferred = deepAnalysisConfigs.find(
-          (config) => config.id === data.defaultDeepAnalysisConfigId
+        const preferred = data.profiles.find(
+          (profile) => profile.id === data.defaults.deepAnalysisProfileId
         );
         return {
-          engineConfigId: preferred?.id ?? deepAnalysisConfigs[0]?.id ?? null,
+          ...prev,
+          engineProfileId: preferred?.id ?? data.profiles[0]?.id ?? null,
         };
       });
       return data;
@@ -1265,18 +1267,16 @@ export const ChessBoard: React.FC = () => {
   function handleEngineConfigOverviewChange(data: EngineConfigOverview) {
     setEngineConfigOverview(data);
     setEngineConfigLoadError(null);
-    const deepAnalysisConfigs = data.profiles.filter(
-      (config) => config.type === "DEEP_ANALYSIS"
-    );
     setAnalysisSettings((prev) => {
-      if (deepAnalysisConfigs.some((config) => config.id === prev.engineConfigId)) {
+      if (data.profiles.some((profile) => profile.id === prev.engineProfileId)) {
         return prev;
       }
-      const preferred = deepAnalysisConfigs.find(
-        (config) => config.id === data.defaultDeepAnalysisConfigId
+      const preferred = data.profiles.find(
+        (profile) => profile.id === data.defaults.deepAnalysisProfileId
       );
       return {
-        engineConfigId: preferred?.id ?? deepAnalysisConfigs[0]?.id ?? null,
+        ...prev,
+        engineProfileId: preferred?.id ?? data.profiles[0]?.id ?? null,
       };
     });
     setEngineEval(null);
@@ -1339,6 +1339,12 @@ export const ChessBoard: React.FC = () => {
   function openAnalysisSettingsDialog() {
     setAnalysisReplayError(null);
     setAnalysisReplayStatus(null);
+    if (engineConfigOverview?.defaults.deepAnalysisProfileId) {
+      setAnalysisSettings((prev) => ({
+        ...prev,
+        engineProfileId: engineConfigOverview.defaults.deepAnalysisProfileId,
+      }));
+    }
     setShowGameEndDialog(false);
     setShowAnalysisSettingsDialog(true);
   }
@@ -1414,7 +1420,7 @@ export const ChessBoard: React.FC = () => {
 
   async function startAnalysisReplay() {
     try {
-      if (!analysisSettings.engineConfigId) {
+      if (!analysisSettings.engineProfileId) {
         throw new Error("No deep analysis engine profile is available.");
       }
       setAnalysisReplayError(null);
@@ -3601,49 +3607,10 @@ export const ChessBoard: React.FC = () => {
                     />
                   </label>
 
-                  <label className="game-settings-field">
-                    <span>White engine profile</span>
-                    <select
-                      value={gameSettings.whiteEngineConfigId ?? ""}
-                      onChange={(e) =>
-                        setGameSettings((prev) => ({
-                          ...prev,
-                          whiteEngineConfigId: e.target.value,
-                        }))
-                      }
-                      disabled={!engineConfigOverview}
-                    >
-                      {(engineConfigOverview?.profiles ?? [])
-                        .filter((config) => config.type === "PLAYER")
-                        .map((config) => (
-                          <option key={config.id ?? config.name} value={config.id ?? ""}>
-                            {config.name}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
+                  <div className="game-settings-engine-note">
+                    CPU profile assignments are configured globally under Engine Settings → Defaults.
+                  </div>
 
-                  <label className="game-settings-field">
-                    <span>Black engine profile</span>
-                    <select
-                      value={gameSettings.blackEngineConfigId ?? ""}
-                      onChange={(e) =>
-                        setGameSettings((prev) => ({
-                          ...prev,
-                          blackEngineConfigId: e.target.value,
-                        }))
-                      }
-                      disabled={!engineConfigOverview}
-                    >
-                      {(engineConfigOverview?.profiles ?? [])
-                        .filter((config) => config.type === "PLAYER")
-                        .map((config) => (
-                          <option key={config.id ?? config.name} value={config.id ?? ""}>
-                            {config.name}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
 
                 </div>
 
@@ -3682,44 +3649,82 @@ export const ChessBoard: React.FC = () => {
 
                 <div className="analysis-settings-form">
                   <label className="analysis-settings-field analysis-settings-field-wide">
-                    <span>Deep analysis engine profile</span>
+                    <span>Engine profile</span>
                     <select
-                      value={analysisSettings.engineConfigId ?? ""}
+                      value={analysisSettings.engineProfileId ?? ""}
                       onChange={(e) =>
-                        setAnalysisSettings({ engineConfigId: e.target.value || null })
+                        setAnalysisSettings((prev) => ({
+                          ...prev,
+                          engineProfileId: e.target.value || null,
+                        }))
                       }
-                      disabled={!engineConfigOverview || deepAnalysisEngineConfigs.length === 0}
+                      disabled={!engineConfigOverview || analysisEngineProfiles.length === 0}
                     >
-                      {deepAnalysisEngineConfigs.map((config) => (
-                        <option key={config.id ?? config.name} value={config.id ?? ""}>
-                          {config.name}
+                      {analysisEngineProfiles.map((profile) => (
+                        <option key={profile.id ?? profile.name} value={profile.id ?? ""}>
+                          {profile.name}
                         </option>
                       ))}
                     </select>
                   </label>
 
-                  {selectedDeepAnalysisConfig ? (
+                  <label className="analysis-settings-field">
+                    <span>Depth (0 = time per position)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={analysisSettings.depth}
+                      onChange={(e) =>
+                        setAnalysisSettings((prev) => ({
+                          ...prev,
+                          depth: Math.max(0, Number(e.target.value)),
+                        }))
+                      }
+                    />
+                  </label>
+
+                  <label className="analysis-settings-field">
+                    <span>Time per position (seconds)</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={analysisSettings.moveTimeSeconds}
+                      disabled={analysisSettings.depth > 0}
+                      onChange={(e) =>
+                        setAnalysisSettings((prev) => ({
+                          ...prev,
+                          moveTimeSeconds: Math.max(1, Number(e.target.value)),
+                        }))
+                      }
+                    />
+                  </label>
+
+                  {selectedAnalysisProfile && selectedAnalysisEngine ? (
                     <div className="analysis-settings-config-summary">
                       <div>
+                        <span>Profile</span>
+                        <strong>{selectedAnalysisProfile.name}</strong>
+                      </div>
+                      <div>
                         <span>Engine</span>
-                        <strong>{selectedDeepAnalysisConfig.engineName}</strong>
+                        <strong>{selectedAnalysisEngine.engineName || selectedAnalysisEngine.name}</strong>
                       </div>
                       <div>
                         <span>Search</span>
                         <strong>
-                          {selectedDeepAnalysisConfig.depth > 0
-                            ? `depth ${selectedDeepAnalysisConfig.depth}`
-                            : `${selectedDeepAnalysisConfig.moveTimeSeconds}s per position`}
+                          {analysisSettings.depth > 0
+                            ? `depth ${analysisSettings.depth}`
+                            : `${analysisSettings.moveTimeSeconds}s per position`}
                         </strong>
                       </div>
                       <div className="analysis-settings-config-path">
                         <span>Executable</span>
-                        <strong>{selectedDeepAnalysisConfig.engine}</strong>
+                        <strong>{selectedAnalysisEngine.engine}</strong>
                       </div>
                     </div>
                   ) : (
                     <div className="analysis-settings-empty">
-                      No Deep Analysis profile is available. Create one under Engine Settings first.
+                      No engine profile is available. Create one under Engine Settings first.
                     </div>
                   )}
                 </div>
@@ -3739,7 +3744,7 @@ export const ChessBoard: React.FC = () => {
                   <button
                     className="analysis-settings-dialog-button"
                     onClick={startAnalysisReplay}
-                    disabled={isAnalysisReplayRunning || !analysisSettings.engineConfigId}
+                    disabled={isAnalysisReplayRunning || !analysisSettings.engineProfileId}
                   >
                     {isAnalysisReplayRunning ? "Starting..." : "OK"}
                   </button>

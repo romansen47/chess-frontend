@@ -1,5 +1,4 @@
 export type UciOptionType = "spin" | "check" | "combo" | "button" | "string";
-export type EngineConfigType = "PLAYER" | "EVALUATION" | "DEEP_ANALYSIS";
 
 export interface UciOptionConfig {
   type: UciOptionType;
@@ -22,19 +21,22 @@ export interface EngineDefinition {
 export interface EngineProfile {
   id: string | null;
   name: string;
-  type: EngineConfigType;
   engineId: string;
-  depth: number;
-  moveTimeSeconds: number;
   optionValues: Record<string, string>;
+}
+
+export interface EngineProfileAssignments {
+  whitePlayerProfileId: string;
+  blackPlayerProfileId: string;
+  evaluationProfileId: string;
+  deepAnalysisProfileId: string;
 }
 
 export interface EngineConfigOverview {
   engines: EngineDefinition[];
   profiles: EngineProfile[];
-  evaluationConfigId: string;
-  defaultPlayerConfigId: string;
-  defaultDeepAnalysisConfigId: string;
+  defaults: EngineProfileAssignments;
+  fallbackProfileId: string;
   version: number;
 }
 

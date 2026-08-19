@@ -695,3 +695,97 @@
     justify-self: start;
   }
 }
+
+.engine-config-assignment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.engine-config-assignment-summary {
+  margin-bottom: 0;
+  cursor: default;
+}
+
+.engine-config-default-info {
+  padding: 10px 12px;
+  border: 1px solid #494331;
+  border-radius: 6px;
+  background: #29271f;
+  color: #cfc7a8;
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.engine-config-default-info strong {
+  color: #efe2ad;
+}
+
+.engine-config-default-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.engine-config-default-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid #3b3b3b;
+  border-radius: 7px;
+  background: #252525;
+}
+
+.engine-config-default-card:hover {
+  border-color: #505050;
+  background: #292929;
+}
+
+.engine-config-default-card-heading {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.engine-config-default-card-heading > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.engine-config-default-card-heading strong {
+  font-size: 0.82rem;
+}
+
+.engine-config-default-card-heading span:not(.engine-config-chip) {
+  color: #999;
+  font-size: 0.68rem;
+}
+
+.engine-config-default-card-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #aaa;
+  font-size: 0.68rem;
+}
+
+.engine-config-default-card-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #818181;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+@media (max-width: 900px) {
+  .engine-config-default-grid {
+    grid-template-columns: 1fr;
+  }
+}

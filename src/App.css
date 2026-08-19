@@ -1364,3 +1364,13 @@
   background: #342727;
   font-size: 0.8rem;
 }
+
+.game-settings-engine-note {
+  padding: 8px 10px;
+  border: 1px solid #474747;
+  border-radius: 5px;
+  background: #242424;
+  color: #b9b9b9;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
