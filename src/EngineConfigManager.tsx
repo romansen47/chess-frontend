@@ -355,8 +355,13 @@ export default function EngineConfigManager({
       if (!response.ok) {
         throw new Error(await response.text() || `HTTP ${response.status}`);
       }
-      await reloadOverview();
-      onClose();
+      const saved = (await response.json()) as EngineDefinition;
+      const next = await reloadOverview();
+      const selected = next.engines.find((engine) => engine.id === saved.id) ?? saved;
+      setCreatingEngine(false);
+      setSelectedEngineId(selected.id);
+      setEngineDraft(copyEngine(selected));
+      setMessage(isNew ? "Engine created." : "Engine saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Engine could not be saved.");
     } finally {
@@ -386,8 +391,13 @@ export default function EngineConfigManager({
       if (!response.ok) {
         throw new Error(await response.text() || `HTTP ${response.status}`);
       }
-      await reloadOverview();
-      onClose();
+      const saved = (await response.json()) as EngineProfile;
+      const next = await reloadOverview();
+      const selected = next.profiles.find((profile) => profile.id === saved.id) ?? saved;
+      setCreatingProfile(false);
+      setSelectedProfileId(selected.id);
+      setProfileDraft(copyProfile(selected));
+      setMessage(isNew ? "Engine profile created." : "Engine profile saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Engine profile could not be saved.");
     } finally {
