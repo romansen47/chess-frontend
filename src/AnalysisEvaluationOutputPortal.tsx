@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import "./AnalysisEvaluationOutputPortal.css";
 
 interface EngineLine {
   eval: number;
@@ -72,12 +73,11 @@ function dispatchEvaluation(detail: AnalysisEvaluationEventDetail) {
 }
 
 /**
- * Adds a second engine-output block below the saved DeepAnalysis variants.
+ * Adds a third analysis section below the DeepAnalysis detail row.
  *
- * ChessBoard already polls /api/analysis-eval every two seconds while the
- * analysis evaluation bar is enabled. This component observes those existing
- * responses instead of starting another polling loop, so the displayed output
- * and the evaluation bar always refer to the same infinite engine search.
+ * The existing ChessBoard polling remains the single source for
+ * /api/analysis-eval. This component only observes those responses, so the
+ * evaluation bar and this output always show the same infinite engine search.
  */
 export default function AnalysisEvaluationOutputPortal() {
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
@@ -89,9 +89,11 @@ export default function AnalysisEvaluationOutputPortal() {
     let createdHost: HTMLElement | null = null;
 
     const ensurePortalHost = () => {
-      const panel = document.querySelector<HTMLElement>(".analysis-lines-panel");
+      const analysisContent = document.querySelector<HTMLElement>(
+        ".analysis-replay-content"
+      );
 
-      if (!panel) {
+      if (!analysisContent) {
         if (createdHost?.isConnected) {
           createdHost.remove();
         }
@@ -100,7 +102,7 @@ export default function AnalysisEvaluationOutputPortal() {
         return;
       }
 
-      const existing = panel.querySelector<HTMLElement>(
+      const existing = analysisContent.querySelector<HTMLElement>(
         ":scope > .analysis-evaluation-output-host"
       );
 
@@ -112,7 +114,7 @@ export default function AnalysisEvaluationOutputPortal() {
 
       const host = document.createElement("div");
       host.className = "analysis-evaluation-output-host";
-      panel.appendChild(host);
+      analysisContent.appendChild(host);
       createdHost = host;
       setPortalHost(host);
     };
@@ -171,7 +173,7 @@ export default function AnalysisEvaluationOutputPortal() {
           });
         })
         .catch(() => {
-          // The actual request is handled by ChessBoard. Failure reporting stays there.
+          // ChessBoard owns error handling for the actual request.
         });
 
       return response;
@@ -204,8 +206,8 @@ export default function AnalysisEvaluationOutputPortal() {
         return;
       }
 
-      // Just like the normal game-mode evaluation display: a temporary empty
-      // parser snapshot must not overwrite the last valid engine result.
+      // Temporary empty parser snapshots must not overwrite the most recent
+      // valid result for the currently selected ply.
       if (detail.evaluation) {
         setEvaluation(detail.evaluation);
       }
@@ -222,20 +224,18 @@ export default function AnalysisEvaluationOutputPortal() {
   }
 
   return createPortal(
-    <div
-      style={{
-        marginTop: "12px",
-        paddingTop: "10px",
-        borderTop: "1px solid #4a4a4a",
-      }}
-    >
-      <div className="analysis-detail-title">EvaluationEngine · infinite</div>
+    <section className="analysis-evaluation-panel">
+      <div className="analysis-evaluation-header">
+        <strong className="analysis-evaluation-title">
+          EvaluationEngine · infinite
+        </strong>
+        <span className="analysis-evaluation-position">
+          {activePly ? `${activePly}. Halbzug` : "keine Stellung aktiv"}
+        </span>
+      </div>
 
       {!evaluation && (
-        <div
-          className="engine-placeholder-text"
-          style={{ marginTop: "6px" }}
-        >
+        <div className="analysis-evaluation-placeholder">
           {activePly
             ? `Evaluation für Halbzug ${activePly} wird berechnet…`
             : "Evaluation-Bar einschalten, um die ausgewählte Stellung infinite zu analysieren."}
@@ -243,7 +243,7 @@ export default function AnalysisEvaluationOutputPortal() {
       )}
 
       {evaluation && (
-        <div className="engine-lines" style={{ marginTop: "6px" }}>
+        <div className="analysis-evaluation-lines">
           {evaluation.lines.length > 0 && (
             <div className="engine-lines-summary">
               <span>{evaluation.engineName || "Evaluation engine"}</span>
@@ -267,7 +267,7 @@ export default function AnalysisEvaluationOutputPortal() {
           ))}
         </div>
       )}
-    </div>,
+    </section>,
     portalHost
   );
 }
