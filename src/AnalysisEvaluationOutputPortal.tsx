@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./AnalysisEvaluationOutputPortal.css";
 
@@ -7,6 +7,7 @@ interface EngineLine {
   depth: number;
   mateDistance?: number | null;
   moves: string;
+  positions?: string[];
 }
 
 interface EngineEvaluation {
@@ -42,6 +43,60 @@ function formatEngineLineScore(line: EngineLine): string {
   return formatEngineScore(line.eval);
 }
 
+function getPieceSymbolFromPositionChar(pieceChar: string): string {
+  switch (pieceChar) {
+    case "P":
+      return "♙";
+    case "N":
+      return "♘";
+    case "B":
+      return "♗";
+    case "R":
+      return "♖";
+    case "Q":
+      return "♕";
+    case "K":
+      return "♔";
+    case "p":
+      return "♟";
+    case "n":
+      return "♞";
+    case "b":
+      return "♝";
+    case "r":
+      return "♜";
+    case "q":
+      return "♛";
+    case "k":
+      return "♚";
+    default:
+      return "";
+  }
+}
+
+function isWhitePositionPiece(pieceChar: string): boolean {
+  return pieceChar >= "A" && pieceChar <= "Z";
+}
+
+function splitMoveText(moves: string): string[] {
+  if (!moves || !moves.trim()) {
+    return [];
+  }
+
+  const tokens = moves.trim().split(/\s+/);
+  const result: string[] = [];
+
+  for (const token of tokens) {
+    if (token === "e.p." && result.length > 0) {
+      result[result.length - 1] = `${result[result.length - 1]} ${token}`;
+    } else {
+      result.push(token);
+    }
+  }
+
+  return result;
+}
+
 function getRequestUrl(input: RequestInfo | URL): string {
   if (typeof input === "string") {
     return input;
@@ -73,16 +128,17 @@ function dispatchEvaluation(detail: AnalysisEvaluationEventDetail) {
 }
 
 /**
- * Adds a third analysis section below the DeepAnalysis detail row.
- *
- * The existing ChessBoard polling remains the single source for
- * /api/analysis-eval. This component only observes those responses, so the
- * evaluation bar and this output always show the same infinite engine search.
+ * Adds the EvaluationEngine as the third analysis view. ChessBoard remains the
+ * owner of polling and of the evaluation bar; this component observes exactly
+ * those responses and renders them in the same board + variants form used by
+ * the saved DeepAnalysis result.
  */
 export default function AnalysisEvaluationOutputPortal() {
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   const [evaluation, setEvaluation] = useState<EngineEvaluation | null>(null);
   const [activePly, setActivePly] = useState<number | null>(null);
+  const [selectedLineIndex, setSelectedLineIndex] = useState(0);
+  const [animationIndex, setAnimationIndex] = useState(0);
   const activePlyRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -196,6 +252,8 @@ export default function AnalysisEvaluationOutputPortal() {
         activePlyRef.current = null;
         setActivePly(null);
         setEvaluation(null);
+        setSelectedLineIndex(0);
+        setAnimationIndex(0);
         return;
       }
 
@@ -203,6 +261,8 @@ export default function AnalysisEvaluationOutputPortal() {
         activePlyRef.current = detail.ply;
         setActivePly(detail.ply);
         setEvaluation(detail.evaluation);
+        setSelectedLineIndex(0);
+        setAnimationIndex(0);
         return;
       }
 
@@ -219,54 +279,216 @@ export default function AnalysisEvaluationOutputPortal() {
     };
   }, []);
 
+  const selectedLine = useMemo(() => {
+    const lines = evaluation?.lines ?? [];
+    if (lines.length === 0) {
+      return null;
+    }
+
+    return lines[Math.min(selectedLineIndex, lines.length - 1)] ?? lines[0];
+  }, [evaluation, selectedLineIndex]);
+
+  const selectedPositions = selectedLine?.positions ?? [];
+
+  useEffect(() => {
+    if (!evaluation || evaluation.lines.length === 0) {
+      setSelectedLineIndex(0);
+      return;
+    }
+
+    setSelectedLineIndex((previous) =>
+      Math.min(previous, evaluation.lines.length - 1)
+    );
+  }, [evaluation]);
+
+  useEffect(() => {
+    setAnimationIndex(0);
+  }, [activePly, selectedLineIndex]);
+
+  useEffect(() => {
+    if (selectedPositions.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setAnimationIndex((previous) =>
+        (previous + 1) % selectedPositions.length
+      );
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [selectedPositions.length]);
+
+  const renderEvaluationBoard = () => {
+    if (!selectedLine || selectedPositions.length === 0) {
+      return (
+        <div className="analysis-detail-placeholder">
+          {evaluation
+            ? "Für diese Variante wurden noch keine Brettstellungen geliefert."
+            : "Evaluation-Bar einschalten, um die Stellung zu analysieren."}
+        </div>
+      );
+    }
+
+    const position =
+      selectedPositions[animationIndex % selectedPositions.length]
+      ?? selectedPositions[0];
+
+    if (!position || position.length !== 64) {
+      return (
+        <div className="analysis-detail-placeholder">
+          Brettstellung der EvaluationEngine ist nicht verfügbar.
+        </div>
+      );
+    }
+
+    return (
+      <div className="analysis-position-board">
+        {Array.from({ length: 64 }, (_, index) => {
+          const rankFromTop = Math.floor(index / 8);
+          const fileFromLeft = index % 8;
+          const pieceChar = position.charAt(index);
+          const pieceSymbol = getPieceSymbolFromPositionChar(pieceChar);
+          const isLight = (rankFromTop + fileFromLeft) % 2 === 0;
+
+          return (
+            <div
+              key={index}
+              className={[
+                "analysis-position-square",
+                isLight
+                  ? "analysis-position-square-light"
+                  : "analysis-position-square-dark",
+              ].join(" ")}
+            >
+              {pieceSymbol && (
+                <span
+                  className={[
+                    "analysis-position-piece",
+                    isWhitePositionPiece(pieceChar)
+                      ? "analysis-position-piece-white"
+                      : "analysis-position-piece-black",
+                  ].join(" ")}
+                >
+                  {pieceSymbol}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderLineMoves = (line: EngineLine, isSelected: boolean) => {
+    const moves = splitMoveText(line.moves);
+    if (moves.length === 0) {
+      return "—";
+    }
+
+    const highlightedMoveIndex =
+      isSelected && selectedPositions.length > 1 && animationIndex > 0
+        ? (animationIndex % selectedPositions.length) - 1
+        : -1;
+
+    return (
+      <>
+        {moves.map((move, moveIndex) => (
+          <span
+            key={`${moveIndex}-${move}`}
+            className={
+              moveIndex === highlightedMoveIndex
+                ? "analysis-line-move analysis-line-move-current"
+                : "analysis-line-move"
+            }
+          >
+            {move}
+          </span>
+        ))}
+      </>
+    );
+  };
+
   if (!portalHost) {
     return null;
   }
 
   return createPortal(
-    <section className="analysis-evaluation-panel">
-      <div className="analysis-evaluation-header">
-        <strong className="analysis-evaluation-title">
-          EvaluationEngine · infinite
-        </strong>
-        <span className="analysis-evaluation-position">
-          {activePly ? `${activePly}. Halbzug` : "keine Stellung aktiv"}
-        </span>
+    <section className="analysis-detail-row analysis-evaluation-panel">
+      <div className="analysis-position-panel analysis-evaluation-position-panel">
+        <div className="analysis-detail-title">
+          {activePly
+            ? `EvaluationEngine-Fortsetzung ab ${activePly}. Halbzug`
+            : "EvaluationEngine-Fortsetzung"}
+        </div>
+        {renderEvaluationBoard()}
       </div>
 
-      {!evaluation && (
-        <div className="analysis-evaluation-placeholder">
-          {activePly
-            ? `Evaluation für Halbzug ${activePly} wird berechnet…`
-            : "Evaluation-Bar einschalten, um die ausgewählte Stellung infinite zu analysieren."}
+      <div className="analysis-lines-panel analysis-evaluation-lines-panel">
+        <div className="analysis-detail-title">
+          EvaluationEngine-Varianten · infinite
         </div>
-      )}
 
-      {evaluation && (
-        <div className="analysis-evaluation-lines">
-          {evaluation.lines.length > 0 && (
-            <div className="engine-lines-summary">
+        {!evaluation && (
+          <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
+            {activePly
+              ? `Evaluation für Halbzug ${activePly} wird berechnet…`
+              : "Evaluation-Bar einschalten, um die ausgewählte Stellung infinite zu analysieren."}
+          </div>
+        )}
+
+        {evaluation && evaluation.lines.length === 0 && (
+          <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
+            {formatEngineScore(evaluation.eval)} · terminal position
+          </div>
+        )}
+
+        {evaluation && evaluation.lines.length > 0 && (
+          <>
+            <div className="engine-lines-summary analysis-evaluation-summary">
               <span>{evaluation.engineName || "Evaluation engine"}</span>
               <span>depth {evaluation.lines[0].depth} · infinite</span>
             </div>
-          )}
 
-          {evaluation.lines.length === 0 && (
-            <div className="engine-empty">
-              {formatEngineScore(evaluation.eval)} · terminal position
-            </div>
-          )}
+            <div className="analysis-lines-list analysis-evaluation-lines-list">
+              {evaluation.lines.map((line, index) => {
+                const effectiveIndex = Math.min(
+                  selectedLineIndex,
+                  evaluation.lines.length - 1
+                );
+                const isSelected = index === effectiveIndex;
 
-          {evaluation.lines.map((line, index) => (
-            <div key={`${index}-${line.depth}-${line.moves}`} className="engine-line">
-              <div className="engine-line-header">
-                #{index + 1} · {formatEngineLineScore(line)}
-              </div>
-              <div className="engine-line-moves">{line.moves}</div>
+                return (
+                  <button
+                    type="button"
+                    className={[
+                      "analysis-line-card",
+                      isSelected ? "analysis-line-card-selected" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    key={`${index}-${line.depth}-${line.moves}`}
+                    onClick={() => {
+                      setSelectedLineIndex(index);
+                      setAnimationIndex(0);
+                    }}
+                  >
+                    <div className="analysis-line-header">
+                      <strong>#{index + 1}</strong>
+                      <span>{formatEngineLineScore(line)}</span>
+                    </div>
+                    <div className="analysis-line-moves">
+                      {renderLineMoves(line, isSelected)}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </section>,
     portalHost
   );
