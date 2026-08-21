@@ -541,6 +541,25 @@ export default function EngineConfigManager({
       </div>
     );
 
+    if (disabled) {
+      const displayValue = option.type === "button"
+        ? "action"
+        : value === ""
+          ? "<empty>"
+          : value;
+      return (
+        <div className="engine-config-option engine-config-option-readonly" key={name}>
+          <div className="engine-config-option-label">
+            <strong>{name}</strong>
+            {common}
+          </div>
+          <span className="engine-config-option-default" title={displayValue}>
+            {displayValue}
+          </span>
+        </div>
+      );
+    }
+
     if (option.type === "button") {
       return (
         <div className="engine-config-option engine-config-option-readonly" key={name}>
@@ -564,7 +583,7 @@ export default function EngineConfigManager({
             type="checkbox"
             checked={value.toLowerCase() === "true"}
             onChange={(event) => update(name, event.target.checked ? "true" : "false")}
-            disabled={disabled || busy}
+            disabled={busy}
           />
         </label>
       );
@@ -580,7 +599,7 @@ export default function EngineConfigManager({
           <select
             value={value}
             onChange={(event) => update(name, event.target.value)}
-            disabled={disabled || busy}
+            disabled={busy}
           >
             {(option.vars ?? []).map((candidate) => (
               <option key={candidate} value={candidate}>{candidate}</option>
@@ -603,7 +622,7 @@ export default function EngineConfigManager({
             max={option.max ?? undefined}
             value={value}
             onChange={(event) => update(name, event.target.value)}
-            disabled={disabled || busy}
+            disabled={busy}
           />
         </label>
       );
@@ -619,7 +638,7 @@ export default function EngineConfigManager({
           type="text"
           value={value}
           onChange={(event) => update(name, event.target.value)}
-          disabled={disabled || busy}
+          disabled={busy}
         />
       </label>
     );
@@ -967,8 +986,8 @@ export default function EngineConfigManager({
                             <strong>{engineDraft.id ? engineDraft.name : "Engine definition prüfen"}</strong>
                             <span>
                               {engineDraft.id
-                                ? "UCI-Metadaten und editierbare Engine-Defaults"
-                                : "Schritt 2 · Erkannte Engine prüfen, Defaults anpassen und speichern"}
+                                ? "UCI-Metadaten und erkannte Engine-Fähigkeiten"
+                                : "Schritt 2 · Erkannte Engine und UCI-Fähigkeiten prüfen und speichern"}
                             </span>
                           </div>
                           <span className="engine-config-chip">
@@ -1007,9 +1026,9 @@ export default function EngineConfigManager({
 
                         <div className="engine-config-options-header">
                           <div>
-                            <strong>UCI Option Defaults</strong>
+                            <strong>Available UCI Options</strong>
                             <span>
-                              Diese Werte werden beim Erstellen neuer Profile übernommen. Bestehende Profile behalten ihre eigenen Werte.
+                              Von der Engine gemeldete Fähigkeiten und Original-Defaults. Konkrete Werte werden ausschließlich in Profilen festgelegt.
                             </span>
                           </div>
                           <div className="engine-config-option-tools">
@@ -1028,7 +1047,8 @@ export default function EngineConfigManager({
                               name,
                               option,
                               option.defaultValue ?? "",
-                              updateEngineDefault
+                              updateEngineDefault,
+                              true
                             )
                           )}
                           {visibleEngineOptions.length === 0 && (
