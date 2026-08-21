@@ -806,6 +806,14 @@ export const ChessBoard: React.FC = () => {
   const [analysisBlackPlayerName, setAnalysisBlackPlayerName] =
     useState<string | null>(null);
   const analysisReplayCancelledRef = useRef<boolean>(false);
+  const [analysisEvaluationEnabled, setAnalysisEvaluationEnabledState] =
+    useState<boolean>(false);
+  const analysisEvaluationEnabledRef = useRef<boolean>(false);
+  const [analysisEvaluation, setAnalysisEvaluation] =
+    useState<EngineEvaluation | null>(null);
+  const [analysisEvaluationError, setAnalysisEvaluationError] =
+    useState<string | null>(null);
+  const analysisEvaluationPlyRef = useRef<number | null>(null);
   const soundCacheRef = useRef<Map<string, HTMLAudioElement>>(new Map());
 
   const analysisEngineProfiles = useMemo(
@@ -915,6 +923,11 @@ export const ChessBoard: React.FC = () => {
   function setAnalysisReplayActive(value: boolean) {
     analysisReplayActiveRef.current = value;
     setAnalysisReplayActiveState(value);
+  }
+
+  function setAnalysisEvaluationEnabled(value: boolean) {
+    analysisEvaluationEnabledRef.current = value;
+    setAnalysisEvaluationEnabledState(value);
   }
 
   function normalizeSide(side: string | null | undefined): PieceColor | null {
@@ -1220,6 +1233,65 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
+  async function stopAnalysisEvaluation() {
+    try {
+      await fetch("/api/analysis-eval/stop", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      console.warn("[stopAnalysisEvaluation] backend stop failed", e);
+    }
+  }
+
+  async function loadAnalysisEvaluation(ply: number) {
+    if (!analysisEvaluationEnabledRef.current || analysisEvaluationPlyRef.current !== ply) {
+      return;
+    }
+
+    try {
+      setAnalysisEvaluationError(null);
+      const response = await fetch(
+        `/api/analysis-eval?ply=${encodeURIComponent(String(ply))}`
+      );
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+
+      const data: EngineEvaluation = await response.json();
+      if (
+        analysisEvaluationEnabledRef.current
+        && analysisEvaluationPlyRef.current === ply
+      ) {
+        setAnalysisEvaluation(data);
+      }
+    } catch (e) {
+      console.error("[loadAnalysisEvaluation] error", e);
+      if (analysisEvaluationPlyRef.current === ply) {
+        setAnalysisEvaluationError("Fehler bei der Analyse-Evaluation.");
+      }
+    }
+  }
+
+  function toggleAnalysisEvaluation() {
+    if (!analysisReplayFinished || !analysisSelectedPosition) {
+      return;
+    }
+
+    const nextValue = !analysisEvaluationEnabledRef.current;
+    setAnalysisEvaluationEnabled(nextValue);
+    setAnalysisEvaluation(null);
+    setAnalysisEvaluationError(null);
+
+    if (!nextValue) {
+      void stopAnalysisEvaluation();
+    }
+  }
+
   function toggleEngineAutoUpdate() {
     const nextValue = !engineAutoUpdateRef.current;
     setEngineAutoUpdate(nextValue);
@@ -1336,6 +1408,36 @@ export const ChessBoard: React.FC = () => {
     };
   }, [analysisReplayActive, analysisSelectedPosition?.ply, analysisSelectedLineIndex, analysisProfile]);
 
+  useEffect(() => {
+    if (
+      !analysisReplayActive
+      || !analysisReplayFinished
+      || !analysisEvaluationEnabled
+      || !analysisSelectedPosition
+    ) {
+      return;
+    }
+
+    const ply = analysisSelectedPosition.ply;
+    analysisEvaluationPlyRef.current = ply;
+    setAnalysisEvaluation(null);
+    setAnalysisEvaluationError(null);
+    void loadAnalysisEvaluation(ply);
+
+    const intervalId = window.setInterval(() => {
+      void loadAnalysisEvaluation(ply);
+    }, 2000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [
+    analysisReplayActive,
+    analysisReplayFinished,
+    analysisEvaluationEnabled,
+    analysisSelectedPosition?.ply,
+  ]);
+
   function openAnalysisSettingsDialog() {
     setAnalysisReplayError(null);
     setAnalysisReplayStatus(null);
@@ -1381,12 +1483,21 @@ export const ChessBoard: React.FC = () => {
     });
   }
 
-  async function runAnalysisReplayLoop() {
+  async function runAnalysisReplayLoop(initialStep: AnalysisReplayStep) {
     setIsAnalysisReplayRunning(true);
     analysisReplayCancelledRef.current = false;
+    let currentStep = initialStep;
 
     try {
       while (!analysisReplayCancelledRef.current) {
+        if (currentStep.currentPly < currentStep.totalPlies) {
+          const activePly = currentStep.currentPly + 1;
+          selectAnalysisPositionByPly(activePly);
+          setAnalysisReplayStatus(
+            `Analysiere ${activePly} / ${currentStep.totalPlies}…`
+          );
+        }
+
         const response = await fetch("/api/analysis-replay/next", {
           method: "POST",
           headers: {
@@ -1401,11 +1512,11 @@ export const ChessBoard: React.FC = () => {
 
         const step: AnalysisReplayStep = await response.json();
         applyAnalysisReplayStep(step);
+        currentStep = step;
 
         const progressText = `${step.currentPly} / ${step.totalPlies}`;
-        setAnalysisReplayStatus(step.done ? `Analyse fertig (${progressText}).` : `Analysiere ${progressText}…`);
-
         if (step.done) {
+          setAnalysisReplayStatus(`Analyse fertig (${progressText}).`);
           setAnalysisReplayFinished(true);
           break;
         }
@@ -1441,6 +1552,11 @@ export const ChessBoard: React.FC = () => {
         ? analysisBlackPlayerName || "Black"
         : getDisplayedBlackPlayerName(clock, blackComputerEnabledRef.current));
       setAnalysisReplayActive(true);
+      setAnalysisEvaluationEnabled(false);
+      setAnalysisEvaluation(null);
+      setAnalysisEvaluationError(null);
+      analysisEvaluationPlyRef.current = null;
+      await stopAnalysisEvaluation();
       await stopLiveEvaluation();
       await disablePlayerEngines();
       setShowGameEndDialog(false);
@@ -1450,7 +1566,6 @@ export const ChessBoard: React.FC = () => {
       setAnalysisSelectedLineIndex(null);
       setAnalysisLineAnimationIndex(0);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
-      selectFirstAnalysisPosition();
 
       const response = await fetch("/api/analysis-replay/start", {
         method: "POST",
@@ -1468,9 +1583,8 @@ export const ChessBoard: React.FC = () => {
       const step: AnalysisReplayStep = await response.json();
       applyAnalysisReplayStep(step);
       setAnalysisReplayStatus(`Analysiere 0 / ${step.totalPlies}…`);
-      setIsAnalysisReplayRunning(false);
 
-      await runAnalysisReplayLoop();
+      await runAnalysisReplayLoop(step);
     } catch (error) {
       console.error("[startAnalysisReplay] error", error);
       setAnalysisReplayError("Analyse-Replay konnte nicht gestartet werden.");
@@ -1623,8 +1737,13 @@ export const ChessBoard: React.FC = () => {
       setHoverPreview(null);
       await disablePlayerEngines();
       await stopLiveEvaluation();
+      await stopAnalysisEvaluation();
       setEngineAutoUpdate(false);
       setEngineEval(null);
+      setAnalysisEvaluationEnabled(false);
+      setAnalysisEvaluation(null);
+      setAnalysisEvaluationError(null);
+      analysisEvaluationPlyRef.current = null;
 
       analysisReplayCancelledRef.current = true;
       setAnalysisReplayActive(false);
@@ -1698,6 +1817,11 @@ export const ChessBoard: React.FC = () => {
       setLoadError(null);
       setGameSettingsError(null);
       await disablePlayerEngines();
+      await stopAnalysisEvaluation();
+      setAnalysisEvaluationEnabled(false);
+      setAnalysisEvaluation(null);
+      setAnalysisEvaluationError(null);
+      analysisEvaluationPlyRef.current = null;
       analysisReplayCancelledRef.current = true;
       setAnalysisReplayActive(false);
       setIsAnalysisReplayRunning(false);
@@ -1902,6 +2026,9 @@ export const ChessBoard: React.FC = () => {
     }
 
     const moveLabel = san ? ` · ${san}` : "";
+    analysisEvaluationPlyRef.current = ply;
+    setAnalysisEvaluation(null);
+    setAnalysisEvaluationError(null);
     setAnalysisSelectedPosition({
       position,
       label: `${ply}. Halbzug${moveLabel}`,
@@ -1938,31 +2065,6 @@ export const ChessBoard: React.FC = () => {
     }
 
     selectAnalysisPosition(selection.position, selection.san, selection.ply);
-  }
-
-  function selectFirstAnalysisPosition() {
-    const firstRow = moves.find((row) => row.whitePosition || row.blackPosition);
-
-    if (!firstRow) {
-      return;
-    }
-
-    if (firstRow.whitePosition) {
-      selectAnalysisPosition(
-        firstRow.whitePosition,
-        firstRow.white,
-        (firstRow.moveNumber - 1) * 2 + 1
-      );
-      return;
-    }
-
-    if (firstRow.blackPosition) {
-      selectAnalysisPosition(
-        firstRow.blackPosition,
-        firstRow.black,
-        firstRow.moveNumber * 2
-      );
-    }
   }
 
   function handleGameEndState(gameState: string | null | undefined) {
@@ -2777,6 +2879,10 @@ export const ChessBoard: React.FC = () => {
         {analysisReplayError && (
           <div className="analysis-profile-error">{analysisReplayError}</div>
         )}
+
+        {analysisEvaluationError && (
+          <div className="analysis-profile-error">{analysisEvaluationError}</div>
+        )}
       </div>
     );
   };
@@ -3447,6 +3553,46 @@ export const ChessBoard: React.FC = () => {
                     className="engine-bar-black"
                     style={{
                       height: `${(1 - (engineAutoUpdate && engineEval ? engineEval.bar : 0.5)) * 100}%`,
+                    }}
+                  />
+                </button>
+              )}
+
+              {analysisReplayActive && analysisReplayFinished && (
+                <button
+                  type="button"
+                  className={[
+                    "engine-bar-wrapper",
+                    analysisEvaluationEnabled ? "engine-bar-enabled" : "engine-bar-disabled",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={toggleAnalysisEvaluation}
+                  aria-pressed={analysisEvaluationEnabled}
+                  disabled={!analysisSelectedPosition}
+                  aria-label={
+                    analysisEvaluationEnabled
+                      ? "Analyse-Evaluation ausschalten"
+                      : "Analyse-Evaluation einschalten"
+                  }
+                  title={
+                    !analysisSelectedPosition
+                      ? "Zug auswählen, um die Evaluation-Engine zu verwenden"
+                      : analysisEvaluationEnabled
+                        ? "Evaluation-Engine ausschalten"
+                        : "Evaluation-Engine für den ausgewählten Zug einschalten"
+                  }
+                >
+                  <div
+                    className="engine-bar-white"
+                    style={{
+                      height: `${(analysisEvaluationEnabled && analysisEvaluation ? analysisEvaluation.bar : 0.5) * 100}%`,
+                    }}
+                  />
+                  <div
+                    className="engine-bar-black"
+                    style={{
+                      height: `${(1 - (analysisEvaluationEnabled && analysisEvaluation ? analysisEvaluation.bar : 0.5)) * 100}%`,
                     }}
                   />
                 </button>
