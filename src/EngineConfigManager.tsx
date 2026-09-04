@@ -8,6 +8,7 @@ import type {
 } from "./engineConfig";
 import { fetchEngineConfigOverview } from "./engineConfig";
 import "./EngineConfigManager.css";
+import "./EngineConfigOptionPopup.css";
 
 interface EngineConfigManagerProps {
   overview: EngineConfigOverview | null;
@@ -17,6 +18,12 @@ interface EngineConfigManagerProps {
 
 type ManagerMode = "DEFAULTS" | "PROFILES" | "ENGINES";
 type AssignmentKey = keyof EngineProfileAssignments;
+
+interface ProfileOptionEditorState {
+  name: string;
+  option: UciOptionConfig;
+  value: string;
+}
 
 const EMPTY_ASSIGNMENTS: EngineProfileAssignments = {
   whitePlayerProfileId: "",
@@ -62,6 +69,13 @@ function optionHint(option: UciOptionConfig): string {
   return parts.join(" · ");
 }
 
+function displayOptionValue(option: UciOptionConfig, value: string): string {
+  if (option.type === "button") {
+    return "action";
+  }
+  return value === "" ? "<empty>" : value;
+}
+
 function defaultProfileForEngine(engine: EngineDefinition): EngineProfile {
   return {
     id: null,
@@ -95,6 +109,7 @@ export default function EngineConfigManager({
   const [profileDraft, setProfileDraft] = useState<EngineProfile | null>(null);
   const [creatingProfile, setCreatingProfile] = useState(false);
   const [newProfileEngineId, setNewProfileEngineId] = useState("");
+  const [profileOptionEditor, setProfileOptionEditor] = useState<ProfileOptionEditorState | null>(null);
 
   const [busy, setBusy] = useState(false);
   const [optionFilter, setOptionFilter] = useState("");
@@ -165,6 +180,7 @@ export default function EngineConfigManager({
     setMode(nextMode);
     setCreatingEngine(false);
     setCreatingProfile(false);
+    setProfileOptionEditor(null);
     setOptionFilter("");
     setMessage(null);
     setError(null);
@@ -175,6 +191,7 @@ export default function EngineConfigManager({
     setSelectedEngineId(id);
     const selected = engines.find((engine) => engine.id === id);
     setEngineDraft(selected ? copyEngine(selected) : null);
+    setProfileOptionEditor(null);
     setOptionFilter("");
     setMessage(null);
     setError(null);
@@ -185,6 +202,7 @@ export default function EngineConfigManager({
     setSelectedProfileId(id);
     const selected = profiles.find((profile) => profile.id === id);
     setProfileDraft(selected ? copyProfile(selected) : null);
+    setProfileOptionEditor(null);
     setOptionFilter("");
     setMessage(null);
     setError(null);
@@ -197,6 +215,7 @@ export default function EngineConfigManager({
     setEngineDraft(null);
     setNewEnginePath("");
     setNewEngineName("");
+    setProfileOptionEditor(null);
     setOptionFilter("");
     setMessage(null);
     setError(null);
@@ -208,6 +227,7 @@ export default function EngineConfigManager({
     setSelectedProfileId(null);
     setProfileDraft(null);
     setNewProfileEngineId("");
+    setProfileOptionEditor(null);
     setOptionFilter("");
     setMessage(null);
     setError(null);
@@ -316,6 +336,7 @@ export default function EngineConfigManager({
       setBusy(true);
       setError(null);
       setMessage(null);
+      setProfileOptionEditor(null);
 
       const response = await fetch("/api/engine-configs/reset", { method: "POST" });
       if (!response.ok) {
@@ -426,6 +447,7 @@ export default function EngineConfigManager({
     try {
       setBusy(true);
       setError(null);
+      setProfileOptionEditor(null);
       const isNew = !profileDraft.id;
       const response = await fetch(
         isNew
@@ -494,6 +516,7 @@ export default function EngineConfigManager({
     try {
       setBusy(true);
       setError(null);
+      setProfileOptionEditor(null);
       const response = await fetch(`/api/engine-configs/profiles/${selectedStoredProfile.id}`, {
         method: "DELETE",
       });
@@ -540,29 +563,26 @@ export default function EngineConfigManager({
       : current);
   }
 
-  function updateEngineDefault(name: string, value: string) {
-    setEngineDraft((current) => {
-      if (!current || !current.options[name]) {
-        return current;
-      }
-      return {
-        ...current,
-        options: {
-          ...current.options,
-          [name]: {
-            ...current.options[name],
-            defaultValue: value,
-            value,
-          },
-        },
-      };
-    });
+  function openProfileOptionEditor(name: string, option: UciOptionConfig, value: string) {
+    if (busy || isFallbackProfile || option.type === "button") {
+      return;
+    }
+    setProfileOptionEditor({ name, option, value });
+  }
+
+  function applyProfileOptionEditor() {
+    if (!profileOptionEditor) {
+      return;
+    }
+    updateProfileOption(profileOptionEditor.name, profileOptionEditor.value);
+    setProfileOptionEditor(null);
   }
 
   function resetProfileOptionsToDefaults() {
     if (!profileEngine || isFallbackProfile) {
       return;
     }
+    setProfileOptionEditor(null);
     setProfileDraft((current) => current
       ? {
           ...current,
@@ -575,14 +595,14 @@ export default function EngineConfigManager({
       : current);
   }
 
-  function renderEditableOption(
+  function renderOption(
     name: string,
     option: UciOptionConfig,
     value: string,
-    update: (name: string, value: string) => void,
     disabled = false
   ) {
     const hint = optionHint(option);
+    const displayValue = displayOptionValue(option, value);
     const common = (
       <div className="engine-config-option-meta">
         <span className="engine-config-option-type">{option.type}</span>
@@ -590,12 +610,7 @@ export default function EngineConfigManager({
       </div>
     );
 
-    if (disabled) {
-      const displayValue = option.type === "button"
-        ? "action"
-        : value === ""
-          ? "<empty>"
-          : value;
+    if (disabled || option.type === "button") {
       return (
         <div className="engine-config-option engine-config-option-readonly" key={name}>
           <div className="engine-config-option-label">
@@ -609,87 +624,22 @@ export default function EngineConfigManager({
       );
     }
 
-    if (option.type === "button") {
-      return (
-        <div className="engine-config-option engine-config-option-readonly" key={name}>
-          <div className="engine-config-option-label">
-            <strong>{name}</strong>
-            {common}
-          </div>
-          <span className="engine-config-option-default">action</span>
-        </div>
-      );
-    }
-
-    if (option.type === "check") {
-      return (
-        <label className="engine-config-option" key={name}>
-          <div className="engine-config-option-label">
-            <strong>{name}</strong>
-            {common}
-          </div>
-          <input
-            type="checkbox"
-            checked={value.toLowerCase() === "true"}
-            onChange={(event) => update(name, event.target.checked ? "true" : "false")}
-            disabled={busy}
-          />
-        </label>
-      );
-    }
-
-    if (option.type === "combo") {
-      return (
-        <label className="engine-config-option" key={name}>
-          <div className="engine-config-option-label">
-            <strong>{name}</strong>
-            {common}
-          </div>
-          <select
-            value={value}
-            onChange={(event) => update(name, event.target.value)}
-            disabled={busy}
-          >
-            {(option.vars ?? []).map((candidate) => (
-              <option key={candidate} value={candidate}>{candidate}</option>
-            ))}
-          </select>
-        </label>
-      );
-    }
-
-    if (option.type === "spin") {
-      return (
-        <label className="engine-config-option" key={name}>
-          <div className="engine-config-option-label">
-            <strong>{name}</strong>
-            {common}
-          </div>
-          <input
-            type="number"
-            min={option.min ?? undefined}
-            max={option.max ?? undefined}
-            value={value}
-            onChange={(event) => update(name, event.target.value)}
-            disabled={busy}
-          />
-        </label>
-      );
-    }
-
     return (
-      <label className="engine-config-option" key={name}>
+      <div className="engine-config-option" key={name}>
         <div className="engine-config-option-label">
           <strong>{name}</strong>
           {common}
         </div>
-        <input
-          type="text"
-          value={value}
-          onChange={(event) => update(name, event.target.value)}
+        <button
+          type="button"
+          className="engine-config-option-value-button"
+          title={`${name}: ${displayValue} · zum Bearbeiten klicken`}
+          onClick={() => openProfileOptionEditor(name, option, value)}
           disabled={busy}
-        />
-      </label>
+        >
+          {displayValue}
+        </button>
+      </div>
     );
   }
 
@@ -1099,11 +1049,10 @@ export default function EngineConfigManager({
 
                         <div className="engine-config-options">
                           {visibleEngineOptions.map(([name, option]) =>
-                            renderEditableOption(
+                            renderOption(
                               name,
                               option,
                               option.defaultValue ?? "",
-                              updateEngineDefault,
                               true
                             )
                           )}
@@ -1236,7 +1185,9 @@ export default function EngineConfigManager({
                         <div className="engine-config-options-header">
                           <div>
                             <strong>Profile UCI Options ({Object.keys(profileDraft.optionValues).length})</strong>
-                            <span>Das Profil speichert ausschließlich konkrete Werte für {profileEngine.name}.</span>
+                            <span>
+                              Die Werte werden hier nur angezeigt. Klicke einen Wert an, um genau diese Option zu bearbeiten.
+                            </span>
                           </div>
                           <div className="engine-config-option-tools">
                             <input
@@ -1257,11 +1208,10 @@ export default function EngineConfigManager({
 
                         <div className="engine-config-options">
                           {visibleProfileOptions.map(([name, option]) =>
-                            renderEditableOption(
+                            renderOption(
                               name,
                               option,
                               profileDraft.optionValues[name] ?? option.defaultValue ?? "",
-                              updateProfileOption,
                               isFallbackProfile
                             )
                           )}
@@ -1307,6 +1257,112 @@ export default function EngineConfigManager({
             </>
           )}
         </div>
+
+        {profileOptionEditor && (
+          <div
+            className="engine-config-option-popup-backdrop"
+            role="presentation"
+            onMouseDown={() => setProfileOptionEditor(null)}
+          >
+            <form
+              className="engine-config-option-popup"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${profileOptionEditor.name} bearbeiten`}
+              onMouseDown={(event) => event.stopPropagation()}
+              onSubmit={(event) => {
+                event.preventDefault();
+                applyProfileOptionEditor();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setProfileOptionEditor(null);
+                }
+              }}
+            >
+              <div className="engine-config-option-popup-header">
+                <div className="engine-config-option-popup-title">
+                  <strong>{profileOptionEditor.name}</strong>
+                  <div className="engine-config-option-popup-meta">
+                    <span className="engine-config-option-type">{profileOptionEditor.option.type}</span>
+                    {optionHint(profileOptionEditor.option) && (
+                      <span>{optionHint(profileOptionEditor.option)}</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setProfileOptionEditor(null)}
+                  aria-label="Editor schließen"
+                >
+                  ×
+                </button>
+              </div>
+
+              <label className="engine-config-option-popup-editor">
+                <span>Profilwert</span>
+                {profileOptionEditor.option.type === "check" ? (
+                  <span className="engine-config-option-popup-check">
+                    <input
+                      type="checkbox"
+                      checked={profileOptionEditor.value.toLowerCase() === "true"}
+                      onChange={(event) => setProfileOptionEditor({
+                        ...profileOptionEditor,
+                        value: event.target.checked ? "true" : "false",
+                      })}
+                      autoFocus
+                    />
+                    <span>{profileOptionEditor.value.toLowerCase() === "true" ? "true" : "false"}</span>
+                  </span>
+                ) : profileOptionEditor.option.type === "combo" ? (
+                  <select
+                    value={profileOptionEditor.value}
+                    onChange={(event) => setProfileOptionEditor({
+                      ...profileOptionEditor,
+                      value: event.target.value,
+                    })}
+                    autoFocus
+                  >
+                    {(profileOptionEditor.option.vars ?? []).map((candidate) => (
+                      <option key={candidate} value={candidate}>{candidate}</option>
+                    ))}
+                  </select>
+                ) : profileOptionEditor.option.type === "spin" ? (
+                  <input
+                    type="number"
+                    min={profileOptionEditor.option.min ?? undefined}
+                    max={profileOptionEditor.option.max ?? undefined}
+                    value={profileOptionEditor.value}
+                    onChange={(event) => setProfileOptionEditor({
+                      ...profileOptionEditor,
+                      value: event.target.value,
+                    })}
+                    required
+                    autoFocus
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={profileOptionEditor.value}
+                    onChange={(event) => setProfileOptionEditor({
+                      ...profileOptionEditor,
+                      value: event.target.value,
+                    })}
+                    autoFocus
+                  />
+                )}
+              </label>
+
+              <div className="engine-config-option-popup-actions">
+                <button type="button" onClick={() => setProfileOptionEditor(null)}>
+                  Abbrechen
+                </button>
+                <button type="submit">Übernehmen</button>
+              </div>
+            </form>
+          </div>
+        )}
       </section>
     </div>
   );
