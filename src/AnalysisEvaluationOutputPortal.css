@@ -7,8 +7,8 @@
 }
 
 /*
- * The analysis profile stays at the top. Below it, Deep Analysis and Live
- * Evaluation share the remaining space and are selected through tabs.
+ * The analysis profile stays compact at the top. Below it, Deep Analysis and
+ * Live Evaluation share the remaining space and are selected through tabs.
  */
 .analysis-replay-content > .analysis-profile-panel {
   flex: 0 0 216px !important;
@@ -88,21 +88,31 @@
   min-height: 0;
 }
 
-/* Both DeepAnalysis and EvaluationEngine use the same compact board geometry. */
+/*
+ * Deep Analysis and Live Evaluation deliberately use exactly the same board
+ * geometry. The old three-row layout limited the preview board to 172 px;
+ * with tabs that restriction would waste most of the available vertical
+ * space. A wider left column lets the square board grow down to roughly the
+ * same baseline as the visible engine variants on the right.
+ */
 .analysis-replay-content .analysis-position-panel {
-  flex: 0 0 194px;
-  width: 194px;
-  min-width: 194px;
+  flex: 0 0 336px;
+  width: 336px;
+  min-width: 336px;
 }
 
 .analysis-replay-content .analysis-position-board {
-  width: 100%;
-  max-width: 172px;
+  flex: 1 1 auto;
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
   align-self: center;
 }
 
 .analysis-replay-content .analysis-position-piece {
-  font-size: 1.35rem;
+  font-size: 2.1rem;
 }
 
 .analysis-replay-content .analysis-lines-panel {
