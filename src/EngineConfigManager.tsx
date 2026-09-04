@@ -560,7 +560,7 @@ export default function EngineConfigManager({
   }
 
   function openProfileOptionEditor(name: string, option: UciOptionConfig, value: string) {
-    if (busy || isFallbackProfile || option.type === "button") {
+    if (busy || option.type === "button") {
       return;
     }
     setProfileOptionEditor({ name, option, value });
@@ -575,7 +575,7 @@ export default function EngineConfigManager({
   }
 
   function resetProfileOptionsToDefaults() {
-    if (!profileEngine || isFallbackProfile) {
+    if (!profileEngine) {
       return;
     }
     setProfileOptionEditor(null);
@@ -815,9 +815,9 @@ export default function EngineConfigManager({
                   </div>
 
                   <div className="engine-config-default-info">
-                    The fallback profile remains bound to <strong>{fallbackEngine?.engine ?? "the detected UCI engine"}</strong> with its
-                    UCI default values. <strong>/usr/games/stockfish</strong> is preferred when it is detected there as a valid UCI engine
-                    Each other profile can be assigned to multiple tasks at the same time.
+                    The fallback profile remains bound to <strong>{fallbackEngine?.engine ?? "the detected UCI engine"}</strong> so the
+                    application always has a valid engine profile available. It can be edited like any other profile, but it cannot be deleted
+                    while it is the fallback. <strong>/usr/games/stockfish</strong> is preferred as the fallback engine when available.
                   </div>
 
                   <div className="engine-config-default-grid">
@@ -1161,8 +1161,8 @@ export default function EngineConfigManager({
 
                         {isFallbackProfile && (
                           <div className="engine-config-default-info">
-                            This profile is the fixed fallback for <strong>{profileEngine.engine}</strong> and remains on its
-                            UCI default values. Create a new profile if you want to configure this engine differently.
+                            This profile is the fallback for <strong>{profileEngine.engine}</strong>. It can be edited like any other profile,
+                            but it cannot be deleted while it is the fallback.
                           </div>
                         )}
 
@@ -1172,7 +1172,6 @@ export default function EngineConfigManager({
                             <input
                               value={profileDraft.name}
                               onChange={(event) => setProfileDraft({ ...profileDraft, name: event.target.value })}
-                              disabled={isFallbackProfile}
                             />
                           </label>
                           <label>
@@ -1198,7 +1197,7 @@ export default function EngineConfigManager({
                             <button
                               type="button"
                               onClick={resetProfileOptionsToDefaults}
-                              disabled={busy || isFallbackProfile}
+                              disabled={busy}
                             >
                               Reset defaults
                             </button>
@@ -1210,8 +1209,7 @@ export default function EngineConfigManager({
                             renderOption(
                               name,
                               option,
-                              profileDraft.optionValues[name] ?? option.defaultValue ?? "",
-                              isFallbackProfile
+                              profileDraft.optionValues[name] ?? option.defaultValue ?? ""
                             )
                           )}
                           {visibleProfileOptions.length === 0 && (
@@ -1238,15 +1236,13 @@ export default function EngineConfigManager({
                             </button>
                           )}
                           <div className="engine-config-actions-spacer" />
-                          {!isFallbackProfile && (
-                            <button
-                              type="button"
-                              onClick={() => void saveProfile()}
-                              disabled={busy || !profileDraft.name.trim()}
-                            >
-                              {busy ? "Saving…" : profileDraft.id ? "Save Profile" : "Create Profile"}
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => void saveProfile()}
+                            disabled={busy || !profileDraft.name.trim()}
+                          >
+                            {busy ? "Saving…" : profileDraft.id ? "Save Profile" : "Create Profile"}
+                          </button>
                         </div>
                       </div>
                     )}
