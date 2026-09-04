@@ -119,6 +119,16 @@ export default function EngineConfigManager({
     [engines, profileDraft?.engineId]
   );
 
+  const fallbackProfile = useMemo(
+    () => profiles.find((profile) => profile.id === overview?.fallbackProfileId) ?? null,
+    [profiles, overview?.fallbackProfileId]
+  );
+
+  const fallbackEngine = useMemo(
+    () => engines.find((engine) => engine.id === fallbackProfile?.engineId) ?? null,
+    [engines, fallbackProfile?.engineId]
+  );
+
   const isFallbackProfile = profileDraft?.id != null && profileDraft.id === overview?.fallbackProfileId;
 
   useEffect(() => {
@@ -257,10 +267,46 @@ export default function EngineConfigManager({
     return next;
   }
 
+  async function scanSystemEngines() {
+    try {
+      setBusy(true);
+      setError(null);
+      setMessage("Scanning /usr/games and validating UCI handshakes…");
+
+      const previousEngineCount = overview?.engines.length ?? 0;
+      const previousProfileCount = overview?.profiles.length ?? 0;
+      const response = await fetch("/api/engine-configs/discover", { method: "POST" });
+      if (!response.ok) {
+        throw new Error(await response.text() || `HTTP ${response.status}`);
+      }
+
+      const next = (await response.json()) as EngineConfigOverview;
+      onOverviewChange(next);
+      setDefaultsDraft(copyAssignments(next.defaults));
+
+      const addedEngines = Math.max(0, next.engines.length - previousEngineCount);
+      const addedProfiles = Math.max(0, next.profiles.length - previousProfileCount);
+      if (addedEngines === 0) {
+        setMessage("Scan complete. No new responsive UCI engines found in /usr/games.");
+      } else {
+        setMessage(
+          `Scan complete. Added ${addedEngines} UCI engine${addedEngines === 1 ? "" : "s"}` +
+          ` and ${addedProfiles} default profile${addedProfiles === 1 ? "" : "s"}.`
+        );
+      }
+    } catch (e) {
+      setMessage(null);
+      setError(e instanceof Error ? e.message : "System engines could not be scanned.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function resetEngineSettings() {
     const confirmed = window.confirm(
-      "Delete all saved engines and profiles? The list will be recreated with " +
-      "/usr/games/stockfish, one fallback profile using its UCI defaults, and all four default assignments pointing to it."
+      "Delete all saved engines and profiles? /usr/games will be scanned again. " +
+      "Only executables that complete a UCI handshake will be imported, each with a default profile. " +
+      "/usr/games/stockfish is preferred as fallback when available."
     );
     if (!confirmed) {
       return;
@@ -288,19 +334,22 @@ export default function EngineConfigManager({
       setOptionFilter("");
       setMode("DEFAULTS");
 
-      const nextEngine = next.engines[0] ?? null;
-      setSelectedEngineId(nextEngine?.id ?? null);
-      setEngineDraft(nextEngine ? copyEngine(nextEngine) : null);
-
       const nextProfile =
         next.profiles.find((profile) => profile.id === next.fallbackProfileId) ??
         next.profiles[0] ??
         null;
+      const nextEngine =
+        next.engines.find((engine) => engine.id === nextProfile?.engineId) ??
+        next.engines[0] ??
+        null;
+      setSelectedEngineId(nextEngine?.id ?? null);
+      setEngineDraft(nextEngine ? copyEngine(nextEngine) : null);
       setSelectedProfileId(nextProfile?.id ?? null);
       setProfileDraft(nextProfile ? copyProfile(nextProfile) : null);
 
       setMessage(
-        "Engine settings reset. /usr/games/stockfish is the fallback; all default assignments use its UCI-default profile."
+        `Engine settings reset. ${next.engines.length} engine${next.engines.length === 1 ? "" : "s"} available; ` +
+        `fallback: ${nextEngine?.engine ?? "none"}.`
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Engine settings could not be reset.");
@@ -721,6 +770,13 @@ export default function EngineConfigManager({
           <div className="engine-config-header-actions">
             <button
               type="button"
+              onClick={() => void scanSystemEngines()}
+              disabled={busy}
+            >
+              Scan /usr/games
+            </button>
+            <button
+              type="button"
               className="engine-config-reset"
               onClick={() => void resetEngineSettings()}
               disabled={busy}
@@ -813,9 +869,9 @@ export default function EngineConfigManager({
                   </div>
 
                   <div className="engine-config-default-info">
-                    Das Fallback-Profil bleibt immer an <strong>/usr/games/stockfish</strong> mit dessen
-                    UCI-Defaultwerten gebunden. Jedes andere Profil kann gleichzeitig mehreren Aufgaben
-                    zugewiesen werden.
+                    Das Fallback-Profil bleibt an <strong>{fallbackEngine?.engine ?? "die erkannte UCI-Engine"}</strong> mit deren
+                    UCI-Defaultwerten gebunden. <strong>/usr/games/stockfish</strong> wird bevorzugt, wenn es dort als gültige UCI-Engine
+                    erkannt wird. Jedes andere Profil kann gleichzeitig mehreren Aufgaben zugewiesen werden.
                   </div>
 
                   <div className="engine-config-default-grid">
@@ -1157,7 +1213,7 @@ export default function EngineConfigManager({
 
                         {isFallbackProfile && (
                           <div className="engine-config-default-info">
-                            Dieses Profil ist der feste Fallback für <strong>/usr/games/stockfish</strong> und bleibt auf dessen
+                            Dieses Profil ist der feste Fallback für <strong>{profileEngine.engine}</strong> und bleibt auf dessen
                             UCI-Defaultwerten. Erstelle ein neues Profil, wenn du diese Engine anders konfigurieren möchtest.
                           </div>
                         )}
