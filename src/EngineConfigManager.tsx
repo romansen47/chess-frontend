@@ -102,7 +102,6 @@ export default function EngineConfigManager({
   const [selectedEngineId, setSelectedEngineId] = useState<string | null>(null);
   const [engineDraft, setEngineDraft] = useState<EngineDefinition | null>(null);
   const [creatingEngine, setCreatingEngine] = useState(false);
-  const [newEnginePath, setNewEnginePath] = useState("");
   const [newEngineName, setNewEngineName] = useState("");
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -213,7 +212,6 @@ export default function EngineConfigManager({
     setCreatingEngine(true);
     setSelectedEngineId(null);
     setEngineDraft(null);
-    setNewEnginePath("");
     setNewEngineName("");
     setProfileOptionEditor(null);
     setOptionFilter("");
@@ -245,37 +243,36 @@ export default function EngineConfigManager({
   }
 
   async function inspectEngine() {
-    const engine = newEnginePath.trim();
-    if (!engine) {
-      setError("Please enter an engine executable path first.");
-      return;
-    }
+    const requestedName = (engineDraft?.id ? "" : engineDraft?.name ?? newEngineName).trim();
 
     try {
       setBusy(true);
       setError(null);
-      setMessage("Starting engine and reading its UCI definition…");
-      const response = await fetch("/api/engine-configs/engines/inspect", {
+      setMessage("System-Dateiauswahl wird geöffnet…");
+      const response = await fetch("/api/engine-configs/engines/select", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          engine,
-          name: newEngineName.trim() || null,
-        }),
       });
+      if (response.status === 204) {
+        setMessage(null);
+        return;
+      }
       if (!response.ok) {
         throw new Error(await response.text() || `HTTP ${response.status}`);
       }
       const inspected = (await response.json()) as EngineDefinition;
+      if (requestedName) {
+        inspected.name = requestedName;
+      }
       setEngineDraft(copyEngine(inspected));
       setNewEngineName(inspected.name);
+      setOptionFilter("");
       setMessage(
         `${inspected.engineName} detected · ${Object.keys(inspected.options).length} UCI options`
       );
     } catch (e) {
       setEngineDraft(null);
       setMessage(null);
-      setError(e instanceof Error ? e.message : "Engine could not be inspected.");
+      setError(e instanceof Error ? e.message : "Engine could not be selected or inspected.");
     } finally {
       setBusy(false);
     }
@@ -349,7 +346,6 @@ export default function EngineConfigManager({
 
       setCreatingEngine(false);
       setCreatingProfile(false);
-      setNewEnginePath("");
       setNewEngineName("");
       setNewProfileEngineId("");
       setOptionFilter("");
@@ -949,30 +945,25 @@ export default function EngineConfigManager({
                         <div className="engine-config-details-heading">
                           <div>
                             <strong>Neue Engine definieren</strong>
-                            <span>Schritt 1 · Executable auswählen und UCI-Definition einlesen</span>
+                            <span>Schritt 1 · Executable über die System-Dateiauswahl auswählen</span>
                           </div>
                         </div>
-                        <div className="engine-config-form-grid engine-config-form-grid-wide">
+                        <div className="engine-config-form-grid">
                           <label>
-                            <span>Engine name</span>
+                            <span>Engine name (optional)</span>
                             <input
                               value={newEngineName}
                               onChange={(event) => setNewEngineName(event.target.value)}
-                              placeholder="e.g. Stockfish 18"
-                            />
-                          </label>
-                          <label>
-                            <span>Engine path</span>
-                            <input
-                              value={newEnginePath}
-                              onChange={(event) => setNewEnginePath(event.target.value)}
-                              placeholder="/usr/games/stockfish18 or /opt/lc0/lc0"
+                              placeholder="Wird sonst aus der UCI-Engine übernommen"
                             />
                           </label>
                         </div>
+                        <div className="engine-config-default-info">
+                          Der Dateidialog wird auf dem Rechner geöffnet, auf dem das Backend läuft. Nach der Auswahl wird die Engine automatisch per UCI eingelesen.
+                        </div>
                         <div className="engine-config-actions">
                           <button type="button" onClick={() => void inspectEngine()} disabled={busy}>
-                            {busy ? "Inspecting…" : "Inspect Engine (uci)"}
+                            {busy ? "Dateiauswahl läuft…" : "Engine-Datei auswählen…"}
                           </button>
                         </div>
                       </div>
@@ -1062,7 +1053,7 @@ export default function EngineConfigManager({
                         </div>
 
                         <div className="engine-config-actions engine-config-actions-footer">
-                          {engineDraft.id && (
+                          {engineDraft.id ? (
                             <button
                               type="button"
                               className="engine-config-delete"
@@ -1070,6 +1061,14 @@ export default function EngineConfigManager({
                               disabled={busy}
                             >
                               Delete Engine
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => void inspectEngine()}
+                              disabled={busy}
+                            >
+                              {busy ? "Dateiauswahl läuft…" : "Andere Engine auswählen…"}
                             </button>
                           )}
                           <div className="engine-config-actions-spacer" />
