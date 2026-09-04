@@ -23,6 +23,8 @@ interface AnalysisEvaluationEventDetail {
   stop?: boolean;
 }
 
+type AnalysisEngineView = "deep" | "live";
+
 const ANALYSIS_EVALUATION_EVENT = "chess-analysis-evaluation-update";
 
 function formatEngineScore(evaluation: number): string {
@@ -127,11 +129,63 @@ function dispatchEvaluation(detail: AnalysisEvaluationEventDetail) {
   );
 }
 
+function findDeepAnalysisRow(analysisContent: HTMLElement): HTMLElement | null {
+  for (const child of Array.from(analysisContent.children)) {
+    if (
+      child instanceof HTMLElement
+      && child.classList.contains("analysis-detail-row")
+    ) {
+      return child;
+    }
+  }
+
+  return null;
+}
+
+function applyAnalysisViewLayout(
+  portalHost: HTMLElement,
+  activeView: AnalysisEngineView
+) {
+  const analysisContent = portalHost.parentElement;
+  if (!analysisContent) {
+    return;
+  }
+
+  const deepAnalysisRow = findDeepAnalysisRow(analysisContent);
+  const liveView = activeView === "live";
+
+  portalHost.classList.toggle("analysis-evaluation-output-host-live", liveView);
+  portalHost.classList.toggle("analysis-evaluation-output-host-deep", !liveView);
+  deepAnalysisRow?.classList.toggle(
+    "analysis-detail-row-hidden-by-tabs",
+    liveView
+  );
+}
+
+function keepAnalysisMoveTimeEditable() {
+  const fields = document.querySelectorAll<HTMLElement>(
+    ".analysis-settings-field"
+  );
+
+  for (const field of Array.from(fields)) {
+    const caption = field.querySelector("span")?.textContent?.trim() ?? "";
+    if (!caption.startsWith("Time per position")) {
+      continue;
+    }
+
+    const input = field.querySelector<HTMLInputElement>('input[type="number"]');
+    if (input?.disabled) {
+      input.disabled = false;
+    }
+  }
+}
+
 /**
- * Adds the EvaluationEngine as the third analysis view. ChessBoard remains the
- * owner of polling and of the evaluation bar; this component observes exactly
- * those responses and renders them in the same board + variants form used by
- * the saved DeepAnalysis result.
+ * Adds the EvaluationEngine as an alternative analysis-lines view. ChessBoard
+ * remains the owner of polling, DeepAnalysis and the evaluation bar. This
+ * component observes the live-evaluation responses and lets the user switch
+ * between the saved DeepAnalysis lines and Live Evaluation without showing
+ * both views at the same time.
  */
 export default function AnalysisEvaluationOutputPortal() {
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
@@ -139,7 +193,10 @@ export default function AnalysisEvaluationOutputPortal() {
   const [activePly, setActivePly] = useState<number | null>(null);
   const [selectedLineIndex, setSelectedLineIndex] = useState(0);
   const [animationIndex, setAnimationIndex] = useState(0);
+  const [activeEngineView, setActiveEngineView] =
+    useState<AnalysisEngineView>("deep");
   const activePlyRef = useRef<number | null>(null);
+  const activeEngineViewRef = useRef<AnalysisEngineView>("deep");
 
   useEffect(() => {
     let createdHost: HTMLElement | null = null;
@@ -151,6 +208,12 @@ export default function AnalysisEvaluationOutputPortal() {
 
       if (!analysisContent) {
         if (createdHost?.isConnected) {
+          const previousContent = createdHost.parentElement;
+          if (previousContent) {
+            findDeepAnalysisRow(previousContent)?.classList.remove(
+              "analysis-detail-row-hidden-by-tabs"
+            );
+          }
           createdHost.remove();
         }
         createdHost = null;
@@ -158,19 +221,25 @@ export default function AnalysisEvaluationOutputPortal() {
         return;
       }
 
-      const existing = analysisContent.querySelector<HTMLElement>(
+      const deepAnalysisRow = findDeepAnalysisRow(analysisContent);
+      let host = analysisContent.querySelector<HTMLElement>(
         ":scope > .analysis-evaluation-output-host"
       );
 
-      if (existing) {
-        createdHost = existing;
-        setPortalHost(existing);
-        return;
+      if (!host) {
+        host = document.createElement("div");
+        host.className = "analysis-evaluation-output-host";
       }
 
-      const host = document.createElement("div");
-      host.className = "analysis-evaluation-output-host";
-      analysisContent.appendChild(host);
+      if (deepAnalysisRow) {
+        if (host.parentElement !== analysisContent || host.nextElementSibling !== deepAnalysisRow) {
+          analysisContent.insertBefore(host, deepAnalysisRow);
+        }
+      } else if (host.parentElement !== analysisContent) {
+        analysisContent.appendChild(host);
+      }
+
+      applyAnalysisViewLayout(host, activeEngineViewRef.current);
       createdHost = host;
       setPortalHost(host);
     };
@@ -189,8 +258,55 @@ export default function AnalysisEvaluationOutputPortal() {
     return () => {
       observer.disconnect();
       if (createdHost?.isConnected) {
+        const analysisContent = createdHost.parentElement;
+        if (analysisContent) {
+          findDeepAnalysisRow(analysisContent)?.classList.remove(
+            "analysis-detail-row-hidden-by-tabs"
+          );
+        }
         createdHost.remove();
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    activeEngineViewRef.current = activeEngineView;
+    if (portalHost) {
+      applyAnalysisViewLayout(portalHost, activeEngineView);
+    }
+  }, [activeEngineView, portalHost]);
+
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) {
+      return;
+    }
+
+    let scheduled = false;
+    const ensureEditable = () => {
+      if (scheduled) {
+        return;
+      }
+
+      scheduled = true;
+      queueMicrotask(() => {
+        scheduled = false;
+        keepAnalysisMoveTimeEditable();
+      });
+    };
+
+    keepAnalysisMoveTimeEditable();
+
+    const observer = new MutationObserver(ensureEditable);
+    observer.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["disabled"],
+    });
+
+    return () => {
+      observer.disconnect();
     };
   }, []);
 
@@ -416,80 +532,119 @@ export default function AnalysisEvaluationOutputPortal() {
   }
 
   return createPortal(
-    <section className="analysis-detail-row analysis-evaluation-panel">
-      <div className="analysis-position-panel analysis-evaluation-position-panel">
-        <div className="analysis-detail-title">
-          {activePly
-            ? `EvaluationEngine-Fortsetzung ab ${activePly}. Halbzug`
-            : "EvaluationEngine-Fortsetzung"}
-        </div>
-        {renderEvaluationBoard()}
+    <>
+      <div
+        className="analysis-engine-view-tabs"
+        role="tablist"
+        aria-label="Analyse-Engine-Linien"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeEngineView === "deep"}
+          className={[
+            "analysis-engine-view-tab",
+            activeEngineView === "deep" ? "analysis-engine-view-tab-active" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={() => setActiveEngineView("deep")}
+        >
+          Deep Analysis
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeEngineView === "live"}
+          className={[
+            "analysis-engine-view-tab",
+            activeEngineView === "live" ? "analysis-engine-view-tab-active" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={() => setActiveEngineView("live")}
+        >
+          Live Evaluation
+        </button>
       </div>
 
-      <div className="analysis-lines-panel analysis-evaluation-lines-panel">
-        <div className="analysis-detail-title">
-          EvaluationEngine-Varianten · infinite
-        </div>
-
-        {!evaluation && (
-          <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
-            {activePly
-              ? `Evaluation für Halbzug ${activePly} wird berechnet…`
-              : "Evaluation-Bar einschalten, um die ausgewählte Stellung infinite zu analysieren."}
+      {activeEngineView === "live" && (
+        <section className="analysis-detail-row analysis-evaluation-panel">
+          <div className="analysis-position-panel analysis-evaluation-position-panel">
+            <div className="analysis-detail-title">
+              {activePly
+                ? `EvaluationEngine-Fortsetzung ab ${activePly}. Halbzug`
+                : "EvaluationEngine-Fortsetzung"}
+            </div>
+            {renderEvaluationBoard()}
           </div>
-        )}
 
-        {evaluation && evaluation.lines.length === 0 && (
-          <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
-            {formatEngineScore(evaluation.eval)} · terminal position
-          </div>
-        )}
-
-        {evaluation && evaluation.lines.length > 0 && (
-          <>
-            <div className="engine-lines-summary analysis-evaluation-summary">
-              <span>{evaluation.engineName || "Evaluation engine"}</span>
-              <span>depth {evaluation.lines[0].depth} · infinite</span>
+          <div className="analysis-lines-panel analysis-evaluation-lines-panel">
+            <div className="analysis-detail-title">
+              EvaluationEngine-Varianten · infinite
             </div>
 
-            <div className="analysis-lines-list analysis-evaluation-lines-list">
-              {evaluation.lines.map((line, index) => {
-                const effectiveIndex = Math.min(
-                  selectedLineIndex,
-                  evaluation.lines.length - 1
-                );
-                const isSelected = index === effectiveIndex;
+            {!evaluation && (
+              <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
+                {activePly
+                  ? `Evaluation für Halbzug ${activePly} wird berechnet…`
+                  : "Evaluation-Bar einschalten, um die ausgewählte Stellung infinite zu analysieren."}
+              </div>
+            )}
 
-                return (
-                  <button
-                    type="button"
-                    className={[
-                      "analysis-line-card",
-                      isSelected ? "analysis-line-card-selected" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    key={`${index}-${line.depth}-${line.moves}`}
-                    onClick={() => {
-                      setSelectedLineIndex(index);
-                      setAnimationIndex(0);
-                    }}
-                  >
-                    <div className="analysis-line-header">
-                      <strong>#{index + 1}</strong>
-                      <span>{formatEngineLineScore(line)}</span>
-                    </div>
-                    <div className="analysis-line-moves">
-                      {renderLineMoves(line, isSelected)}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
-    </section>,
+            {evaluation && evaluation.lines.length === 0 && (
+              <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
+                {formatEngineScore(evaluation.eval)} · terminal position
+              </div>
+            )}
+
+            {evaluation && evaluation.lines.length > 0 && (
+              <>
+                <div className="engine-lines-summary analysis-evaluation-summary">
+                  <span>{evaluation.engineName || "Evaluation engine"}</span>
+                  <span>depth {evaluation.lines[0].depth} · infinite</span>
+                </div>
+
+                <div className="analysis-lines-list analysis-evaluation-lines-list">
+                  {evaluation.lines.map((line, index) => {
+                    const effectiveIndex = Math.min(
+                      selectedLineIndex,
+                      evaluation.lines.length - 1
+                    );
+                    const isSelected = index === effectiveIndex;
+
+                    return (
+                      <button
+                        type="button"
+                        className={[
+                          "analysis-line-card",
+                          isSelected ? "analysis-line-card-selected" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        key={`${index}-${line.depth}-${line.moves}`}
+                        onClick={() => {
+                          setSelectedLineIndex(index);
+                          setAnimationIndex(0);
+                        }}
+                      >
+                        <div className="analysis-line-header">
+                          <strong>#{index + 1}</strong>
+                          <span>{formatEngineLineScore(line)}</span>
+                        </div>
+                        <div className="analysis-line-moves">
+                          {renderLineMoves(line, isSelected)}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+    </>,
     portalHost
   );
 }
