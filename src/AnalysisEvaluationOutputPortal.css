@@ -7,12 +7,13 @@
 }
 
 /*
- * The analysis profile stays compact at the top. Below it, Deep Analysis and
- * Live Evaluation share the remaining space and are selected through tabs.
+ * The analysis history gets enough height that the square continuation board
+ * below it fits exactly into the remaining analysis area. Deep Analysis and
+ * Live Evaluation share the same geometry and are selected through tabs.
  */
 .analysis-replay-content > .analysis-profile-panel {
-  flex: 0 0 216px !important;
-  height: 216px !important;
+  flex: 0 0 260px !important;
+  height: 260px !important;
   min-height: 0 !important;
 }
 
@@ -89,11 +90,10 @@
 }
 
 /*
- * Deep Analysis and Live Evaluation deliberately use exactly the same board
- * geometry. The old three-row layout limited the preview board to 172 px;
- * with tabs that restriction would waste most of the available vertical
- * space. A wider left column lets the square board grow down to roughly the
- * same baseline as the visible engine variants on the right.
+ * Both tabs use the exact same square board geometry. The panel width is
+ * 336px including padding/border; the board itself therefore gets roughly
+ * 314px in both dimensions. The 260px analysis-history height above leaves
+ * exactly enough room for this square board plus title and spacing below.
  */
 .analysis-replay-content .analysis-position-panel {
   flex: 0 0 336px;
@@ -102,11 +102,11 @@
 }
 
 .analysis-replay-content .analysis-position-board {
-  flex: 1 1 auto;
-  width: auto;
+  flex: 0 0 auto;
+  width: 100%;
+  height: auto;
   max-width: 100%;
-  max-height: 100%;
-  min-height: 0;
+  max-height: none;
   aspect-ratio: 1 / 1;
   align-self: center;
 }
