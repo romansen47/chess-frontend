@@ -248,7 +248,7 @@ export default function EngineConfigManager({
     try {
       setBusy(true);
       setError(null);
-      setMessage("System-Dateiauswahl wird geöffnet…");
+      setMessage("Opening system file picker…");
       const response = await fetch("/api/engine-configs/engines/select", {
         method: "POST",
       });
@@ -629,7 +629,7 @@ export default function EngineConfigManager({
         <button
           type="button"
           className="engine-config-option-value-button"
-          title={`${name}: ${displayValue} · zum Bearbeiten klicken`}
+          title={`${name}: ${displayValue} · click to edit`}
           onClick={() => openProfileOptionEditor(name, option, value)}
           disabled={busy}
         >
@@ -709,7 +709,7 @@ export default function EngineConfigManager({
           <div>
             <h2>Engine Settings</h2>
             <div className="engine-config-dialog-subtitle">
-              Engines, wiederverwendbare Profile und ihre Verwendung
+              Engines, reusable profiles, and their assignments
               {overview && <span> · Version {overview.version}</span>}
             </div>
           </div>
@@ -729,7 +729,7 @@ export default function EngineConfigManager({
             >
               Reset Engines &amp; Profiles
             </button>
-            <button type="button" onClick={onClose} disabled={busy}>Schließen</button>
+            <button type="button" onClick={onClose} disabled={busy}>Close</button>
           </div>
         </header>
 
@@ -779,7 +779,7 @@ export default function EngineConfigManager({
                 <div className="engine-config-sidebar-header">
                   <div>
                     <strong>Use Cases</strong>
-                    <span>Profile sind unabhängig vom Einsatzzweck</span>
+                    <span>Profiles are independent of their use case</span>
                   </div>
                 </div>
                 <div className="engine-config-nav-list engine-config-assignment-list">
@@ -807,39 +807,39 @@ export default function EngineConfigManager({
                     <div>
                       <strong>Default Profile Assignments</strong>
                       <span>
-                        Ein Profil beschreibt nur seine Engine-Konfiguration. Hier wird festgelegt,
-                        welches Profil ein konkreter Anwendungsfall standardmäßig benutzt.
+                        A profile only describes its engine configuration. This section defines
+                        which profile each use case uses by default.
                       </span>
                     </div>
                     <span className="engine-config-chip">Global</span>
                   </div>
 
                   <div className="engine-config-default-info">
-                    Das Fallback-Profil bleibt an <strong>{fallbackEngine?.engine ?? "die erkannte UCI-Engine"}</strong> mit deren
-                    UCI-Defaultwerten gebunden. <strong>/usr/games/stockfish</strong> wird bevorzugt, wenn es dort als gültige UCI-Engine
-                    erkannt wird. Jedes andere Profil kann gleichzeitig mehreren Aufgaben zugewiesen werden.
+                    The fallback profile remains bound to <strong>{fallbackEngine?.engine ?? "the detected UCI engine"}</strong> with its
+                    UCI default values. <strong>/usr/games/stockfish</strong> is preferred when it is detected there as a valid UCI engine
+                    Each other profile can be assigned to multiple tasks at the same time.
                   </div>
 
                   <div className="engine-config-default-grid">
                     {renderAssignmentCard(
                       "whitePlayerProfileId",
                       "White CPU Player",
-                      "Profil, sobald Weiß als Computer spielt."
+                      "Profile used when White is controlled by the computer."
                     )}
                     {renderAssignmentCard(
                       "blackPlayerProfileId",
                       "Black CPU Player",
-                      "Profil, sobald Schwarz als Computer spielt."
+                      "Profile used when Black is controlled by the computer."
                     )}
                     {renderAssignmentCard(
                       "evaluationProfileId",
                       "Live Evaluation",
-                      "Profil für die laufende Stellungsbewertung."
+                      "Profile used for live position evaluation."
                     )}
                     {renderAssignmentCard(
                       "deepAnalysisProfileId",
                       "Deep Analysis",
-                      "Vorauswahl für einen neuen Deep-Analysis-Lauf."
+                      "Default selection for a new Deep Analysis run."
                     )}
                   </div>
 
@@ -865,7 +865,7 @@ export default function EngineConfigManager({
                     <span>
                       {mode === "ENGINES"
                         ? "Executable und UCI-Definition"
-                        : "Engine und konkrete UCI-Werte"}
+                        : "Engine and concrete UCI values"}
                     </span>
                   </div>
                   <button
@@ -879,7 +879,7 @@ export default function EngineConfigManager({
 
                 <div className="engine-config-nav-list">
                   {mode === "ENGINES" && engines.length === 0 && (
-                    <div className="engine-config-empty">Noch keine Engine definiert.</div>
+                    <div className="engine-config-empty">No engine has been defined yet.</div>
                   )}
                   {mode === "ENGINES" && engines.map((engine) => (
                     <button
@@ -903,7 +903,7 @@ export default function EngineConfigManager({
                   ))}
 
                   {mode === "PROFILES" && profiles.length === 0 && (
-                    <div className="engine-config-empty">Noch kein Profil definiert.</div>
+                    <div className="engine-config-empty">No profile has been defined yet.</div>
                   )}
                   {mode === "PROFILES" && profiles.map((profile) => {
                     const engine = engines.find((candidate) => candidate.id === profile.engineId);
@@ -945,7 +945,7 @@ export default function EngineConfigManager({
                         <div className="engine-config-details-heading">
                           <div>
                             <strong>Neue Engine definieren</strong>
-                            <span>Schritt 1 · Executable über die System-Dateiauswahl auswählen</span>
+                            <span>Step 1 · Select the executable using the system file picker</span>
                           </div>
                         </div>
                         <div className="engine-config-form-grid">
@@ -954,16 +954,16 @@ export default function EngineConfigManager({
                             <input
                               value={newEngineName}
                               onChange={(event) => setNewEngineName(event.target.value)}
-                              placeholder="Wird sonst aus der UCI-Engine übernommen"
+                              placeholder="Otherwise taken from the UCI engine"
                             />
                           </label>
                         </div>
                         <div className="engine-config-default-info">
-                          Der Dateidialog wird auf dem Rechner geöffnet, auf dem das Backend läuft. Nach der Auswahl wird die Engine automatisch per UCI eingelesen.
+                          The file dialog opens on the computer running the backend. After selection, the engine is inspected automatically through UCI.
                         </div>
                         <div className="engine-config-actions">
                           <button type="button" onClick={() => void inspectEngine()} disabled={busy}>
-                            {busy ? "Dateiauswahl läuft…" : "Engine-Datei auswählen…"}
+                            {busy ? "File picker is open…" : "Select engine file…"}
                           </button>
                         </div>
                       </div>
@@ -971,8 +971,8 @@ export default function EngineConfigManager({
 
                     {!creatingEngine && !engineDraft && (
                       <div className="engine-config-details-empty">
-                        <strong>Keine Engine ausgewählt</strong>
-                        <span>Wähle links eine Engine oder lege eine neue Definition an.</span>
+                        <strong>No engine selected</strong>
+                        <span>Select an engine on the left or create a new definition.</span>
                       </div>
                     )}
 
@@ -980,11 +980,11 @@ export default function EngineConfigManager({
                       <div className="engine-config-editor">
                         <div className="engine-config-details-heading">
                           <div>
-                            <strong>{engineDraft.id ? engineDraft.name : "Engine definition prüfen"}</strong>
+                            <strong>{engineDraft.id ? engineDraft.name : "Review engine definition"}</strong>
                             <span>
                               {engineDraft.id
-                                ? "UCI-Metadaten und erkannte Engine-Fähigkeiten"
-                                : "Schritt 2 · Erkannte Engine und UCI-Fähigkeiten prüfen und speichern"}
+                                ? "UCI metadata and detected engine capabilities"
+                                : "Step 2 · Review and save the detected engine and UCI capabilities"}
                             </span>
                           </div>
                           <span className="engine-config-chip">
@@ -1025,7 +1025,7 @@ export default function EngineConfigManager({
                           <div>
                             <strong>Available UCI Options</strong>
                             <span>
-                              Von der Engine gemeldete Fähigkeiten und Original-Defaults. Konkrete Werte werden ausschließlich in Profilen festgelegt.
+                              Capabilities and original defaults reported by the engine. Concrete values are configured exclusively in profiles.
                             </span>
                           </div>
                           <div className="engine-config-option-tools">
@@ -1068,7 +1068,7 @@ export default function EngineConfigManager({
                               onClick={() => void inspectEngine()}
                               disabled={busy}
                             >
-                              {busy ? "Dateiauswahl läuft…" : "Andere Engine auswählen…"}
+                              {busy ? "File picker is open…" : "Select another engine…"}
                             </button>
                           )}
                           <div className="engine-config-actions-spacer" />
@@ -1091,13 +1091,13 @@ export default function EngineConfigManager({
                       <div className="engine-config-create-card">
                         <div className="engine-config-details-heading">
                           <div>
-                            <strong>Neues Profil</strong>
-                            <span>Schritt 1 · Bereits definierte Engine auswählen</span>
+                            <strong>New profile</strong>
+                            <span>Step 1 · Select an already defined engine</span>
                           </div>
                         </div>
                         {engines.length === 0 ? (
                           <div className="engine-config-details-empty">
-                            <strong>Keine Engine vorhanden</strong>
+                            <strong>No engine available</strong>
                             <span>Definiere zuerst unter Engines eine UCI-Engine.</span>
                           </div>
                         ) : (
@@ -1135,8 +1135,8 @@ export default function EngineConfigManager({
 
                     {!creatingProfile && !profileDraft && (
                       <div className="engine-config-details-empty">
-                        <strong>Kein Profil ausgewählt</strong>
-                        <span>Wähle links ein Profil oder lege ein neues an.</span>
+                        <strong>No profile selected</strong>
+                        <span>Select a profile on the left or create a new one.</span>
                       </div>
                     )}
 
@@ -1144,11 +1144,11 @@ export default function EngineConfigManager({
                       <div className="engine-config-editor">
                         <div className="engine-config-details-heading">
                           <div>
-                            <strong>{profileDraft.id ? profileDraft.name : "Profil konfigurieren"}</strong>
+                            <strong>{profileDraft.id ? profileDraft.name : "Configure profile"}</strong>
                             <span>
                               {profileDraft.id
-                                ? `${profileEngine.name} · wiederverwendbare Engine-Konfiguration`
-                                : `Schritt 2 · UCI-Werte für ${profileEngine.name} festlegen`}
+                                ? `${profileEngine.name} · reusable engine configuration`
+                                : `Step 2 · Configure UCI values for ${profileEngine.name}`}
                             </span>
                           </div>
                           <div className="engine-config-heading-badges">
@@ -1161,8 +1161,8 @@ export default function EngineConfigManager({
 
                         {isFallbackProfile && (
                           <div className="engine-config-default-info">
-                            Dieses Profil ist der feste Fallback für <strong>{profileEngine.engine}</strong> und bleibt auf dessen
-                            UCI-Defaultwerten. Erstelle ein neues Profil, wenn du diese Engine anders konfigurieren möchtest.
+                            This profile is the fixed fallback for <strong>{profileEngine.engine}</strong> and remains on its
+                            UCI default values. Create a new profile if you want to configure this engine differently.
                           </div>
                         )}
 
@@ -1185,7 +1185,7 @@ export default function EngineConfigManager({
                           <div>
                             <strong>Profile UCI Options ({Object.keys(profileDraft.optionValues).length})</strong>
                             <span>
-                              Die Werte werden hier nur angezeigt. Klicke einen Wert an, um genau diese Option zu bearbeiten.
+                              Values are only displayed here. Click a value to edit that specific option.
                             </span>
                           </div>
                           <div className="engine-config-option-tools">
@@ -1267,7 +1267,7 @@ export default function EngineConfigManager({
               className="engine-config-option-popup"
               role="dialog"
               aria-modal="true"
-              aria-label={`${profileOptionEditor.name} bearbeiten`}
+              aria-label={`Edit ${profileOptionEditor.name}`}
               onMouseDown={(event) => event.stopPropagation()}
               onSubmit={(event) => {
                 event.preventDefault();
@@ -1293,14 +1293,14 @@ export default function EngineConfigManager({
                 <button
                   type="button"
                   onClick={() => setProfileOptionEditor(null)}
-                  aria-label="Editor schließen"
+                  aria-label="Close editor"
                 >
                   ×
                 </button>
               </div>
 
               <label className="engine-config-option-popup-editor">
-                <span>Profilwert</span>
+                <span>Profile value</span>
                 {profileOptionEditor.option.type === "check" ? (
                   <span className="engine-config-option-popup-check">
                     <input
@@ -1355,9 +1355,9 @@ export default function EngineConfigManager({
 
               <div className="engine-config-option-popup-actions">
                 <button type="button" onClick={() => setProfileOptionEditor(null)}>
-                  Abbrechen
+                  Cancel
                 </button>
-                <button type="submit">Übernehmen</button>
+                <button type="submit">Apply</button>
               </div>
             </form>
           </div>

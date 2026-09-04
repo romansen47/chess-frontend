@@ -93,7 +93,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
         return historyData[0]?.id ?? null;
       });
     } catch (e) {
-      setError(`Engine-Liste konnte nicht geladen werden: ${String(e)}`);
+      setError(`Could not load engine list: ${String(e)}`);
     }
   }
 
@@ -105,7 +105,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
       }
       setLogEntries((await response.json()) as EngineLogEntry[]);
     } catch (e) {
-      setError(`Engine-Protokoll konnte nicht geladen werden: ${String(e)}`);
+      setError(`Could not load engine log: ${String(e)}`);
     }
   }
 
@@ -133,7 +133,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
       await loadInstances();
       await loadLog(instance.id);
     } catch (e) {
-      setError(`Engine-Prozess konnte nicht beendet werden: ${String(e)}`);
+      setError(`Could not terminate engine process: ${String(e)}`);
     } finally {
       setTerminatingId(null);
     }
@@ -197,7 +197,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
     return (
       <div className="engine-manager-details">
         {!instance && (
-          <div className="engine-manager-empty">Engine-Instanz auswählen.</div>
+          <div className="engine-manager-empty">Select an engine instance.</div>
         )}
 
         {instance && (
@@ -214,7 +214,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
                   disabled={!instance.processAlive || terminatingId === instance.id}
                   onClick={() => void terminate(instance)}
                 >
-                  {terminatingId === instance.id ? "Beende…" : "Prozess beenden"}
+                  {terminatingId === instance.id ? "Terminating…" : "Terminate process"}
                 </button>
               )}
             </div>
@@ -223,11 +223,11 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
               <div><dt>PID</dt><dd>{instance.pid ?? "–"}</dd></div>
               <div><dt>Status</dt><dd>{instance.state}</dd></div>
               <div><dt>Typ</dt><dd>{instance.engineType}</dd></div>
-              <div><dt>Exit-Code</dt><dd>{instance.exitCode ?? "–"}</dd></div>
+              <div><dt>Exit code</dt><dd>{instance.exitCode ?? "–"}</dd></div>
               <div><dt>Instanz seit</dt><dd>{formatTimestamp(instance.createdAt)}</dd></div>
               <div><dt>Prozess seit</dt><dd>{formatTimestamp(instance.processStartedAt)}</dd></div>
-              <div><dt>Letzte Aktivität</dt><dd>{formatTimestamp(instance.lastActivityAt)}</dd></div>
-              <div><dt>Log-Einträge</dt><dd>{instance.logEntryCount}</dd></div>
+              <div><dt>Last activity</dt><dd>{formatTimestamp(instance.lastActivityAt)}</dd></div>
+              <div><dt>Log entries</dt><dd>{instance.logEntryCount}</dd></div>
             </dl>
 
             <div className="engine-manager-path-row">
@@ -237,11 +237,11 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
 
             <div className="engine-manager-log-header">
               <strong>UCI-Protokoll</strong>
-              <span>max. 2000 letzte Einträge pro Instanz</span>
+              <span>up to 2000 most recent entries per instance</span>
             </div>
             <div className="engine-manager-log">
               {logEntries.length === 0 && (
-                <div className="engine-manager-empty">Noch keine Kommunikation protokolliert.</div>
+                <div className="engine-manager-empty">No communication has been logged yet.</div>
               )}
               {logEntries.map((entry) => (
                 <div
@@ -292,7 +292,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
               Aktualisieren
             </button>
             <button type="button" onClick={onClose}>
-              Schließen
+              Close
             </button>
           </div>
         </header>
@@ -304,7 +304,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
             currentInstances,
             selectedId,
             setSelectedId,
-            "Keine aktuelle Engine-Instanz registriert."
+            "No active engine instance is registered."
           )}
           {renderDetails(selected, true)}
         </div>
@@ -330,7 +330,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
               <div>
                 <h2>Engine-Historie</h2>
                 <div className="engine-manager-subtitle">
-                  Ordnungsgemäß geschlossene UCI-Instanzen und ihre Protokolle
+                  Gracefully closed UCI instances and their logs
                 </div>
               </div>
               <div className="engine-manager-header-actions">
@@ -338,7 +338,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
                   Aktualisieren
                 </button>
                 <button type="button" onClick={() => setShowHistory(false)}>
-                  Schließen
+                  Close
                 </button>
               </div>
             </header>
@@ -350,7 +350,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
                 historyInstances,
                 historySelectedId,
                 setHistorySelectedId,
-                "Noch keine geschlossene Engine-Instanz vorhanden."
+                "No closed engine instance is available yet."
               )}
               {renderDetails(historySelected, false)}
             </div>

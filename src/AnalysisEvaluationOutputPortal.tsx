@@ -29,7 +29,7 @@ const ANALYSIS_EVALUATION_EVENT = "chess-analysis-evaluation-update";
 
 function formatEngineScore(evaluation: number): string {
   if (Math.abs(evaluation) >= 99) {
-    return evaluation > 0 ? "Mate für Weiß" : "Mate für Schwarz";
+    return evaluation > 0 ? "Mate for White" : "Mate for Black";
   }
 
   return `Eval ${evaluation.toFixed(2)}`;
@@ -37,7 +37,7 @@ function formatEngineScore(evaluation: number): string {
 
 function formatEngineLineScore(line: EngineLine): string {
   if (line.mateDistance !== undefined && line.mateDistance !== null) {
-    const winner = line.eval > 0 ? "Weiß" : "Schwarz";
+    const winner = line.eval > 0 ? "White" : "Black";
     const distance = Math.abs(line.mateDistance);
     return distance > 0 ? `Mate für ${winner} in ${distance}` : `Mate für ${winner}`;
   }
@@ -442,8 +442,8 @@ export default function AnalysisEvaluationOutputPortal() {
       return (
         <div className="analysis-detail-placeholder">
           {evaluation
-            ? "Für diese Variante wurden noch keine Brettstellungen geliefert."
-            : "Evaluation-Bar einschalten, um die Stellung zu analysieren."}
+            ? "No board positions have been provided for this variation yet."
+            : "Enable the evaluation bar to analyze the position."}
         </div>
       );
     }
@@ -455,7 +455,7 @@ export default function AnalysisEvaluationOutputPortal() {
     if (!position || position.length !== 64) {
       return (
         <div className="analysis-detail-placeholder">
-          Brettstellung der EvaluationEngine ist nicht verfügbar.
+          The EvaluationEngine board position is not available.
         </div>
       );
     }
@@ -536,7 +536,7 @@ export default function AnalysisEvaluationOutputPortal() {
       <div
         className="analysis-engine-view-tabs"
         role="tablist"
-        aria-label="Analyse-Engine-Linien"
+        aria-label="Analysis engine lines"
       >
         <button
           type="button"
@@ -573,22 +573,22 @@ export default function AnalysisEvaluationOutputPortal() {
           <div className="analysis-position-panel analysis-evaluation-position-panel">
             <div className="analysis-detail-title">
               {activePly
-                ? `EvaluationEngine-Fortsetzung ab ${activePly}. Halbzug`
-                : "EvaluationEngine-Fortsetzung"}
+                ? `EvaluationEngine continuation from ply ${activePly}`
+                : "EvaluationEngine continuation"}
             </div>
             {renderEvaluationBoard()}
           </div>
 
           <div className="analysis-lines-panel analysis-evaluation-lines-panel">
             <div className="analysis-detail-title">
-              EvaluationEngine-Varianten · infinite
+              EvaluationEngine variations · infinite
             </div>
 
             {!evaluation && (
               <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
                 {activePly
-                  ? `Evaluation für Halbzug ${activePly} wird berechnet…`
-                  : "Evaluation-Bar einschalten, um die ausgewählte Stellung infinite zu analysieren."}
+                  ? `Evaluation for ply ${activePly} is being calculated…`
+                  : "Enable the evaluation bar to analyze the selected position infinitely."}
               </div>
             )}
 
