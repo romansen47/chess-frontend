@@ -115,7 +115,7 @@
 .chess-database-progress {
   position: relative;
   height: 10px;
-  margin: 14px 0;
+  margin: 14px 0 6px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
@@ -125,15 +125,23 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 42%;
+  left: 0;
+  width: 0;
   border-radius: inherit;
-  background: rgba(255, 255, 255, 0.72);
-  animation: chess-database-progress 1.15s ease-in-out infinite;
+  background: rgba(255, 255, 255, 0.78);
+  transition: width 180ms linear;
 }
 
-@keyframes chess-database-progress {
-  0% { left: -42%; }
-  100% { left: 100%; }
+.chess-database-progress-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.86rem;
+}
+
+.chess-database-progress-label span {
+  opacity: 0.68;
 }
 
 .chess-database-import-result {
@@ -149,6 +157,17 @@
   display: flex;
   justify-content: space-between;
   gap: 20px;
+}
+
+.chess-database-import-message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.chess-database-import-footer {
+  justify-content: space-between;
 }
 
 .chess-database-search-dialog {
