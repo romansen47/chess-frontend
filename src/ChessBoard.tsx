@@ -887,7 +887,7 @@ export const ChessBoard: React.FC = () => {
 
   function playMoveResultSound(result: MoveResult) {
     const san = result.san ?? "";
-    const sound: GameSound = san.includes("x") ? "capture" : "move";
+    const sound: GameSound = /[x+#]/.test(san) ? "capture" : "move";
 
     void playGameSound(sound);
 
