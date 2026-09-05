@@ -3,6 +3,8 @@ import EngineManager from "./EngineManager";
 import EngineConfigManager from "./EngineConfigManager";
 import { fetchEngineConfigOverview } from "./engineConfig";
 import type { EngineConfigOverview } from "./engineConfig";
+import ChessDatabaseDialog, { type ChessDatabaseLoadedGame } from "./ChessDatabaseDialog";
+import AnalysisDatabasePanel from "./AnalysisDatabasePanel";
 
 type PieceColor = "white" | "black";
 type PieceType = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
@@ -755,6 +757,7 @@ export const ChessBoard: React.FC = () => {
   const [engineConfigLoadError, setEngineConfigLoadError] = useState<string | null>(null);
   const [showEngineManager, setShowEngineManager] = useState<boolean>(false);
   const [showDataMenu, setShowDataMenu] = useState<boolean>(false);
+  const [showChessDatabaseDialog, setShowChessDatabaseDialog] = useState<boolean>(false);
   const [isTerminatingProgram, setIsTerminatingProgram] = useState<boolean>(false);
   const dataMenuRef = useRef<HTMLDivElement | null>(null);
   const [uciAnalysisLoaded, setUciAnalysisLoadedState] = useState<boolean>(false);
@@ -797,6 +800,7 @@ export const ChessBoard: React.FC = () => {
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const [analysisSelectedPosition, setAnalysisSelectedPosition] =
     useState<AnalysisPositionSelection | null>(null);
+  const [analysisDetailsTab, setAnalysisDetailsTab] = useState<"engine" | "database">("engine");
   const [analysisSelectedLineIndex, setAnalysisSelectedLineIndex] =
     useState<number | null>(null);
   const [analysisLineAnimationIndex, setAnalysisLineAnimationIndex] =
@@ -1716,6 +1720,72 @@ export const ChessBoard: React.FC = () => {
     uciFileInputRef.current?.click();
   }
 
+  async function applyImportedGame(imported: UciGameResponse | ChessDatabaseLoadedGame) {
+    setIsLoadingMoves(true);
+    try {
+      setLoadError(null);
+      setShowGameEndDialog(false);
+      setShowGameSettingsDialog(false);
+      setShowAnalysisSettingsDialog(false);
+      setSelectedSquare(null);
+      updatePossibleTargets([]);
+      setPromotionContext(null);
+      setHoverPreview(null);
+      await disablePlayerEngines();
+      await stopLiveEvaluation();
+      await stopAnalysisEvaluation();
+      setEngineAutoUpdate(false);
+      setEngineEval(null);
+      setAnalysisEvaluationEnabled(false);
+      setAnalysisEvaluation(null);
+      setAnalysisEvaluationError(null);
+      analysisEvaluationPlyRef.current = null;
+
+      analysisReplayCancelledRef.current = true;
+      setAnalysisReplayActive(false);
+      setIsAnalysisReplayRunning(false);
+      setAnalysisReplayStatus(null);
+      setAnalysisReplayError(null);
+      setAnalysisReplayFinished(false);
+      setAnalysisSelectedPosition(null);
+      setAnalysisSelectedLineIndex(null);
+      setAnalysisLineAnimationIndex(0);
+      setAnalysisDetailsTab("engine");
+      setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
+
+      const importedMoves = imported.moves ?? [];
+      const moveRows = mapImportedUciMovesToRows(importedMoves);
+
+      setUciAnalysisLoaded(true);
+      setMoves(moveRows);
+      setAnalysisWhitePlayerName(formatPlayerDisplayName(imported.whitePlayerName, "White"));
+      setAnalysisBlackPlayerName(formatPlayerDisplayName(imported.blackPlayerName, "Black"));
+      setAnalysisTotalPlies(Math.max(0, imported.totalPlies ?? importedMoves.length));
+      setGameEndState(null);
+      setShowGameEndDialog(false);
+
+      if (imported.position && imported.position.length === 64) {
+        setPieces(mapPositionStringToLocalPieces(imported.position));
+      } else {
+        setPieces(createInitialPieces());
+      }
+
+      const lastImportedMove = importedMoves[importedMoves.length - 1];
+      if (lastImportedMove?.uci && lastImportedMove.uci.length >= 4) {
+        setLastMove({
+          from: lastImportedMove.uci.substring(0, 2),
+          to: lastImportedMove.uci.substring(2, 4),
+        });
+      } else {
+        setLastMove(null);
+      }
+
+      setShowAnalysisSettingsDialog(true);
+    } finally {
+      setIsLoadingMoves(false);
+    }
+  }
+
   async function handleUciFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     const hadImportedGame = uciAnalysisLoadedRef.current;
@@ -1771,34 +1841,7 @@ export const ChessBoard: React.FC = () => {
       }
 
       const imported: UciGameResponse = await response.json();
-      const importedMoves = imported.moves ?? [];
-      const moveRows = mapImportedUciMovesToRows(importedMoves);
-
-      setUciAnalysisLoaded(true);
-      setMoves(moveRows);
-      setAnalysisWhitePlayerName(formatPlayerDisplayName(imported.whitePlayerName, "White"));
-      setAnalysisBlackPlayerName(formatPlayerDisplayName(imported.blackPlayerName, "Black"));
-      setAnalysisTotalPlies(Math.max(0, imported.totalPlies ?? importedMoves.length));
-      setGameEndState(null);
-      setShowGameEndDialog(false);
-
-      if (imported.position && imported.position.length === 64) {
-        setPieces(mapPositionStringToLocalPieces(imported.position));
-      } else {
-        setPieces(createInitialPieces());
-      }
-
-      const lastImportedMove = importedMoves[importedMoves.length - 1];
-      if (lastImportedMove?.uci && lastImportedMove.uci.length >= 4) {
-        setLastMove({
-          from: lastImportedMove.uci.substring(0, 2),
-          to: lastImportedMove.uci.substring(2, 4),
-        });
-      } else {
-        setLastMove(null);
-      }
-
-      setShowAnalysisSettingsDialog(true);
+      await applyImportedGame(imported);
     } catch (error) {
       console.error("[handleUciFileSelected] error", error);
       setUciAnalysisLoaded(hadImportedGame);
@@ -3000,6 +3043,10 @@ export const ChessBoard: React.FC = () => {
       return null;
     }
 
+    if (analysisDetailsTab === "database") {
+      return analysisSelectedPosition.position;
+    }
+
     if (lines.length === 0) {
       return analysisSelectedPosition.position;
     }
@@ -3138,20 +3185,61 @@ export const ChessBoard: React.FC = () => {
   };
 
   const renderAnalysisDetails = () => {
+    const databaseTabActive = analysisDetailsTab === "database";
+
     return (
-      <div className="analysis-detail-row">
-        <div className="analysis-position-panel">
-          <div className="analysis-detail-title">
-            {analysisSelectedPosition ? `Engine continuation from ${analysisSelectedPosition.label}` : "Engine continuation"}
-          </div>
-          {renderAnalysisPositionBoard()}
+      <>
+        <div className="analysis-detail-tabs" role="tablist" aria-label="Analysis source">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!databaseTabActive}
+            className={[
+              "analysis-detail-tab",
+              !databaseTabActive ? "analysis-detail-tab-active" : "",
+            ].filter(Boolean).join(" ")}
+            onClick={() => setAnalysisDetailsTab("engine")}
+          >
+            Engine
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={databaseTabActive}
+            className={[
+              "analysis-detail-tab",
+              databaseTabActive ? "analysis-detail-tab-active" : "",
+            ].filter(Boolean).join(" ")}
+            onClick={() => setAnalysisDetailsTab("database")}
+          >
+            Database
+          </button>
         </div>
 
-        <div className="analysis-lines-panel">
-          <div className="analysis-detail-title">Engine variations</div>
-          {renderAnalysisLinesForSelection()}
+        <div className="analysis-detail-row">
+          <div className="analysis-position-panel">
+            <div className="analysis-detail-title">
+              {databaseTabActive
+                ? analysisSelectedPosition
+                  ? `Database position after ${analysisSelectedPosition.label}`
+                  : "Database position"
+                : analysisSelectedPosition
+                  ? `Engine continuation from ${analysisSelectedPosition.label}`
+                  : "Engine continuation"}
+            </div>
+            {renderAnalysisPositionBoard()}
+          </div>
+
+          <div className="analysis-lines-panel">
+            <div className="analysis-detail-title">
+              {databaseTabActive ? "Database continuations" : "Engine variations"}
+            </div>
+            {databaseTabActive
+              ? <AnalysisDatabasePanel ply={analysisSelectedPosition?.ply ?? null} />
+              : renderAnalysisLinesForSelection()}
+          </div>
         </div>
-      </div>
+      </>
     );
   };
 
@@ -3300,6 +3388,18 @@ export const ChessBoard: React.FC = () => {
                   Load PGN
                 </button>
 
+                <button
+                  className="data-menu-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setShowDataMenu(false);
+                    setShowChessDatabaseDialog(true);
+                  }}
+                  disabled={analysisReplayActive && !analysisReplayFinished}
+                >
+                  Chess Database…
+                </button>
+
                 <div className="data-menu-separator" role="separator" />
 
                 <button
@@ -3334,6 +3434,15 @@ export const ChessBoard: React.FC = () => {
 
       {showEngineManager && (
         <EngineManager onClose={() => setShowEngineManager(false)} />
+      )}
+
+      {showChessDatabaseDialog && (
+        <ChessDatabaseDialog
+          onClose={() => setShowChessDatabaseDialog(false)}
+          onGameLoaded={async (game) => {
+            await applyImportedGame(game);
+          }}
+        />
       )}
 
       <input
