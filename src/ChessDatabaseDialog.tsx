@@ -25,11 +25,18 @@ interface DatabaseStatus {
   message: string | null;
 }
 
-interface DatabaseImportResult {
+interface DatabaseImportJob {
+  id: string;
+  fileName: string;
+  status: "RUNNING" | "COMPLETE" | "CANCELLED" | "FAILED";
+  totalBytes: number;
+  bytesRead: number;
+  processedGames: number;
   importedGames: number;
   skippedGames: number;
   totalPlies: number;
   elapsedMillis: number;
+  message: string | null;
 }
 
 interface DatabaseGameSummary {
@@ -96,6 +103,21 @@ function optionalNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function importProgressPercent(job: DatabaseImportJob | null): number {
+  if (!job || job.totalBytes <= 0) {
+    return job?.status === "COMPLETE" ? 100 : 0;
+  }
+
+  const calculated = Math.max(0, Math.min(100, (job.bytesRead / job.totalBytes) * 100));
+  if (job.status === "RUNNING") {
+    return Math.min(99.9, calculated);
+  }
+  if (job.status === "COMPLETE") {
+    return 100;
+  }
+  return calculated;
+}
+
 export default function ChessDatabaseDialog({
   onClose,
   onGameLoaded,
@@ -107,9 +129,10 @@ export default function ChessDatabaseDialog({
   const [isStatusLoading, setIsStatusLoading] = useState(false);
 
   const [importFileName, setImportFileName] = useState<string>("");
-  const [isImporting, setIsImporting] = useState(false);
-  const [importResult, setImportResult] = useState<DatabaseImportResult | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
+  const [isImportStarting, setIsImportStarting] = useState(false);
+  const [importJob, setImportJob] = useState<DatabaseImportJob | null>(null);
+  const [importStartError, setImportStartError] = useState<string | null>(null);
+  const [cancelRequested, setCancelRequested] = useState(false);
 
   const [searchForm, setSearchForm] = useState<SearchForm>(EMPTY_SEARCH);
   const [searchResults, setSearchResults] = useState<DatabaseGameSummary[]>([]);
@@ -120,6 +143,19 @@ export default function ChessDatabaseDialog({
   useEffect(() => {
     void loadStatus();
   }, []);
+
+  useEffect(() => {
+    const importId = importJob?.id;
+    if (!importId || importJob?.status !== "RUNNING") {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void refreshImportJob(importId);
+    }, 400);
+
+    return () => window.clearInterval(timer);
+  }, [importJob?.id, importJob?.status]);
 
   async function loadStatus() {
     setIsStatusLoading(true);
@@ -142,6 +178,24 @@ export default function ChessDatabaseDialog({
     }
   }
 
+  async function refreshImportJob(importId: string) {
+    try {
+      const response = await fetch(`/api/chess-database/imports/${encodeURIComponent(importId)}`);
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+      const nextJob: DatabaseImportJob = await response.json();
+      setImportJob(nextJob);
+      if (nextJob.status !== "RUNNING") {
+        setCancelRequested(false);
+        await loadStatus();
+      }
+    } catch (error) {
+      setImportStartError(error instanceof Error ? error.message : "Could not read import progress.");
+    }
+  }
+
   function chooseImportFile() {
     fileInputRef.current?.click();
   }
@@ -155,9 +209,10 @@ export default function ChessDatabaseDialog({
 
     setView("import");
     setImportFileName(file.name);
-    setImportResult(null);
-    setImportError(null);
-    setIsImporting(true);
+    setImportJob(null);
+    setImportStartError(null);
+    setCancelRequested(false);
+    setIsImportStarting(true);
 
     try {
       const formData = new FormData();
@@ -172,14 +227,49 @@ export default function ChessDatabaseDialog({
         throw new Error(message || `HTTP ${response.status}`);
       }
 
-      const result: DatabaseImportResult = await response.json();
-      setImportResult(result);
-      await loadStatus();
+      const job: DatabaseImportJob = await response.json();
+      setImportJob(job);
+      if (job.status !== "RUNNING") {
+        await loadStatus();
+      }
     } catch (error) {
-      setImportError(error instanceof Error ? error.message : "PGN database import failed.");
+      setImportStartError(error instanceof Error ? error.message : "Could not start PGN database import.");
     } finally {
-      setIsImporting(false);
+      setIsImportStarting(false);
     }
+  }
+
+  async function cancelImport() {
+    if (!importJob || importJob.status !== "RUNNING") {
+      return;
+    }
+
+    setCancelRequested(true);
+    try {
+      const response = await fetch(
+        `/api/chess-database/imports/${encodeURIComponent(importJob.id)}/cancel`,
+        { method: "POST" },
+      );
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+      const nextJob: DatabaseImportJob = await response.json();
+      setImportJob(nextJob);
+    } catch (error) {
+      setCancelRequested(false);
+      setImportStartError(error instanceof Error ? error.message : "Could not cancel database import.");
+    }
+  }
+
+  function closeImportResult() {
+    if (isImportStarting || importJob?.status === "RUNNING") {
+      return;
+    }
+    setView("overview");
+    setImportJob(null);
+    setImportStartError(null);
+    setCancelRequested(false);
   }
 
   function updateSearchField(key: keyof SearchForm, value: string) {
@@ -241,6 +331,10 @@ export default function ChessDatabaseDialog({
     }
   }
 
+  const progressPercent = importProgressPercent(importJob);
+  const importRunning = isImportStarting || importJob?.status === "RUNNING";
+  const importCanClose = !importRunning && (importJob !== null || importStartError !== null);
+
   return (
     <>
       <input
@@ -297,38 +391,62 @@ export default function ChessDatabaseDialog({
         <div className="chess-database-overlay" role="presentation">
           <section className="chess-database-dialog chess-database-import-dialog" role="dialog" aria-modal="true" aria-labelledby="chess-database-import-title">
             <h2 id="chess-database-import-title">Import PGN Database</h2>
-            <div className="chess-database-import-file" title={importFileName}>{importFileName}</div>
+            <div className="chess-database-import-file" title={importJob?.fileName || importFileName}>
+              {importJob?.fileName || importFileName}
+            </div>
 
-            {isImporting && (
+            {isImportStarting && (
+              <div className="chess-database-muted">Preparing import…</div>
+            )}
+
+            {importJob && (
               <>
-                <div className="chess-database-progress" aria-label="Import in progress">
-                  <div className="chess-database-progress-bar" />
+                <div
+                  className="chess-database-progress"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(progressPercent)}
+                >
+                  <div
+                    className="chess-database-progress-bar"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
-                <div className="chess-database-muted">Importing games and building position statistics…</div>
+                <div className="chess-database-progress-label">
+                  <strong>{progressPercent.toFixed(1)}%</strong>
+                  <span>{formatBytes(importJob.bytesRead)} / {formatBytes(importJob.totalBytes)}</span>
+                </div>
+
+                <div className="chess-database-import-result">
+                  <div><span>Status</span><strong>{importJob.status}</strong></div>
+                  <div><span>Games processed</span><strong>{importJob.processedGames.toLocaleString()}</strong></div>
+                  <div>
+                    <span>{importJob.status === "COMPLETE" ? "Games imported" : "Games staged"}</span>
+                    <strong>{importJob.importedGames.toLocaleString()}</strong>
+                  </div>
+                  <div><span>Games skipped</span><strong>{importJob.skippedGames.toLocaleString()}</strong></div>
+                  <div><span>Plies indexed</span><strong>{importJob.totalPlies.toLocaleString()}</strong></div>
+                  <div><span>Elapsed</span><strong>{(importJob.elapsedMillis / 1000).toFixed(1)} s</strong></div>
+                </div>
+
+                {importJob.message && (
+                  <div className={importJob.status === "FAILED" ? "chess-database-error" : "chess-database-import-message"}>
+                    {importJob.message}
+                  </div>
+                )}
               </>
             )}
 
-            {importResult && (
-              <div className="chess-database-import-result">
-                <div><span>Games imported</span><strong>{importResult.importedGames.toLocaleString()}</strong></div>
-                <div><span>Games skipped</span><strong>{importResult.skippedGames.toLocaleString()}</strong></div>
-                <div><span>Plies indexed</span><strong>{importResult.totalPlies.toLocaleString()}</strong></div>
-                <div><span>Elapsed</span><strong>{(importResult.elapsedMillis / 1000).toFixed(1)} s</strong></div>
-              </div>
-            )}
+            {importStartError && <div className="chess-database-error">{importStartError}</div>}
 
-            {importError && <div className="chess-database-error">{importError}</div>}
-
-            <div className="chess-database-footer">
-              <button
-                type="button"
-                disabled={isImporting}
-                onClick={() => {
-                  setView("overview");
-                  setImportResult(null);
-                  setImportError(null);
-                }}
-              >
+            <div className="chess-database-footer chess-database-import-footer">
+              {importJob?.status === "RUNNING" && (
+                <button type="button" onClick={() => void cancelImport()} disabled={cancelRequested}>
+                  {cancelRequested ? "Cancelling…" : "Cancel"}
+                </button>
+              )}
+              <button type="button" disabled={!importCanClose} onClick={closeImportResult}>
                 OK
               </button>
             </div>
