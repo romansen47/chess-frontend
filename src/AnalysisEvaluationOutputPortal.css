@@ -7,23 +7,21 @@
 }
 
 /*
- * The continuation board has a fixed width but its vertical size follows from
- * its square aspect ratio. Therefore the lower analysis row owns its natural
- * content height, while the history chart above consumes whatever vertical
- * space remains. This avoids tuning the chart height against captions, tabs or
- * other controls and keeps the board inside the analysis area.
+ * Keep the established analysis geometry. The history panel has a fixed share
+ * of the analysis height, while the detail row below receives the remaining
+ * space. The continuation board is then fitted into that available row height
+ * instead of being allowed to overflow vertically.
  */
 .analysis-replay-content > .analysis-profile-panel {
-  flex: 1 1 0 !important;
-  height: auto !important;
+  flex: 0 0 260px !important;
+  height: 260px !important;
   min-height: 0 !important;
 }
 
 .analysis-replay-content > .analysis-detail-row {
-  flex: 0 0 auto !important;
+  flex: 1 1 auto !important;
   height: auto !important;
-  min-height: auto !important;
-  align-items: flex-start;
+  min-height: 0 !important;
 }
 
 .analysis-detail-row-hidden-by-tabs {
@@ -63,7 +61,7 @@
 }
 
 .analysis-evaluation-output-host-live {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   height: auto;
   gap: 8px;
 }
@@ -104,33 +102,37 @@
 }
 
 .analysis-evaluation-panel {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   width: 100%;
   height: auto;
   min-width: 0;
-  min-height: auto;
-  align-items: flex-start;
+  min-height: 0;
 }
 
 /*
- * Deep Analysis and Live Evaluation use the same square board geometry. The
- * board size follows from the panel width; its height is therefore intrinsic
- * and is no longer coupled to a separately hard-coded history-panel height.
+ * Both engine views keep the same panel width. The board itself is sized from
+ * the available vertical space in the row, so it stays square and cannot hang
+ * below the surrounding analysis panels when the title above it is hidden.
  */
 .analysis-replay-content .analysis-position-panel {
   flex: 0 0 336px;
   width: 336px;
   min-width: 336px;
+  overflow: hidden;
+}
+
+.analysis-replay-content .analysis-position-panel:has(> .analysis-position-board) {
+  display: grid;
+  place-items: start center;
 }
 
 .analysis-replay-content .analysis-position-board {
-  flex: 0 0 auto;
-  width: 100%;
-  height: auto;
+  width: auto;
+  height: 100%;
   max-width: 100%;
-  max-height: none;
+  max-height: 100%;
   aspect-ratio: 1 / 1;
-  align-self: center;
+  align-self: start;
 }
 
 .analysis-replay-content .analysis-position-piece {
