@@ -1,0 +1,22 @@
+/* Small visual refinements for the main chess UI. */
+
+/*
+ * The analysis position is already identified by the active Engine/Database tab
+ * and the selected move. Hiding this redundant caption lets the compact board
+ * align more naturally with the surrounding analysis content.
+ */
+.analysis-position-panel > .analysis-detail-title {
+  display: none;
+}
+
+/* Keep mouse-wheel/touchpad scrolling in the move list, but hide the scrollbar. */
+.moves-list {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.moves-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
