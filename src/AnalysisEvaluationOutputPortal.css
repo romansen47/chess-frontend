@@ -35,6 +35,25 @@
   flex-direction: column;
 }
 
+/*
+ * The Database source tab has precedence over the Engine sub-view tabs. The
+ * live-evaluation portal may still remember "live" as the preferred engine
+ * view, but while Database is selected its host must be hidden and the normal
+ * analysis-detail row must remain visible. This prevents click order from
+ * leaving the live engine board/lines on screen behind an active Database tab.
+ */
+.analysis-replay-content:has(
+  > .analysis-detail-tabs > .analysis-detail-tab:last-child[aria-selected="true"]
+) > .analysis-evaluation-output-host {
+  display: none !important;
+}
+
+.analysis-replay-content:has(
+  > .analysis-detail-tabs > .analysis-detail-tab:last-child[aria-selected="true"]
+) > .analysis-detail-row-hidden-by-tabs {
+  display: flex !important;
+}
+
 .analysis-evaluation-output-host-deep {
   flex: 0 0 34px;
   height: 34px;
