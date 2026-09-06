@@ -25,10 +25,18 @@ interface DatabaseStatus {
   message: string | null;
 }
 
+type DatabaseImportPhase =
+  | "READING_PGN"
+  | "FINALIZING_DATABASE"
+  | "COMPLETE"
+  | "CANCELLED"
+  | "FAILED";
+
 interface DatabaseImportJob {
   id: string;
   fileName: string;
   status: "RUNNING" | "COMPLETE" | "CANCELLED" | "FAILED";
+  phase: DatabaseImportPhase;
   totalBytes: number;
   bytesRead: number;
   processedGames: number;
@@ -95,6 +103,18 @@ function formatBytes(value: number): string {
   return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+function formatElapsed(value: number): string {
+  const totalSeconds = Math.max(0, Math.floor(value / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 function optionalNumber(value: string): number | null {
   if (!value.trim()) {
     return null;
@@ -108,14 +128,41 @@ function importProgressPercent(job: DatabaseImportJob | null): number {
     return job?.status === "COMPLETE" ? 100 : 0;
   }
 
-  const calculated = Math.max(0, Math.min(100, (job.bytesRead / job.totalBytes) * 100));
-  if (job.status === "RUNNING") {
-    return Math.min(99.9, calculated);
+  return Math.max(0, Math.min(100, (job.bytesRead / job.totalBytes) * 100));
+}
+
+function importStatusLabel(job: DatabaseImportJob): string {
+  switch (job.phase) {
+    case "READING_PGN":
+      return "Reading PGN";
+    case "FINALIZING_DATABASE":
+      return "Finalizing";
+    case "COMPLETE":
+      return "Complete";
+    case "CANCELLED":
+      return "Cancelled";
+    case "FAILED":
+      return "Failed";
+    default:
+      return job.status;
   }
-  if (job.status === "COMPLETE") {
-    return 100;
+}
+
+function importOperationLabel(job: DatabaseImportJob): string {
+  switch (job.phase) {
+    case "READING_PGN":
+      return "Parsing games and staging position statistics";
+    case "FINALIZING_DATABASE":
+      return "Merging position statistics and publishing staged games";
+    case "COMPLETE":
+      return "Database import complete";
+    case "CANCELLED":
+      return "Import cancelled";
+    case "FAILED":
+      return "Import failed";
+    default:
+      return job.status;
   }
-  return calculated;
 }
 
 export default function ChessDatabaseDialog({
@@ -334,6 +381,9 @@ export default function ChessDatabaseDialog({
   const progressPercent = importProgressPercent(importJob);
   const importRunning = isImportStarting || importJob?.status === "RUNNING";
   const importCanClose = !importRunning && (importJob !== null || importStartError !== null);
+  const pgnComplete = importJob != null && progressPercent >= 100;
+  const finalizationActive = importJob?.phase === "FINALIZING_DATABASE";
+  const finalizationComplete = importJob?.status === "COMPLETE";
 
   return (
     <>
@@ -401,33 +451,64 @@ export default function ChessDatabaseDialog({
 
             {importJob && (
               <>
-                <div
-                  className="chess-database-progress"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(progressPercent)}
-                >
-                  <div
-                    className="chess-database-progress-bar"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <div className="chess-database-progress-label">
-                  <strong>{progressPercent.toFixed(1)}%</strong>
-                  <span>{formatBytes(importJob.bytesRead)} / {formatBytes(importJob.totalBytes)}</span>
+                <div className="chess-database-import-phases">
+                  <div className={`chess-database-import-phase ${pgnComplete ? "is-complete" : "is-active"}`}>
+                    <div className="chess-database-import-phase-header">
+                      <strong>1. Reading PGN</strong>
+                      <span>{pgnComplete ? "Complete" : "Running"}</span>
+                    </div>
+                    <div
+                      className="chess-database-progress"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(progressPercent)}
+                    >
+                      <div
+                        className="chess-database-progress-bar"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                    <div className="chess-database-progress-label">
+                      <strong>{progressPercent.toFixed(1)}%</strong>
+                      <span>{formatBytes(importJob.bytesRead)} / {formatBytes(importJob.totalBytes)}</span>
+                    </div>
+                  </div>
+
+                  <div className={`chess-database-import-phase ${finalizationActive ? "is-active" : ""} ${finalizationComplete ? "is-complete" : ""}`}>
+                    <div className="chess-database-import-phase-header">
+                      <strong>2. Building database</strong>
+                      <span>
+                        {finalizationComplete ? "Complete" : finalizationActive ? "Running" : "Waiting"}
+                      </span>
+                    </div>
+                    {finalizationActive && (
+                      <div
+                        className="chess-database-indeterminate"
+                        role="progressbar"
+                        aria-label="Finalizing database"
+                      >
+                        <div className="chess-database-indeterminate-bar" />
+                      </div>
+                    )}
+                    <div className="chess-database-import-phase-detail">
+                      {finalizationComplete
+                        ? "Database finalization complete."
+                        : finalizationActive
+                          ? "Merging position statistics and publishing staged games…"
+                          : "Starts after the PGN file has been fully processed."}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="chess-database-import-result">
-                  <div><span>Status</span><strong>{importJob.status}</strong></div>
+                  <div><span>Status</span><strong>{importStatusLabel(importJob)}</strong></div>
+                  <div><span>Current operation</span><strong>{importOperationLabel(importJob)}</strong></div>
                   <div><span>Games processed</span><strong>{importJob.processedGames.toLocaleString()}</strong></div>
-                  <div>
-                    <span>{importJob.status === "COMPLETE" ? "Games imported" : "Games staged"}</span>
-                    <strong>{importJob.importedGames.toLocaleString()}</strong>
-                  </div>
+                  <div><span>Games accepted</span><strong>{importJob.importedGames.toLocaleString()}</strong></div>
                   <div><span>Games skipped</span><strong>{importJob.skippedGames.toLocaleString()}</strong></div>
                   <div><span>Plies indexed</span><strong>{importJob.totalPlies.toLocaleString()}</strong></div>
-                  <div><span>Elapsed</span><strong>{(importJob.elapsedMillis / 1000).toFixed(1)} s</strong></div>
+                  <div><span>Elapsed</span><strong>{formatElapsed(importJob.elapsedMillis)}</strong></div>
                 </div>
 
                 {importJob.message && (
