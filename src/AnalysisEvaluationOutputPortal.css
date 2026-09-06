@@ -7,20 +7,23 @@
 }
 
 /*
- * The analysis history gets enough height that the square continuation board
- * below it fits exactly into the remaining analysis area. Deep Analysis and
- * Live Evaluation share the same geometry and are selected through tabs.
+ * The continuation board has a fixed width but its vertical size follows from
+ * its square aspect ratio. Therefore the lower analysis row owns its natural
+ * content height, while the history chart above consumes whatever vertical
+ * space remains. This avoids tuning the chart height against captions, tabs or
+ * other controls and keeps the board inside the analysis area.
  */
 .analysis-replay-content > .analysis-profile-panel {
-  flex: 0 0 260px !important;
-  height: 260px !important;
+  flex: 1 1 0 !important;
+  height: auto !important;
   min-height: 0 !important;
 }
 
 .analysis-replay-content > .analysis-detail-row {
-  flex: 1 1 auto !important;
+  flex: 0 0 auto !important;
   height: auto !important;
-  min-height: 0 !important;
+  min-height: auto !important;
+  align-items: flex-start;
 }
 
 .analysis-detail-row-hidden-by-tabs {
@@ -60,7 +63,7 @@
 }
 
 .analysis-evaluation-output-host-live {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   height: auto;
   gap: 8px;
 }
@@ -101,18 +104,18 @@
 }
 
 .analysis-evaluation-panel {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   width: 100%;
   height: auto;
   min-width: 0;
-  min-height: 0;
+  min-height: auto;
+  align-items: flex-start;
 }
 
 /*
- * Both tabs use the exact same square board geometry. The panel width is
- * 336px including padding/border; the board itself therefore gets roughly
- * 314px in both dimensions. The 260px analysis-history height above leaves
- * exactly enough room for this square board plus title and spacing below.
+ * Deep Analysis and Live Evaluation use the same square board geometry. The
+ * board size follows from the panel width; its height is therefore intrinsic
+ * and is no longer coupled to a separately hard-coded history-panel height.
  */
 .analysis-replay-content .analysis-position-panel {
   flex: 0 0 336px;
