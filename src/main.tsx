@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import "./boardMoveAnimation.css";
+import "./visualPolish.css";
 import { installBoardMoveAnimationTiming } from "./boardMoveAnimation";
 
 installBoardMoveAnimationTiming();
