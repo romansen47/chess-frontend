@@ -1,0 +1,9 @@
+.pieces-layer .piece:not(.piece-dragging) {
+  transition: transform 100ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pieces-layer .piece:not(.piece-dragging) {
+    transition-duration: 0ms;
+  }
+}
