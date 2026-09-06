@@ -9,36 +9,6 @@
   display: none;
 }
 
-/*
- * Let the lower analysis area reserve the natural height required by the
- * compact board. The profile/chart above it then receives the remaining
- * vertical space instead of forcing the board row to shrink and clip.
- */
-.analysis-profile-panel {
-  height: auto;
-  flex: 1 1 0;
-  min-height: 0;
-}
-
-.analysis-detail-tabs {
-  flex: 0 0 auto;
-}
-
-.analysis-detail-row {
-  flex: 0 0 auto;
-  min-height: auto;
-  align-items: flex-start;
-}
-
-.analysis-position-panel {
-  min-height: auto;
-  flex-shrink: 0;
-}
-
-.analysis-position-board {
-  flex: 0 0 auto;
-}
-
 /* Keep mouse-wheel/touchpad scrolling in the move list, but hide the scrollbar. */
 .moves-list {
   scrollbar-width: none;
