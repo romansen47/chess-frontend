@@ -1,12 +1,22 @@
 /* Small visual refinements for the main chess UI. */
 
 /*
- * The analysis position is already identified by the active Engine/Database tab
- * and the selected move. Hiding this redundant caption lets the compact board
- * align more naturally with the surrounding analysis content.
+ * The selected analysis position is already clear from the move list and the
+ * active Engine/Database context, so the extra caption above the compact board
+ * stays hidden.
  */
 .analysis-position-panel > .analysis-detail-title {
   display: none;
+}
+
+/*
+ * Pull the complete lower analysis area upward without changing the compact
+ * board itself. The original analysis profile uses a fixed 320 px height;
+ * reducing it by 24 px moves the tabs and board up as one coherent block.
+ */
+.analysis-profile-panel {
+  height: 296px;
+  flex: 0 0 296px;
 }
 
 /* Keep mouse-wheel/touchpad scrolling in the move list, but hide the scrollbar. */
