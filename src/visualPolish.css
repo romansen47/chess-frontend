@@ -10,13 +10,33 @@
 }
 
 /*
- * Pull the complete lower analysis area upward without changing the compact
- * board itself. The original analysis profile uses a fixed 320 px height;
- * reducing it by 24 px moves the tabs and board up as one coherent block.
+ * Let the lower analysis area reserve the natural height required by the
+ * compact board. The profile/chart above it then receives the remaining
+ * vertical space instead of forcing the board row to shrink and clip.
  */
 .analysis-profile-panel {
-  height: 296px;
-  flex: 0 0 296px;
+  height: auto;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.analysis-detail-tabs {
+  flex: 0 0 auto;
+}
+
+.analysis-detail-row {
+  flex: 0 0 auto;
+  min-height: auto;
+  align-items: flex-start;
+}
+
+.analysis-position-panel {
+  min-height: auto;
+  flex-shrink: 0;
+}
+
+.analysis-position-board {
+  flex: 0 0 auto;
 }
 
 /* Keep mouse-wheel/touchpad scrolling in the move list, but hide the scrollbar. */
