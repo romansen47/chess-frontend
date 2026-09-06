@@ -101,7 +101,7 @@
 }
 
 .chess-database-import-dialog {
-  width: min(560px, calc(100vw - 48px));
+  width: min(620px, calc(100vw - 48px));
 }
 
 .chess-database-import-file {
@@ -112,10 +112,45 @@
   font-weight: 600;
 }
 
+.chess-database-import-phases {
+  display: grid;
+  gap: 10px;
+}
+
+.chess-database-import-phase {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.chess-database-import-phase.is-active,
+.chess-database-import-phase.is-complete {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.chess-database-import-phase-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chess-database-import-phase-header > span {
+  font-size: 0.82rem;
+  opacity: 0.68;
+}
+
+.chess-database-import-phase-detail {
+  margin-top: 8px;
+  font-size: 0.86rem;
+  opacity: 0.7;
+}
+
 .chess-database-progress {
   position: relative;
   height: 10px;
-  margin: 14px 0 6px;
+  margin: 10px 0 6px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
@@ -144,6 +179,35 @@
   opacity: 0.68;
 }
 
+.chess-database-indeterminate {
+  position: relative;
+  height: 10px;
+  margin: 10px 0 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chess-database-indeterminate-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36%;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.78);
+  animation: chess-database-indeterminate-slide 1.15s ease-in-out infinite;
+}
+
+@keyframes chess-database-indeterminate-slide {
+  from {
+    left: -40%;
+  }
+
+  to {
+    left: 104%;
+  }
+}
+
 .chess-database-import-result {
   display: grid;
   gap: 8px;
@@ -154,9 +218,20 @@
 }
 
 .chess-database-import-result > div {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 145px minmax(0, 1fr);
   gap: 20px;
+  align-items: baseline;
+}
+
+.chess-database-import-result > div > span {
+  opacity: 0.72;
+}
+
+.chess-database-import-result > div > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .chess-database-import-message {
@@ -261,5 +336,14 @@
   .chess-database-import-dialog {
     width: calc(100vw - 24px);
     max-height: calc(100vh - 24px);
+  }
+
+  .chess-database-import-result > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .chess-database-import-result > div > strong {
+    text-align: left;
   }
 }
