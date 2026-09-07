@@ -33,6 +33,10 @@ import type {
   UciGameResponse,
 } from "./chess/types";
 import ChessHeader from "./chess/header/ChessHeader";
+import NewGameDialog from "./chess/game/NewGameDialog";
+import MovePanel from "./chess/game/MovePanel";
+import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
+import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 
 function squareName(file: number, rank: number): string {
   const fileChar = String.fromCharCode("a".charCodeAt(0) + file - 1);
@@ -1460,22 +1464,6 @@ export const ChessBoard: React.FC = () => {
       setIsTerminatingProgram(false);
       setLoadError("Could not terminate the program.");
     }
-  }
-
-  function updateGameSettingsNumberField(
-    key:
-      | "timeForEachPlayerSeconds"
-      | "incrementForWhiteSeconds"
-      | "incrementForBlackSeconds"
-      | "additionalTimeAfter40MovesSeconds",
-    value: number
-  ) {
-    const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0;
-
-    setGameSettings((prev) => ({
-      ...prev,
-      [key]: safeValue,
-    }));
   }
 
   async function saveUciGame() {
@@ -3121,113 +3109,33 @@ export const ChessBoard: React.FC = () => {
 
       <main className="app-main">
         <div className="board-layout">
-          <section className="moves-panel">
-            <h2 className="panel-title">Moves</h2>
-
-            <div className="player-names-panel">
-              <div
-                className={[
-                  "player-name-row",
-                  "player-name-row-white",
-                  !uciAnalysisLoaded && clock?.sideToMove === "white" ? "player-name-row-active" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                title={analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName) : uciAnalysisLoaded ? analysisWhitePlayerName || "White" : getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
-              >
-                <span className="player-name-color">White</span>
-                <span className="player-name-value">
-                  {analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName) : uciAnalysisLoaded ? analysisWhitePlayerName || "White" : getDisplayedWhitePlayerName(clock, whiteComputerEnabled)}
-                </span>
-              </div>
-
-              <div
-                className={[
-                  "player-name-row",
-                  "player-name-row-black",
-                  !uciAnalysisLoaded && clock?.sideToMove === "black" ? "player-name-row-active" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                title={analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName) : uciAnalysisLoaded ? analysisBlackPlayerName || "Black" : getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
-              >
-                <span className="player-name-color">Black</span>
-                <span className="player-name-value">
-                  {analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName) : uciAnalysisLoaded ? analysisBlackPlayerName || "Black" : getDisplayedBlackPlayerName(clock, blackComputerEnabled)}
-                </span>
-              </div>
-            </div>
-
-            <div className="moves-list">
-              {moves.length === 0 && (
-                <div className="moves-empty">No moves yet</div>
-              )}
-
-              {moves.map((row) => (
-                <div key={row.moveNumber} className="move-row">
-                  <span className="move-number">{row.moveNumber}.</span>
-                  <span
-                    className={[
-                      "move-entry",
-                      "move-entry-white",
-                      row.whitePosition ? "move-entry-previewable" : "",
-                      analysisSelectedPosition?.ply === (row.moveNumber - 1) * 2 + 1
-                        ? "move-entry-analysis-selected"
-                        : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    onMouseEnter={(e) => showMovePreview(e, row.whitePosition)}
-                    onMouseMove={moveMovePreview}
-                    onMouseLeave={hideMovePreview}
-                    onClick={() =>
-                      selectAnalysisPosition(
-                        row.whitePosition,
-                        row.white,
-                        (row.moveNumber - 1) * 2 + 1
-                      )
-                    }
-                  >
-                    {row.white ?? ""}
-                  </span>
-                  <span
-                    className={[
-                      "move-entry",
-                      "move-entry-black",
-                      row.blackPosition ? "move-entry-previewable" : "",
-                      analysisSelectedPosition?.ply === row.moveNumber * 2
-                        ? "move-entry-analysis-selected"
-                        : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    onMouseEnter={(e) => showMovePreview(e, row.blackPosition)}
-                    onMouseMove={moveMovePreview}
-                    onMouseLeave={hideMovePreview}
-                    onClick={() =>
-                      selectAnalysisPosition(
-                        row.blackPosition,
-                        row.black,
-                        row.moveNumber * 2
-                      )
-                    }
-                  >
-                    {row.black ?? ""}
-                  </span>
-                </div>
-              ))}
-
-              {(isLoadingMoves || isComputerThinking) && (
-                <div className="moves-empty">
-                  {isComputerThinking
-                    ? "Computer is thinking…"
-                    : "Loading / applying moves…"}
-                </div>
-              )}
-
-              {loadError && <div className="moves-empty">Error: {loadError}</div>}
-            </div>
-          </section>
+          <MovePanel
+            state={{
+              moves,
+              whitePlayerName: analysisReplayActive
+                ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName)
+                : uciAnalysisLoaded
+                  ? analysisWhitePlayerName || "White"
+                  : getDisplayedWhitePlayerName(clock, whiteComputerEnabled),
+              blackPlayerName: analysisReplayActive
+                ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName)
+                : uciAnalysisLoaded
+                  ? analysisBlackPlayerName || "Black"
+                  : getDisplayedBlackPlayerName(clock, blackComputerEnabled),
+              whiteActive: !uciAnalysisLoaded && clock?.sideToMove === "white",
+              blackActive: !uciAnalysisLoaded && clock?.sideToMove === "black",
+              selectedPly: analysisSelectedPosition?.ply ?? null,
+              loadingMoves: isLoadingMoves,
+              computerThinking: isComputerThinking,
+              error: loadError,
+            }}
+            actions={{
+              showPreview: showMovePreview,
+              movePreview: moveMovePreview,
+              hidePreview: hideMovePreview,
+              selectPosition: selectAnalysisPosition,
+            }}
+          />
 
           <section className="board-column">
             <div className="board-wrapper">
@@ -3475,203 +3383,28 @@ export const ChessBoard: React.FC = () => {
           )}
 
           {showGameSettingsDialog && (
-            <div className="game-settings-dialog">
-              <div className="game-settings-dialog-content">
-                <h2>New Game</h2>
-
-                <div className="game-settings-form">
-                  <label className="game-settings-field">
-                    <span>Time for each player (minutes)</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={Math.max(
-                        1,
-                        Math.floor(gameSettings.timeForEachPlayerSeconds / 60)
-                      )}
-                      onChange={(e) =>
-                        updateGameSettingsNumberField(
-                          "timeForEachPlayerSeconds",
-                          Number(e.target.value) * 60
-                        )
-                      }
-                    />
-                  </label>
-
-                  <label className="game-settings-field">
-                    <span>Increment for white (seconds)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={gameSettings.incrementForWhiteSeconds}
-                      onChange={(e) =>
-                        updateGameSettingsNumberField(
-                          "incrementForWhiteSeconds",
-                          Number(e.target.value)
-                        )
-                      }
-                    />
-                  </label>
-
-                  <label className="game-settings-field">
-                    <span>Increment for black (seconds)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={gameSettings.incrementForBlackSeconds}
-                      onChange={(e) =>
-                        updateGameSettingsNumberField(
-                          "incrementForBlackSeconds",
-                          Number(e.target.value)
-                        )
-                      }
-                    />
-                  </label>
-
-                  <div className="game-settings-engine-note">
-                    CPU profile assignments are configured globally under Engine Settings → Defaults.
-                  </div>
-
-
-                </div>
-
-                {gameSettingsError && (
-                  <div className="game-settings-error">{gameSettingsError}</div>
-                )}
-
-                <div className="game-settings-dialog-actions">
-                  <button
-                    className="game-settings-dialog-button"
-                    onClick={openUciFilePicker}
-                    disabled={isStartingNewGame}
-                  >
-                    Load PGN
-                  </button>
-                  <button
-                    className="game-settings-dialog-button"
-                    onClick={() => startNewGame(gameSettings)}
-                    disabled={isStartingNewGame}
-                  >
-                    {isStartingNewGame ? "Starting..." : "Start Game"}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <NewGameDialog
+              settings={gameSettings}
+              error={gameSettingsError}
+              starting={isStartingNewGame}
+              onSettingsChange={setGameSettings}
+              onCancel={() => setShowGameSettingsDialog(false)}
+              onStart={(settings) => void startNewGame(settings)}
+            />
           )}
 
           {showAnalysisSettingsDialog && (
-            <div className="analysis-settings-dialog">
-              <div className="analysis-settings-dialog-content">
-                <h2>Analysis</h2>
-                <p className="analysis-settings-description">
-                  The game is replayed from the initial position.
-                  After every ply, the selected analysis engine evaluates the new position.
-                </p>
-
-                <div className="analysis-settings-form">
-                  <label className="analysis-settings-field analysis-settings-field-wide">
-                    <span>Engine profile</span>
-                    <select
-                      value={analysisSettings.engineProfileId ?? ""}
-                      onChange={(e) =>
-                        setAnalysisSettings((prev) => ({
-                          ...prev,
-                          engineProfileId: e.target.value || null,
-                        }))
-                      }
-                      disabled={!engineConfigOverview || analysisEngineProfiles.length === 0}
-                    >
-                      {analysisEngineProfiles.map((profile) => (
-                        <option key={profile.id ?? profile.name} value={profile.id ?? ""}>
-                          {profile.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="analysis-settings-field">
-                    <span>Depth (0 = time per position)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={analysisSettings.depth}
-                      onChange={(e) =>
-                        setAnalysisSettings((prev) => ({
-                          ...prev,
-                          depth: Math.max(0, Number(e.target.value)),
-                        }))
-                      }
-                    />
-                  </label>
-
-                  <label className="analysis-settings-field">
-                    <span>Time per position (seconds)</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={analysisSettings.moveTimeSeconds}
-                      disabled={analysisSettings.depth > 0}
-                      onChange={(e) =>
-                        setAnalysisSettings((prev) => ({
-                          ...prev,
-                          moveTimeSeconds: Math.max(1, Number(e.target.value)),
-                        }))
-                      }
-                    />
-                  </label>
-
-                  {selectedAnalysisProfile && selectedAnalysisEngine ? (
-                    <div className="analysis-settings-config-summary">
-                      <div>
-                        <span>Profile</span>
-                        <strong>{selectedAnalysisProfile.name}</strong>
-                      </div>
-                      <div>
-                        <span>Engine</span>
-                        <strong>{selectedAnalysisEngine.engineName || selectedAnalysisEngine.name}</strong>
-                      </div>
-                      <div>
-                        <span>Search</span>
-                        <strong>
-                          {analysisSettings.depth > 0
-                            ? `depth ${analysisSettings.depth}`
-                            : `${analysisSettings.moveTimeSeconds}s per position`}
-                        </strong>
-                      </div>
-                      <div className="analysis-settings-config-path">
-                        <span>Executable</span>
-                        <strong>{selectedAnalysisEngine.engine}</strong>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="analysis-settings-empty">
-                      No engine profile is available. Create one under Engine Settings first.
-                    </div>
-                  )}
-                </div>
-
-                {analysisReplayError && (
-                  <div className="analysis-settings-error">{analysisReplayError}</div>
-                )}
-
-                <div className="analysis-settings-dialog-actions">
-                  <button
-                    className="analysis-settings-dialog-button"
-                    onClick={() => setShowAnalysisSettingsDialog(false)}
-                    disabled={isAnalysisReplayRunning}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="analysis-settings-dialog-button"
-                    onClick={startAnalysisReplay}
-                    disabled={isAnalysisReplayRunning || !analysisSettings.engineProfileId}
-                  >
-                    {isAnalysisReplayRunning ? "Starting..." : "OK"}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <AnalysisSettingsDialog
+              settings={analysisSettings}
+              profiles={analysisEngineProfiles}
+              selectedProfile={selectedAnalysisProfile}
+              selectedEngine={selectedAnalysisEngine}
+              error={analysisReplayError}
+              running={isAnalysisReplayRunning}
+              onSettingsChange={setAnalysisSettings}
+              onCancel={() => setShowAnalysisSettingsDialog(false)}
+              onStart={() => void startAnalysisReplay()}
+            />
           )}
 
           {showGameEndDialog && gameEndState && (
