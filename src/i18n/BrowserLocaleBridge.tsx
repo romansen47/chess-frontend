@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useI18n, type Language } from "./I18nProvider";
 
 const TERMINATE_PROGRAM_TEXT =
@@ -36,6 +36,11 @@ function localizeSingleGameImportError(
 
 export default function BrowserLocaleBridge() {
   const { language, locale } = useI18n();
+  const languageRef = useRef(language);
+  const localeRef = useRef(locale);
+
+  languageRef.current = language;
+  localeRef.current = locale;
 
   useEffect(() => {
     const nativeConfirm = window.confirm.bind(window);
@@ -45,21 +50,22 @@ export default function BrowserLocaleBridge() {
     const nativeDateToLocaleTimeString = Date.prototype.toLocaleTimeString;
 
     window.confirm = (message?: string) => {
+      const currentLanguage = languageRef.current;
       let translated = message ?? "";
 
       if (translated === TERMINATE_PROGRAM_TEXT) {
-        translated = language === "de"
+        translated = currentLanguage === "de"
           ? "Programm beenden?\n\nDer Schachserver und im Entwicklungsmodus auch der Frontend-Server werden beendet."
-          : language === "fr"
+          : currentLanguage === "fr"
             ? "Arrêter le programme ?\n\nLe serveur d’échecs et, en mode développement, le serveur frontend seront arrêtés."
             : TERMINATE_PROGRAM_TEXT;
       } else {
         const engineMatch = /^Engine-Prozess (.+) \((.+)\) wirklich beenden\?$/.exec(translated);
         if (engineMatch) {
           const [, pid, label] = engineMatch;
-          translated = language === "de"
+          translated = currentLanguage === "de"
             ? `Engine-Prozess ${pid} (${label}) wirklich beenden?`
-            : language === "fr"
+            : currentLanguage === "fr"
               ? `Arrêter réellement le processus moteur ${pid} (${label}) ?`
               : `Really terminate engine process ${pid} (${label})?`;
         }
@@ -81,7 +87,11 @@ export default function BrowserLocaleBridge() {
         try {
           const payload = await response.clone().json() as { code?: string; gameCount?: number };
           if (payload.code) {
-            const localized = localizeSingleGameImportError(payload.code, payload.gameCount, language);
+            const localized = localizeSingleGameImportError(
+              payload.code,
+              payload.gameCount,
+              languageRef.current,
+            );
             if (localized) {
               const headers = new Headers(response.headers);
               headers.set("Content-Type", "text/plain; charset=utf-8");
@@ -101,15 +111,15 @@ export default function BrowserLocaleBridge() {
     };
 
     Number.prototype.toLocaleString = function(locales?: Intl.LocalesArgument, options?: Intl.NumberFormatOptions) {
-      return nativeNumberToLocaleString.call(this, locales ?? locale, options);
+      return nativeNumberToLocaleString.call(this, locales ?? localeRef.current, options);
     };
 
     Date.prototype.toLocaleString = function(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions) {
-      return nativeDateToLocaleString.call(this, locales ?? locale, options);
+      return nativeDateToLocaleString.call(this, locales ?? localeRef.current, options);
     };
 
     Date.prototype.toLocaleTimeString = function(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions) {
-      return nativeDateToLocaleTimeString.call(this, locales ?? locale, options);
+      return nativeDateToLocaleTimeString.call(this, locales ?? localeRef.current, options);
     };
 
     return () => {
@@ -119,7 +129,7 @@ export default function BrowserLocaleBridge() {
       Date.prototype.toLocaleString = nativeDateToLocaleString;
       Date.prototype.toLocaleTimeString = nativeDateToLocaleTimeString;
     };
-  }, [language, locale]);
+  }, []);
 
   return null;
 }
