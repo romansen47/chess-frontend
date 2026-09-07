@@ -7,6 +7,7 @@ import type {
   UciOptionConfig,
 } from "./engineConfig";
 import { fetchEngineConfigOverview } from "./engineConfig";
+import { useI18n } from "./i18n/I18nProvider";
 import "./EngineConfigManager.css";
 import "./EngineConfigOptionPopup.css";
 
@@ -94,6 +95,7 @@ export default function EngineConfigManager({
   onOverviewChange,
   onClose,
 }: EngineConfigManagerProps) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<ManagerMode>("DEFAULTS");
   const [defaultsDraft, setDefaultsDraft] = useState<EngineProfileAssignments>(() =>
     copyAssignments(overview?.defaults)
@@ -464,9 +466,9 @@ export default function EngineConfigManager({
       setCreatingProfile(false);
       setSelectedProfileId(selected.id);
       setProfileDraft(copyProfile(selected));
-      setMessage(isNew ? "Engine profile created." : "Engine profile saved.");
+      setMessage(isNew ? t("settings.profileCreated") : t("settings.profileSaved"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Engine profile could not be saved.");
+      setError(e instanceof Error ? e.message : t("settings.profileSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -505,7 +507,7 @@ export default function EngineConfigManager({
     if (!selectedStoredProfile?.id) {
       return;
     }
-    if (!window.confirm(`Delete engine profile "${selectedStoredProfile.name}"?`)) {
+    if (!window.confirm(t("settings.deleteProfileConfirm", { name: selectedStoredProfile.name }))) {
       return;
     }
 
@@ -523,9 +525,9 @@ export default function EngineConfigManager({
       const nextProfile = next.profiles[0] ?? null;
       setSelectedProfileId(nextProfile?.id ?? null);
       setProfileDraft(nextProfile ? copyProfile(nextProfile) : null);
-      setMessage("Engine profile deleted.");
+      setMessage(t("settings.profileDeleted"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Engine profile could not be deleted.");
+      setError(e instanceof Error ? e.message : t("settings.profileDeleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -536,10 +538,10 @@ export default function EngineConfigManager({
       return [];
     }
     const result: string[] = [];
-    if (overview.defaults.whitePlayerProfileId === profileId) result.push("White CPU");
-    if (overview.defaults.blackPlayerProfileId === profileId) result.push("Black CPU");
-    if (overview.defaults.evaluationProfileId === profileId) result.push("Evaluation");
-    if (overview.defaults.deepAnalysisProfileId === profileId) result.push("Deep Analysis");
+    if (overview.defaults.whitePlayerProfileId === profileId) result.push(t("settings.whiteCpu"));
+    if (overview.defaults.blackPlayerProfileId === profileId) result.push(t("settings.blackCpu"));
+    if (overview.defaults.evaluationProfileId === profileId) result.push(t("settings.liveEvaluation"));
+    if (overview.defaults.deepAnalysisProfileId === profileId) result.push(t("settings.deepAnalysis"));
     return result;
   }
 
@@ -629,7 +631,7 @@ export default function EngineConfigManager({
         <button
           type="button"
           className="engine-config-option-value-button"
-          title={`${name}: ${displayValue} · click to edit`}
+          title={`${name}: ${displayValue} · ${t("settings.clickToEdit")}`}
           onClick={() => openProfileOptionEditor(name, option, value)}
           disabled={busy}
         >
@@ -674,7 +676,7 @@ export default function EngineConfigManager({
             <span>{description}</span>
           </div>
           {selectedId === overview?.fallbackProfileId && (
-            <span className="engine-config-chip">Fallback</span>
+            <span className="engine-config-chip">{t("settings.fallback")}</span>
           )}
         </div>
         <select
@@ -689,7 +691,7 @@ export default function EngineConfigManager({
           ))}
         </select>
         <div className="engine-config-default-card-meta">
-          <span>{engine?.name ?? "Unknown engine"}</span>
+          <span>{engine?.name ?? t("settings.unknownEngine")}</span>
           <span className="engine-config-default-card-path">{engine?.engine ?? "–"}</span>
         </div>
       </label>
@@ -702,15 +704,15 @@ export default function EngineConfigManager({
         className="engine-config-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="Engine Settings"
+        aria-label={t("engine.settings")}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="engine-config-dialog-header">
           <div>
-            <h2>Engine Settings</h2>
+            <h2>{t("engine.settings")}</h2>
             <div className="engine-config-dialog-subtitle">
-              Engines, reusable profiles, and their assignments
-              {overview && <span> · Version {overview.version}</span>}
+              {t("settings.subtitle")}
+              {overview && <span> · {t("settings.version", { version: overview.version })}</span>}
             </div>
           </div>
           <div className="engine-config-header-actions">
@@ -719,7 +721,7 @@ export default function EngineConfigManager({
               onClick={() => void scanSystemEngines()}
               disabled={busy}
             >
-              Scan /usr/games
+              {t("settings.scanSystem")}
             </button>
             <button
               type="button"
@@ -727,16 +729,16 @@ export default function EngineConfigManager({
               onClick={() => void resetEngineSettings()}
               disabled={busy}
             >
-              Reset Engines &amp; Profiles
+              {t("settings.reset")}
             </button>
-            <button type="button" onClick={onClose} disabled={busy}>Close</button>
+            <button type="button" onClick={onClose} disabled={busy}>{t("common.close")}</button>
           </div>
         </header>
 
         {error && <div className="engine-config-error-banner">{error}</div>}
         {message && <div className="engine-config-message-banner">{message}</div>}
 
-        <div className="engine-config-tabs" role="tablist" aria-label="Engine settings area">
+        <div className="engine-config-tabs" role="tablist" aria-label={t("settings.area")}>
           <button
             type="button"
             role="tab"
@@ -745,7 +747,7 @@ export default function EngineConfigManager({
             onClick={() => changeMode("DEFAULTS")}
             disabled={busy}
           >
-            Defaults
+            {t("settings.defaults")}
             <span className="engine-config-tab-count">4</span>
           </button>
           <button
@@ -756,7 +758,7 @@ export default function EngineConfigManager({
             onClick={() => changeMode("PROFILES")}
             disabled={busy}
           >
-            Profiles
+            {t("settings.profiles")}
             <span className="engine-config-tab-count">{profiles.length}</span>
           </button>
           <button
@@ -767,7 +769,7 @@ export default function EngineConfigManager({
             onClick={() => changeMode("ENGINES")}
             disabled={busy}
           >
-            Engines
+            {t("settings.engines")}
             <span className="engine-config-tab-count">{engines.length}</span>
           </button>
         </div>
@@ -778,22 +780,22 @@ export default function EngineConfigManager({
               <aside className="engine-config-sidebar">
                 <div className="engine-config-sidebar-header">
                   <div>
-                    <strong>Use Cases</strong>
-                    <span>Profiles are independent of their use case</span>
+                    <strong>{t("settings.useCases")}</strong>
+                    <span>{t("settings.useCasesDescription")}</span>
                   </div>
                 </div>
                 <div className="engine-config-nav-list engine-config-assignment-list">
                   {([
-                    ["whitePlayerProfileId", "White CPU"],
-                    ["blackPlayerProfileId", "Black CPU"],
-                    ["evaluationProfileId", "Live Evaluation"],
-                    ["deepAnalysisProfileId", "Deep Analysis"],
+                    ["whitePlayerProfileId", t("settings.whiteCpu")],
+                    ["blackPlayerProfileId", t("settings.blackCpu")],
+                    ["evaluationProfileId", t("settings.liveEvaluation")],
+                    ["deepAnalysisProfileId", t("settings.deepAnalysis")],
                   ] as Array<[AssignmentKey, string]>).map(([key, label]) => {
                     const { profile, engine } = profileAndEngine(defaultsDraft[key]);
                     return (
                       <div className="engine-config-nav-item engine-config-assignment-summary" key={key}>
                         <span className="engine-config-nav-title">{label}</span>
-                        <span className="engine-config-nav-meta">{profile?.name ?? "No profile"}</span>
+                        <span className="engine-config-nav-meta">{profile?.name ?? t("settings.noProfile")}</span>
                         <span className="engine-config-nav-path">{engine?.name ?? "–"}</span>
                       </div>
                     );
@@ -805,41 +807,40 @@ export default function EngineConfigManager({
                 <div className="engine-config-editor">
                   <div className="engine-config-details-heading">
                     <div>
-                      <strong>Default Profile Assignments</strong>
+                      <strong>{t("settings.defaultAssignments")}</strong>
                       <span>
-                        A profile only describes its engine configuration. This section defines
-                        which profile each use case uses by default.
+                        {t("settings.defaultAssignmentsDescription")}
                       </span>
                     </div>
-                    <span className="engine-config-chip">Global</span>
+                    <span className="engine-config-chip">{t("settings.global")}</span>
                   </div>
 
                   <div className="engine-config-default-info">
-                    The fallback profile remains bound to <strong>{fallbackEngine?.engine ?? "the detected UCI engine"}</strong> so the
-                    application always has a valid engine profile available. It can be edited like any other profile, but it cannot be deleted
-                    while it is the fallback. <strong>/usr/games/stockfish</strong> is preferred as the fallback engine when available.
+                    {t("settings.fallbackInfoBefore")} <strong>{fallbackEngine?.engine ?? t("settings.detectedUciEngine")}</strong>{" "}
+                    {t("settings.fallbackInfoAfter")} <strong>/usr/games/stockfish</strong>{" "}
+                    {t("settings.fallbackStockfish")}
                   </div>
 
                   <div className="engine-config-default-grid">
                     {renderAssignmentCard(
                       "whitePlayerProfileId",
-                      "White CPU Player",
-                      "Profile used when White is controlled by the computer."
+                      t("settings.whiteCpuPlayer"),
+                      t("settings.whiteCpuDescription")
                     )}
                     {renderAssignmentCard(
                       "blackPlayerProfileId",
-                      "Black CPU Player",
-                      "Profile used when Black is controlled by the computer."
+                      t("settings.blackCpuPlayer"),
+                      t("settings.blackCpuDescription")
                     )}
                     {renderAssignmentCard(
                       "evaluationProfileId",
-                      "Live Evaluation",
-                      "Profile used for live position evaluation."
+                      t("settings.liveEvaluation"),
+                      t("settings.liveEvaluationDescription")
                     )}
                     {renderAssignmentCard(
                       "deepAnalysisProfileId",
-                      "Deep Analysis",
-                      "Default selection for a new Deep Analysis run."
+                      t("settings.deepAnalysis"),
+                      t("settings.deepAnalysisDescription")
                     )}
                   </div>
 
@@ -850,7 +851,7 @@ export default function EngineConfigManager({
                       onClick={() => void saveDefaults()}
                       disabled={busy || profiles.length === 0}
                     >
-                      {busy ? "Saving…" : "Save Defaults"}
+                      {busy ? t("settings.saving") : t("settings.saveDefaults")}
                     </button>
                   </div>
                 </div>
@@ -861,11 +862,11 @@ export default function EngineConfigManager({
               <aside className="engine-config-sidebar">
                 <div className="engine-config-sidebar-header">
                   <div>
-                    <strong>{mode === "ENGINES" ? "Defined Engines" : "Engine Profiles"}</strong>
+                    <strong>{mode === "ENGINES" ? "Defined Engines" : t("settings.engineProfiles")}</strong>
                     <span>
                       {mode === "ENGINES"
                         ? "Executable und UCI-Definition"
-                        : "Engine and concrete UCI values"}
+                        : t("settings.profileValuesSubtitle")}
                     </span>
                   </div>
                   <button
@@ -873,7 +874,7 @@ export default function EngineConfigManager({
                     onClick={mode === "ENGINES" ? beginCreateEngine : beginCreateProfile}
                     disabled={busy}
                   >
-                    {mode === "ENGINES" ? "New Engine" : "New Profile"}
+                    {mode === "ENGINES" ? "New Engine" : t("settings.newProfile")}
                   </button>
                 </div>
 
@@ -924,12 +925,12 @@ export default function EngineConfigManager({
                         <span className="engine-config-nav-title-row">
                           <span className="engine-config-nav-title">{profile.name}</span>
                           {(labels.length > 0 || fallback) && (
-                            <span className="engine-config-nav-active-dot" title="Assigned profile" />
+                            <span className="engine-config-nav-active-dot" title={t("settings.assignedProfile")} />
                           )}
                         </span>
-                        <span className="engine-config-nav-meta">{engine?.name ?? "Unknown engine"}</span>
+                        <span className="engine-config-nav-meta">{engine?.name ?? t("settings.unknownEngine")}</span>
                         <span className="engine-config-nav-path">
-                          {fallback ? "Fallback" : labels.length > 0 ? labels.join(" · ") : "Reusable profile"}
+                          {fallback ? t("settings.fallback") : labels.length > 0 ? labels.join(" · ") : t("settings.reusableProfile")}
                         </span>
                       </button>
                     );
@@ -1033,7 +1034,7 @@ export default function EngineConfigManager({
                               type="search"
                               value={optionFilter}
                               onChange={(event) => setOptionFilter(event.target.value)}
-                              placeholder="Filter options"
+                              placeholder={t("settings.filterOptions")}
                             />
                           </div>
                         </div>
@@ -1048,7 +1049,7 @@ export default function EngineConfigManager({
                             )
                           )}
                           {visibleEngineOptions.length === 0 && (
-                            <div className="engine-config-no-options">No matching UCI options.</div>
+                            <div className="engine-config-no-options">{t("settings.noMatchingUciOptions")}</div>
                           )}
                         </div>
 
@@ -1091,14 +1092,14 @@ export default function EngineConfigManager({
                       <div className="engine-config-create-card">
                         <div className="engine-config-details-heading">
                           <div>
-                            <strong>New profile</strong>
-                            <span>Step 1 · Select an already defined engine</span>
+                            <strong>{t("settings.newProfileTitle")}</strong>
+                            <span>{t("settings.selectDefinedEngineStep")}</span>
                           </div>
                         </div>
                         {engines.length === 0 ? (
                           <div className="engine-config-details-empty">
-                            <strong>No engine available</strong>
-                            <span>Definiere zuerst unter Engines eine UCI-Engine.</span>
+                            <strong>{t("settings.noEngineAvailable")}</strong>
+                            <span>{t("settings.defineEngineFirst")}</span>
                           </div>
                         ) : (
                           <>
@@ -1110,7 +1111,7 @@ export default function EngineConfigManager({
                                   onChange={(event) => setNewProfileEngineId(event.target.value)}
                                   disabled={busy}
                                 >
-                                  <option value="">Select engine…</option>
+                                  <option value="">{t("settings.selectEngine")}</option>
                                   {engines.map((engine) => (
                                     <option key={engine.id ?? engine.name} value={engine.id ?? ""}>
                                       {engine.name} · {engine.engineName}
@@ -1125,7 +1126,7 @@ export default function EngineConfigManager({
                                 onClick={chooseEngineForProfile}
                                 disabled={busy || !newProfileEngineId}
                               >
-                                Continue
+                                {t("settings.continue")}
                               </button>
                             </div>
                           </>
@@ -1135,8 +1136,8 @@ export default function EngineConfigManager({
 
                     {!creatingProfile && !profileDraft && (
                       <div className="engine-config-details-empty">
-                        <strong>No profile selected</strong>
-                        <span>Select a profile on the left or create a new one.</span>
+                        <strong>{t("settings.noProfileSelected")}</strong>
+                        <span>{t("settings.selectOrCreateProfile")}</span>
                       </div>
                     )}
 
@@ -1144,15 +1145,15 @@ export default function EngineConfigManager({
                       <div className="engine-config-editor">
                         <div className="engine-config-details-heading">
                           <div>
-                            <strong>{profileDraft.id ? profileDraft.name : "Configure profile"}</strong>
+                            <strong>{profileDraft.id ? profileDraft.name : t("settings.configureProfile")}</strong>
                             <span>
                               {profileDraft.id
-                                ? `${profileEngine.name} · reusable engine configuration`
-                                : `Step 2 · Configure UCI values for ${profileEngine.name}`}
+                                ? t("settings.reusableEngineConfiguration", { engine: profileEngine.name })
+                                : t("settings.configureUciStep", { engine: profileEngine.name })}
                             </span>
                           </div>
                           <div className="engine-config-heading-badges">
-                            {isFallbackProfile && <span className="engine-config-chip">Fallback</span>}
+                            {isFallbackProfile && <span className="engine-config-chip">{t("settings.fallback")}</span>}
                             {assignmentLabels(profileDraft.id).map((label) => (
                               <span className="engine-config-chip engine-config-chip-active" key={label}>{label}</span>
                             ))}
@@ -1161,14 +1162,13 @@ export default function EngineConfigManager({
 
                         {isFallbackProfile && (
                           <div className="engine-config-default-info">
-                            This profile is the fallback for <strong>{profileEngine.engine}</strong>. It can be edited like any other profile,
-                            but it cannot be deleted while it is the fallback.
+                            {t("settings.fallbackProfileInfo", { engine: profileEngine.engine })}
                           </div>
                         )}
 
                         <div className="engine-config-form-grid">
                           <label>
-                            <span>Profile name</span>
+                            <span>{t("settings.profileName")}</span>
                             <input
                               value={profileDraft.name}
                               onChange={(event) => setProfileDraft({ ...profileDraft, name: event.target.value })}
@@ -1182,9 +1182,9 @@ export default function EngineConfigManager({
 
                         <div className="engine-config-options-header">
                           <div>
-                            <strong>Profile UCI Options ({Object.keys(profileDraft.optionValues).length})</strong>
+                            <strong>{t("settings.profileUciOptions", { count: Object.keys(profileDraft.optionValues).length })}</strong>
                             <span>
-                              Values are only displayed here. Click a value to edit that specific option.
+                              {t("settings.profileUciOptionsDescription")}
                             </span>
                           </div>
                           <div className="engine-config-option-tools">
@@ -1192,14 +1192,14 @@ export default function EngineConfigManager({
                               type="search"
                               value={optionFilter}
                               onChange={(event) => setOptionFilter(event.target.value)}
-                              placeholder="Filter options"
+                              placeholder={t("settings.filterOptions")}
                             />
                             <button
                               type="button"
                               onClick={resetProfileOptionsToDefaults}
                               disabled={busy}
                             >
-                              Reset defaults
+                              {t("settings.resetDefaults")}
                             </button>
                           </div>
                         </div>
@@ -1213,7 +1213,7 @@ export default function EngineConfigManager({
                             )
                           )}
                           {visibleProfileOptions.length === 0 && (
-                            <div className="engine-config-no-options">No matching UCI options.</div>
+                            <div className="engine-config-no-options">{t("settings.noMatchingUciOptions")}</div>
                           )}
                         </div>
 
@@ -1226,13 +1226,13 @@ export default function EngineConfigManager({
                               disabled={busy || isFallbackProfile || isAssignedProfile(profileDraft.id)}
                               title={
                                 isFallbackProfile
-                                  ? "Fallback profile cannot be deleted"
+                                  ? t("settings.fallbackProfileCannotDelete")
                                   : isAssignedProfile(profileDraft.id)
-                                    ? "Remove this profile from Defaults before deleting it"
+                                    ? t("settings.removeFromDefaultsBeforeDelete")
                                     : undefined
                               }
                             >
-                              Delete Profile
+                              {t("settings.deleteProfile")}
                             </button>
                           )}
                           <div className="engine-config-actions-spacer" />
@@ -1241,7 +1241,7 @@ export default function EngineConfigManager({
                             onClick={() => void saveProfile()}
                             disabled={busy || !profileDraft.name.trim()}
                           >
-                            {busy ? "Saving…" : profileDraft.id ? "Save Profile" : "Create Profile"}
+                            {busy ? t("settings.saving") : profileDraft.id ? t("settings.saveProfile") : t("settings.createProfile")}
                           </button>
                         </div>
                       </div>
@@ -1263,7 +1263,7 @@ export default function EngineConfigManager({
               className="engine-config-option-popup"
               role="dialog"
               aria-modal="true"
-              aria-label={`Edit ${profileOptionEditor.name}`}
+              aria-label={t("settings.editOption", { name: profileOptionEditor.name })}
               onMouseDown={(event) => event.stopPropagation()}
               onSubmit={(event) => {
                 event.preventDefault();
@@ -1289,14 +1289,14 @@ export default function EngineConfigManager({
                 <button
                   type="button"
                   onClick={() => setProfileOptionEditor(null)}
-                  aria-label="Close editor"
+                  aria-label={t("settings.closeEditor")}
                 >
                   ×
                 </button>
               </div>
 
               <label className="engine-config-option-popup-editor">
-                <span>Profile value</span>
+                <span>{t("settings.profileValue")}</span>
                 {profileOptionEditor.option.type === "check" ? (
                   <span className="engine-config-option-popup-check">
                     <input
@@ -1351,9 +1351,9 @@ export default function EngineConfigManager({
 
               <div className="engine-config-option-popup-actions">
                 <button type="button" onClick={() => setProfileOptionEditor(null)}>
-                  Cancel
+                  {t("common.cancel")}
                 </button>
-                <button type="submit">Apply</button>
+                <button type="submit">{t("settings.apply")}</button>
               </div>
             </form>
           </div>
