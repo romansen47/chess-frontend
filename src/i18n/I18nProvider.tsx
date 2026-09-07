@@ -165,6 +165,29 @@ const translations = {
     fr: "Analyser la partie PGN chargée",
   },
 
+  "game.newGame": { en: "New Game", de: "Neue Partie", fr: "Nouvelle partie" },
+  "game.timeEachPlayerMinutes": {
+    en: "Time for each player (minutes)",
+    de: "Zeit pro Spieler (Minuten)",
+    fr: "Temps par joueur (minutes)",
+  },
+  "game.incrementWhiteSeconds": {
+    en: "Increment for White (seconds)",
+    de: "Inkrement für Weiß (Sekunden)",
+    fr: "Incrément pour les Blancs (secondes)",
+  },
+  "game.incrementBlackSeconds": {
+    en: "Increment for Black (seconds)",
+    de: "Inkrement für Schwarz (Sekunden)",
+    fr: "Incrément pour les Noirs (secondes)",
+  },
+  "game.cpuProfileNote": {
+    en: "CPU profile assignments are configured globally under Engine Settings → Defaults.",
+    de: "CPU-Profilzuweisungen werden global unter Engine-Einstellungen → Standards konfiguriert.",
+    fr: "Les affectations de profils CPU sont configurées globalement sous Paramètres des moteurs → Valeurs par défaut.",
+  },
+  "game.starting": { en: "Starting…", de: "Wird gestartet…", fr: "Démarrage…" },
+  "game.startGame": { en: "Start Game", de: "Partie starten", fr: "Démarrer la partie" },
   "game.startFailed": { en: "Failed to start a new game.", de: "Neue Partie konnte nicht gestartet werden.", fr: "Impossible de démarrer une nouvelle partie." },
   "game.moveFailed": { en: "Failed to execute the move.", de: "Zug konnte nicht ausgeführt werden.", fr: "Impossible d’exécuter le coup." },
   "game.engineMoveFailed": { en: "Failed to execute the engine move.", de: "Engine-Zug konnte nicht ausgeführt werden.", fr: "Impossible d’exécuter le coup du moteur." },

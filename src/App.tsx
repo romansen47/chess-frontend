@@ -4,13 +4,11 @@ import AnalysisEvaluationOutputPortal from "./AnalysisEvaluationOutputPortal";
 import { ChessBoard } from "./ChessBoard";
 import BrowserLocaleBridge from "./i18n/BrowserLocaleBridge";
 import { I18nProvider } from "./i18n/I18nProvider";
-import NewGameDialogBridge from "./i18n/NewGameDialogBridge";
 
 function App() {
   return (
     <I18nProvider>
       <BrowserLocaleBridge />
-      <NewGameDialogBridge />
       <div className="app">
         <ChessBoard />
         <AnalysisEvaluationLifecycleGuard />

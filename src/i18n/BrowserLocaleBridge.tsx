@@ -4,40 +4,6 @@ import { useI18n, type Language } from "./I18nProvider";
 const TERMINATE_PROGRAM_TEXT =
   "Terminate Program?\n\nThe chess server and, in development mode, the frontend server will be stopped.";
 
-const EXPORT_LABELS = new Set([
-  "Save PGN",
-  "Export Current Game",
-  "Aktuelle Partie exportieren",
-  "Exporter la partie actuelle",
-]);
-
-const IMPORT_LABELS = new Set([
-  "Load PGN",
-  "Import New Game",
-  "Neue Partie importieren",
-  "Importer une nouvelle partie",
-]);
-
-function exportCurrentGameLabel(language: Language): string {
-  if (language === "de") {
-    return "Aktuelle Partie exportieren";
-  }
-  if (language === "fr") {
-    return "Exporter la partie actuelle";
-  }
-  return "Export Current Game";
-}
-
-function importNewGameLabel(language: Language): string {
-  if (language === "de") {
-    return "Neue Partie importieren";
-  }
-  if (language === "fr") {
-    return "Importer une nouvelle partie";
-  }
-  return "Import New Game";
-}
-
 function localizeSingleGameImportError(
   code: string,
   gameCount: number | undefined,
@@ -66,29 +32,6 @@ function localizeSingleGameImportError(
   }
 
   return null;
-}
-
-function translateWorkflowText(root: ParentNode, language: Language) {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let current = walker.nextNode();
-  while (current) {
-    const text = current.textContent ?? "";
-    const leading = text.match(/^\s*/)?.[0] ?? "";
-    const trailing = text.match(/\s*$/)?.[0] ?? "";
-    const core = text.trim();
-    let replacement: string | null = null;
-
-    if (EXPORT_LABELS.has(core)) {
-      replacement = exportCurrentGameLabel(language);
-    } else if (IMPORT_LABELS.has(core)) {
-      replacement = importNewGameLabel(language);
-    }
-
-    if (replacement != null && replacement !== core) {
-      current.textContent = `${leading}${replacement}${trailing}`;
-    }
-    current = walker.nextNode();
-  }
 }
 
 export default function BrowserLocaleBridge() {
@@ -169,26 +112,7 @@ export default function BrowserLocaleBridge() {
       return nativeDateToLocaleTimeString.call(this, locales ?? locale, options);
     };
 
-    translateWorkflowText(document.body, language);
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === "characterData" && mutation.target.parentNode) {
-          translateWorkflowText(mutation.target.parentNode as ParentNode, language);
-          continue;
-        }
-        for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            translateWorkflowText(node as Element, language);
-          } else if (node.nodeType === Node.TEXT_NODE && node.parentNode) {
-            translateWorkflowText(node.parentNode as ParentNode, language);
-          }
-        }
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-
     return () => {
-      observer.disconnect();
       window.confirm = nativeConfirm;
       window.fetch = nativeFetch;
       Number.prototype.toLocaleString = nativeNumberToLocaleString;
