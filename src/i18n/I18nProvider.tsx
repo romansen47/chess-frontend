@@ -318,7 +318,7 @@ const translations = {
   "settings.profileSaveFailed": { en: "Engine profile could not be saved.", de: "Engine-Profil konnte nicht gespeichert werden.", fr: "Impossible d’enregistrer le profil de moteur." },
   "settings.profileDeleted": { en: "Engine profile deleted.", de: "Engine-Profil gelöscht.", fr: "Profil de moteur supprimé." },
   "settings.profileDeleteFailed": { en: "Engine profile could not be deleted.", de: "Engine-Profil konnte nicht gelöscht werden.", fr: "Impossible de supprimer le profil de moteur." },
-  "settings.deleteProfileConfirm": { en: "Delete engine profile "{name}"?", de: "Engine-Profil "{name}" löschen?", fr: "Supprimer le profil de moteur "{name}" ?" },
+  "settings.deleteProfileConfirm": { en: 'Delete engine profile "{name}"?', de: 'Engine-Profil "{name}" löschen?', fr: 'Supprimer le profil de moteur "{name}" ?' },
 } satisfies Record<string, Translation>;
 
 const aliases: Record<string, TranslationKey> = {
