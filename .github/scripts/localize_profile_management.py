@@ -65,6 +65,18 @@ i18n_path.write_text(i18n, encoding="utf-8")
 path = Path("src/EngineConfigManager.tsx")
 text = path.read_text(encoding="utf-8")
 
+# These fragments occur once in the engine editor and once in the profile editor.
+# Localize the first occurrence here; the profile-specific replacement map below
+# then handles the remaining occurrence with its normal one-match safety check.
+for old, new, label in (
+    ('placeholder="Filter options"', 'placeholder={t("settings.filterOptions")}', "filter placeholder"),
+    ('<div className="engine-config-no-options">No matching UCI options.</div>', '<div className="engine-config-no-options">{t("settings.noMatchingUciOptions")}</div>', "no-options message"),
+):
+    count = text.count(old)
+    if count != 2:
+        raise SystemExit(f"Expected exactly two {label} fragments, found {count}")
+    text = text.replace(old, new, 1)
+
 replacements = {
     'setMessage(isNew ? "Engine profile created." : "Engine profile saved.");':
         'setMessage(isNew ? t("settings.profileCreated") : t("settings.profileSaved"));',
