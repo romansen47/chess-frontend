@@ -33,6 +33,8 @@ import type {
   UciGameResponse,
 } from "./chess/types";
 import ChessHeader from "./chess/header/ChessHeader";
+import NewGameDialog from "./chess/game/NewGameDialog";
+import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 
 function squareName(file: number, rank: number): string {
   const fileChar = String.fromCharCode("a".charCodeAt(0) + file - 1);
@@ -1460,22 +1462,6 @@ export const ChessBoard: React.FC = () => {
       setIsTerminatingProgram(false);
       setLoadError("Could not terminate the program.");
     }
-  }
-
-  function updateGameSettingsNumberField(
-    key:
-      | "timeForEachPlayerSeconds"
-      | "incrementForWhiteSeconds"
-      | "incrementForBlackSeconds"
-      | "additionalTimeAfter40MovesSeconds",
-    value: number
-  ) {
-    const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0;
-
-    setGameSettings((prev) => ({
-      ...prev,
-      [key]: safeValue,
-    }));
   }
 
   async function saveUciGame() {
@@ -3475,88 +3461,14 @@ export const ChessBoard: React.FC = () => {
           )}
 
           {showGameSettingsDialog && (
-            <div className="game-settings-dialog">
-              <div className="game-settings-dialog-content">
-                <h2>New Game</h2>
-
-                <div className="game-settings-form">
-                  <label className="game-settings-field">
-                    <span>Time for each player (minutes)</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={Math.max(
-                        1,
-                        Math.floor(gameSettings.timeForEachPlayerSeconds / 60)
-                      )}
-                      onChange={(e) =>
-                        updateGameSettingsNumberField(
-                          "timeForEachPlayerSeconds",
-                          Number(e.target.value) * 60
-                        )
-                      }
-                    />
-                  </label>
-
-                  <label className="game-settings-field">
-                    <span>Increment for white (seconds)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={gameSettings.incrementForWhiteSeconds}
-                      onChange={(e) =>
-                        updateGameSettingsNumberField(
-                          "incrementForWhiteSeconds",
-                          Number(e.target.value)
-                        )
-                      }
-                    />
-                  </label>
-
-                  <label className="game-settings-field">
-                    <span>Increment for black (seconds)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={gameSettings.incrementForBlackSeconds}
-                      onChange={(e) =>
-                        updateGameSettingsNumberField(
-                          "incrementForBlackSeconds",
-                          Number(e.target.value)
-                        )
-                      }
-                    />
-                  </label>
-
-                  <div className="game-settings-engine-note">
-                    CPU profile assignments are configured globally under Engine Settings → Defaults.
-                  </div>
-
-
-                </div>
-
-                {gameSettingsError && (
-                  <div className="game-settings-error">{gameSettingsError}</div>
-                )}
-
-                <div className="game-settings-dialog-actions">
-                  <button
-                    className="game-settings-dialog-button"
-                    onClick={openUciFilePicker}
-                    disabled={isStartingNewGame}
-                  >
-                    Load PGN
-                  </button>
-                  <button
-                    className="game-settings-dialog-button"
-                    onClick={() => startNewGame(gameSettings)}
-                    disabled={isStartingNewGame}
-                  >
-                    {isStartingNewGame ? "Starting..." : "Start Game"}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <NewGameDialog
+              settings={gameSettings}
+              error={gameSettingsError}
+              starting={isStartingNewGame}
+              onSettingsChange={setGameSettings}
+              onCancel={() => setShowGameSettingsDialog(false)}
+              onStart={(settings) => void startNewGame(settings)}
+            />
           )}
 
           {showAnalysisSettingsDialog && (
