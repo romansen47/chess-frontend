@@ -19,6 +19,23 @@ jobs:
 
       - name: Apply localization and component extraction
         run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/scripts/localize_visible_ui.py')
+          text = path.read_text(encoding='utf-8')
+          entry = '    \'<span className="engine-config-chip">Fallback</span>\': \'<span className="engine-config-chip">{t("settings.fallback")}</span>\',\n'
+          if text.count(entry) != 1:
+              raise SystemExit('Could not locate fallback-chip replacement entry exactly once')
+          text = text.replace(entry, '', 1)
+
+          anchor = 'for old, new in replacements.items():\n    engine = replace_once(engine, old, new, f"EngineConfigManager text: {old[:40]}")\n\nfallback_old ='
+          replacement = 'for old, new in replacements.items():\n    engine = replace_once(engine, old, new, f"EngineConfigManager text: {old[:40]}")\n\nfallback_chip = \'<span className="engine-config-chip">Fallback</span>\'\nif engine.count(fallback_chip) != 2:\n    raise SystemExit(f"Expected two fallback chips, found {engine.count(fallback_chip)}")\nengine = engine.replace(fallback_chip, \'<span className="engine-config-chip">{t("settings.fallback")}</span>\')\n\nfallback_old ='
+          if text.count(anchor) != 1:
+              raise SystemExit('Could not locate EngineConfigManager replacement loop exactly once')
+          path.write_text(text.replace(anchor, replacement, 1), encoding='utf-8')
+          PY
+
           python .github/scripts/localize_visible_ui.py
           git diff --check
 
