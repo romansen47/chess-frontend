@@ -90,6 +90,27 @@ function defaultProfileForEngine(engine: EngineDefinition): EngineProfile {
   };
 }
 
+async function readErrorMessage(response: Response): Promise<string> {
+  const text = await response.text();
+  if (!text.trim()) {
+    return `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ""}`;
+  }
+
+  try {
+    const payload = JSON.parse(text) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === "string" && payload.message.trim()) {
+      return payload.message;
+    }
+    if (typeof payload.error === "string" && payload.error.trim()) {
+      return payload.error;
+    }
+  } catch {
+    // The backend may intentionally return a plain-text validation message.
+  }
+
+  return text;
+}
+
 export default function EngineConfigManager({
   overview,
   onOverviewChange,
@@ -105,6 +126,7 @@ export default function EngineConfigManager({
   const [engineDraft, setEngineDraft] = useState<EngineDefinition | null>(null);
   const [creatingEngine, setCreatingEngine] = useState(false);
   const [newEngineName, setNewEngineName] = useState("");
+  const [manualEnginePath, setManualEnginePath] = useState("");
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [profileDraft, setProfileDraft] = useState<EngineProfile | null>(null);
@@ -215,6 +237,7 @@ export default function EngineConfigManager({
     setSelectedEngineId(null);
     setEngineDraft(null);
     setNewEngineName("");
+    setManualEnginePath("");
     setProfileOptionEditor(null);
     setOptionFilter("");
     setMessage(null);
@@ -244,13 +267,29 @@ export default function EngineConfigManager({
     setMessage(`${engine.name} selected. Its UCI defaults are now the starting values of this profile.`);
   }
 
+  function applyInspectedEngine(inspected: EngineDefinition, requestedName: string) {
+    if (requestedName) {
+      inspected.name = requestedName;
+    }
+    setEngineDraft(copyEngine(inspected));
+    setNewEngineName(inspected.name);
+    setManualEnginePath(inspected.engine);
+    setOptionFilter("");
+    setMessage(
+      t("settings.engineDetected", {
+        engine: inspected.engineName,
+        count: Object.keys(inspected.options).length,
+      })
+    );
+  }
+
   async function inspectEngine() {
     const requestedName = (engineDraft?.id ? "" : engineDraft?.name ?? newEngineName).trim();
 
     try {
       setBusy(true);
       setError(null);
-      setMessage("Opening system file picker…");
+      setMessage(t("settings.openingSystemPicker"));
       const response = await fetch("/api/engine-configs/engines/select", {
         method: "POST",
       });
@@ -259,22 +298,45 @@ export default function EngineConfigManager({
         return;
       }
       if (!response.ok) {
-        throw new Error(await response.text() || `HTTP ${response.status}`);
+        throw new Error(await readErrorMessage(response));
       }
       const inspected = (await response.json()) as EngineDefinition;
-      if (requestedName) {
-        inspected.name = requestedName;
-      }
-      setEngineDraft(copyEngine(inspected));
-      setNewEngineName(inspected.name);
-      setOptionFilter("");
-      setMessage(
-        `${inspected.engineName} detected · ${Object.keys(inspected.options).length} UCI options`
-      );
+      applyInspectedEngine(inspected, requestedName);
     } catch (e) {
-      setEngineDraft(null);
       setMessage(null);
-      setError(e instanceof Error ? e.message : "Engine could not be selected or inspected.");
+      setError(e instanceof Error ? e.message : t("settings.engineSelectionFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function inspectEnginePath() {
+    const enginePath = manualEnginePath.trim();
+    if (!enginePath) {
+      return;
+    }
+
+    const requestedName = newEngineName.trim();
+    try {
+      setBusy(true);
+      setError(null);
+      setMessage(t("settings.inspectingEngine"));
+      const response = await fetch("/api/engine-configs/engines/inspect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          engine: enginePath,
+          name: requestedName || null,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(await readErrorMessage(response));
+      }
+      const inspected = (await response.json()) as EngineDefinition;
+      applyInspectedEngine(inspected, requestedName);
+    } catch (e) {
+      setMessage(null);
+      setError(e instanceof Error ? e.message : t("settings.engineInspectionFailed"));
     } finally {
       setBusy(false);
     }
@@ -945,26 +1007,48 @@ export default function EngineConfigManager({
                       <div className="engine-config-create-card">
                         <div className="engine-config-details-heading">
                           <div>
-                            <strong>Neue Engine definieren</strong>
-                            <span>Step 1 · Select the executable using the system file picker</span>
+                            <strong>{t("settings.newEngineTitle")}</strong>
+                            <span>{t("settings.selectExecutableStep")}</span>
                           </div>
                         </div>
                         <div className="engine-config-form-grid">
                           <label>
-                            <span>Engine name (optional)</span>
+                            <span>{t("settings.engineNameOptional")}</span>
                             <input
                               value={newEngineName}
                               onChange={(event) => setNewEngineName(event.target.value)}
-                              placeholder="Otherwise taken from the UCI engine"
+                              placeholder={t("settings.engineNameFromUci")}
                             />
                           </label>
                         </div>
                         <div className="engine-config-default-info">
-                          The file dialog opens on the computer running the backend. After selection, the engine is inspected automatically through UCI.
+                          {t("settings.systemPickerInfo")}
                         </div>
                         <div className="engine-config-actions">
                           <button type="button" onClick={() => void inspectEngine()} disabled={busy}>
-                            {busy ? "File picker is open…" : "Select engine file…"}
+                            {busy ? t("settings.openingSystemPicker") : t("settings.selectEngineFile")}
+                          </button>
+                        </div>
+                        <div className="engine-config-default-info">
+                          {t("settings.manualEnginePathInfo")}
+                        </div>
+                        <div className="engine-config-form-grid">
+                          <label>
+                            <span>{t("settings.enginePath")}</span>
+                            <input
+                              value={manualEnginePath}
+                              onChange={(event) => setManualEnginePath(event.target.value)}
+                              placeholder={t("settings.enginePathPlaceholder")}
+                            />
+                          </label>
+                        </div>
+                        <div className="engine-config-actions">
+                          <button
+                            type="button"
+                            onClick={() => void inspectEnginePath()}
+                            disabled={busy || !manualEnginePath.trim()}
+                          >
+                            {busy ? t("settings.inspectingEngine") : t("settings.inspectEnginePath")}
                           </button>
                         </div>
                       </div>
