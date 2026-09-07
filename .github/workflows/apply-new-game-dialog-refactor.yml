@@ -60,19 +60,19 @@ jobs:
           if helper_count != 1:
               raise SystemExit("Could not remove updateGameSettingsNumberField exactly once")
 
-          replacement = '''
-          {showGameSettingsDialog && (
-            <NewGameDialog
-              settings={gameSettings}
-              error={gameSettingsError}
-              starting={isStartingNewGame}
-              onSettingsChange={setGameSettings}
-              onCancel={() => setShowGameSettingsDialog(false)}
-              onStart={(settings) => void startNewGame(settings)}
-            />
-          )}
-
-          {showAnalysisSettingsDialog && ('''
+          replacement = (
+              '          {showGameSettingsDialog && (\n'
+              '            <NewGameDialog\n'
+              '              settings={gameSettings}\n'
+              '              error={gameSettingsError}\n'
+              '              starting={isStartingNewGame}\n'
+              '              onSettingsChange={setGameSettings}\n'
+              '              onCancel={() => setShowGameSettingsDialog(false)}\n'
+              '              onStart={(settings) => void startNewGame(settings)}\n'
+              '            />\n'
+              '          )}\n\n'
+              '          {showAnalysisSettingsDialog && ('
+          )
 
           text, dialog_count = re.subn(
               r'\n          \{showGameSettingsDialog && \(\n[\s\S]*?\n          \)\}\n\n          \{showAnalysisSettingsDialog && \(',
