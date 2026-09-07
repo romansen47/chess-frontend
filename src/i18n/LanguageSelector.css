@@ -1,0 +1,38 @@
+.language-selector {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.18);
+  font-size: 13px;
+  backdrop-filter: blur(4px);
+}
+
+.language-selector span {
+  font-weight: 600;
+}
+
+.language-selector select {
+  min-width: 104px;
+  height: 30px;
+  padding: 0 28px 0 8px;
+  border: 1px solid #b8bec7;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .language-selector {
+    position: static;
+    margin: 8px 8px 0 auto;
+    width: max-content;
+  }
+}
