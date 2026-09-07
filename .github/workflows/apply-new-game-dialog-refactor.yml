@@ -1,0 +1,104 @@
+name: Apply New Game dialog refactor
+
+on:
+  push:
+    branches:
+      - refactor/new-game-dialog
+
+permissions:
+  contents: write
+
+jobs:
+  apply-refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: refactor/new-game-dialog
+
+      - name: Apply ChessBoard refactor
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import re
+
+          path = Path("src/ChessBoard.tsx")
+          text = path.read_text(encoding="utf-8")
+
+          def git_blob_sha(value: str) -> str:
+              data = value.encode("utf-8")
+              return hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
+
+          expected_before = "09483291e508c3fdc41b2b3a59988a335d11eda9"
+          expected_after = "2547b25238d319bba93dff5741ceddc92366c8ab"
+
+          actual_before = git_blob_sha(text)
+          if actual_before != expected_before:
+              raise SystemExit(
+                  f"Unexpected ChessBoard.tsx source blob: {actual_before}; expected {expected_before}"
+              )
+
+          old_import = 'import ChessHeader from "./chess/header/ChessHeader";\n'
+          new_import = (
+              'import ChessHeader from "./chess/header/ChessHeader";\n'
+              'import NewGameDialog from "./chess/game/NewGameDialog";\n'
+              'import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";\n'
+          )
+          if text.count(old_import) != 1:
+              raise SystemExit("Could not identify ChessHeader import exactly once")
+          text = text.replace(old_import, new_import, 1)
+
+          text, helper_count = re.subn(
+              r'\n  function updateGameSettingsNumberField\([\s\S]*?\n  \}\n\n  async function saveUciGame\(',
+              '\n  async function saveUciGame(',
+              text,
+              count=1,
+          )
+          if helper_count != 1:
+              raise SystemExit("Could not remove updateGameSettingsNumberField exactly once")
+
+          replacement = '''
+          {showGameSettingsDialog && (
+            <NewGameDialog
+              settings={gameSettings}
+              error={gameSettingsError}
+              starting={isStartingNewGame}
+              onSettingsChange={setGameSettings}
+              onCancel={() => setShowGameSettingsDialog(false)}
+              onStart={(settings) => void startNewGame(settings)}
+            />
+          )}
+
+          {showAnalysisSettingsDialog && ('''
+
+          text, dialog_count = re.subn(
+              r'\n          \{showGameSettingsDialog && \(\n[\s\S]*?\n          \)\}\n\n          \{showAnalysisSettingsDialog && \(',
+              '\n' + replacement,
+              text,
+              count=1,
+          )
+          if dialog_count != 1:
+              raise SystemExit("Could not replace the New Game dialog exactly once")
+
+          actual_after = git_blob_sha(text)
+          if actual_after != expected_after:
+              raise SystemExit(
+                  f"Unexpected refactored ChessBoard.tsx blob: {actual_after}; expected {expected_after}"
+              )
+
+          path.write_text(text, encoding="utf-8")
+          print(f"ChessBoard.tsx verified: {actual_before} -> {actual_after}")
+          PY
+
+      - name: Commit refactored ChessBoard
+        shell: bash
+        run: |
+          rm .github/workflows/apply-new-game-dialog-refactor.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/ChessBoard.tsx .github/workflows/apply-new-game-dialog-refactor.yml
+          git commit -m "Extract New Game dialog from ChessBoard"
+          git push origin HEAD:refactor/new-game-dialog
