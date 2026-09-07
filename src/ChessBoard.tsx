@@ -5,212 +5,34 @@ import { fetchEngineConfigOverview } from "./engineConfig";
 import type { EngineConfigOverview } from "./engineConfig";
 import ChessDatabaseDialog, { type ChessDatabaseLoadedGame } from "./ChessDatabaseDialog";
 import AnalysisDatabasePanel from "./AnalysisDatabasePanel";
-
-type PieceColor = "white" | "black";
-type PieceType = "pawn" | "rook" | "knight" | "bishop" | "queen" | "king";
-type GameSound = "move" | "capture" | "notify";
-
-const GAME_SOUND_SOURCES: Record<GameSound, string[]> = {
-  move: [
-    "/sounds/move.mp3",
-    "/sounds/move.wav",
-    "/sounds/move.ogg",
-    "/sounds/move-self.mp3",
-    "/sounds/move-self.wav",
-    "/sounds/move-self.ogg",
-  ],
-  capture: [
-    "/sounds/capture.mp3",
-    "/sounds/capture.wav",
-    "/sounds/capture.ogg",
-  ],
-  notify: [
-    "/sounds/notify.mp3",
-    "/sounds/notify.wav",
-    "/sounds/notify.ogg",
-    "/sounds/game-end.mp3",
-    "/sounds/game-end.wav",
-    "/sounds/game-end.ogg",
-  ],
-};
-
-interface Piece {
-  id: string;
-  color: PieceColor;
-  type: PieceType;
-  file: number;
-  rank: number;
-}
-
-interface MoveRow {
-  moveNumber: number;
-  white?: string;
-  black?: string;
-  whitePosition?: string;
-  blackPosition?: string;
-}
-
-interface LastMove {
-  from: string;
-  to: string;
-}
-
-interface PossibleMovesResponse {
-  from: string;
-  targets: string[];
-}
-
-interface MoveResult {
-  success: boolean;
-  message: string | null;
-  from: string;
-  to: string;
-  san: string | null;
-  sideToMove: string | null;
-  position?: string | null;
-  gameState?: string | null;
-}
-
-interface UciGameMove {
-  ply: number;
-  uci: string;
-  san: string | null;
-  position: string;
-}
-
-interface UciGameResponse {
-  totalPlies: number;
-  sideToMove: string | null;
-  position: string;
-  moves: UciGameMove[];
-  whitePlayerName: string | null;
-  blackPlayerName: string | null;
-}
-
-interface BackendPiece {
-  color: PieceColor;
-  type: PieceType;
-  square: string;
-}
-
-interface BoardResponse {
-  pieces: BackendPiece[];
-}
-
-interface MoveRequest {
-  from: string;
-  to: string;
-  promotion?: PieceType | null;
-}
-
-interface PerformMoveOptions {
-  localMoveAlreadyApplied?: boolean;
-}
-
-interface PromotionContext {
-  from: string;
-  to: string;
-  color: PieceColor;
-}
-
-interface HoverPreview {
-  position: string;
-  x: number;
-  y: number;
-}
-
-interface DragState {
-  pieceId: string;
-  from: string;
-  pointerId: number;
-  offsetX: number;
-  offsetY: number;
-  boardLeft: number;
-  boardTop: number;
-  x: number;
-  y: number;
-  startClientX: number;
-  startClientY: number;
-  hasMoved: boolean;
-}
-
-interface EngineLine {
-  eval: number;
-  depth: number;
-  mateDistance?: number | null;
-  moves: string;
-  positions?: string[];
-}
-
-interface EngineEvaluation {
-  eval: number;
-  bar: number;
-  engineName?: string | null;
-  lines: EngineLine[];
-}
-
-interface ClockState {
-  whiteTime: number;
-  blackTime: number;
-  sideToMove: string | null;
-  whiteRunning: boolean;
-  blackRunning: boolean;
-  gameState: string | null;
-  timeControl: string | null;
-  whitePlayerName: string | null;
-  blackPlayerName: string | null;
-  whitePlayerEngineName: string | null;
-  blackPlayerEngineName: string | null;
-}
-
-interface GameSettings {
-  timeForEachPlayerSeconds: number;
-  incrementForWhiteSeconds: number;
-  incrementForBlackSeconds: number;
-  additionalTimeAfter40MovesSeconds: number;
-  startingColor: string;
-  version: number;
-}
-
-interface AnalysisReplaySettings {
-  engineProfileId: string | null;
-  depth: number;
-  moveTimeSeconds: number;
-}
-
-interface AnalysisProfilePoint {
-  ply: number;
-  from: string | null;
-  to: string | null;
-  san: string | null;
-  evaluation: number;
-  bar: number;
-  depth: number;
-  lines?: EngineLine[];
-}
-
-interface AnalysisPositionSelection {
-  position: string;
-  label: string;
-  ply: number;
-}
-
-interface AnalysisReplayStep {
-  active: boolean;
-  done: boolean;
-  totalPlies: number;
-  currentPly: number;
-  from: string | null;
-  to: string | null;
-  san: string | null;
-  evaluation: number;
-  bar: number;
-  depth: number;
-  engineName?: string | null;
-  board: BoardResponse | null;
-  profile: AnalysisProfilePoint[];
-  message: string | null;
-}
+import type {
+  AnalysisPositionSelection,
+  AnalysisProfilePoint,
+  AnalysisReplaySettings,
+  AnalysisReplayStep,
+  BackendPiece,
+  BoardResponse,
+  ClockState,
+  DragState,
+  EngineEvaluation,
+  EngineLine,
+  GameSettings,
+  GameSound,
+  HoverPreview,
+  LastMove,
+  MoveRequest,
+  MoveResult,
+  MoveRow,
+  PerformMoveOptions,
+  Piece,
+  PieceColor,
+  PieceType,
+  PossibleMovesResponse,
+  PromotionContext,
+  UciGameMove,
+  UciGameResponse,
+} from "./chess/types";
+import ChessHeader from "./chess/header/ChessHeader";
 
 function squareName(file: number, rank: number): string {
   const fileChar = String.fromCharCode("a".charCodeAt(0) + file - 1);
@@ -756,10 +578,8 @@ export const ChessBoard: React.FC = () => {
     useState<EngineConfigOverview | null>(null);
   const [engineConfigLoadError, setEngineConfigLoadError] = useState<string | null>(null);
   const [showEngineManager, setShowEngineManager] = useState<boolean>(false);
-  const [showDataMenu, setShowDataMenu] = useState<boolean>(false);
   const [showChessDatabaseDialog, setShowChessDatabaseDialog] = useState<boolean>(false);
   const [isTerminatingProgram, setIsTerminatingProgram] = useState<boolean>(false);
-  const dataMenuRef = useRef<HTMLDivElement | null>(null);
   const [uciAnalysisLoaded, setUciAnalysisLoadedState] = useState<boolean>(false);
   const uciAnalysisLoadedRef = useRef<boolean>(false);
   const uciFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1126,34 +946,6 @@ export const ChessBoard: React.FC = () => {
       window.clearInterval(intervalId);
     };
   }, []);
-
-  useEffect(() => {
-    if (!showDataMenu) {
-      return;
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-
-      if (target instanceof Node && !dataMenuRef.current?.contains(target)) {
-        setShowDataMenu(false);
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setShowDataMenu(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [showDataMenu]);
 
   async function loadPossibleMoves(from: string): Promise<string[]> {
     console.log("[loadPossibleMoves] for", from);
@@ -1631,7 +1423,6 @@ export const ChessBoard: React.FC = () => {
       return;
     }
 
-    setShowDataMenu(false);
     setIsTerminatingProgram(true);
     setLoadError(null);
 
@@ -3288,149 +3079,24 @@ export const ChessBoard: React.FC = () => {
 
   return (
     <>
-      <header className="app-header">
-        <h1>Chess Frontend</h1>
-
-        <div className="top-engine-controls">
-          {analysisReplayActive && isAnalysisReplayRunning && (
-            <button
-              className="top-engine-button analysis-repeat"
-              onClick={cancelAnalysisReplay}
-              title="Cancel running analysis"
-            >
-              Cancel analysis
-            </button>
-          )}
-
-          {analysisReplayActive && analysisReplayFinished && gameEndState && (
-            <button
-              className="top-engine-button analysis-repeat"
-              onClick={reopenGameEndDialog}
-              title="Open options after the completed analysis"
-            >
-              Options
-            </button>
-          )}
-
-          {analysisReplayActive && analysisReplayFinished && uciAnalysisLoaded && (
-            <button
-              className="top-engine-button analysis-repeat"
-              onClick={openAnalysisSettingsDialog}
-              title="Analyze the loaded PGN game again"
-            >
-              Analyze again
-            </button>
-          )}
-
-          {!analysisReplayActive && uciAnalysisLoaded && (
-            <button
-              className="top-engine-button analysis-repeat"
-              onClick={openAnalysisSettingsDialog}
-              title="Analyze the loaded PGN game"
-            >
-              Analyze
-            </button>
-          )}
-
-          <div className="data-menu" ref={dataMenuRef}>
-            <button
-              className={[
-                "top-engine-button",
-                "data-menu-trigger",
-                showDataMenu ? "data-menu-trigger-open" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => setShowDataMenu((prev) => !prev)}
-              title="Load or save a game, start a new game, or exit the program"
-              aria-haspopup="menu"
-              aria-expanded={showDataMenu}
-              disabled={isTerminatingProgram}
-            >
-              Data
-            </button>
-
-            {showDataMenu && (
-              <div className="data-menu-popup" role="menu">
-                <button
-                  className="data-menu-item"
-                  role="menuitem"
-                  onClick={() => {
-                    setShowDataMenu(false);
-                    openGameSettingsDialog();
-                  }}
-                  disabled={analysisReplayActive && !analysisReplayFinished}
-                >
-                  New Game
-                </button>
-
-                <button
-                  className="data-menu-item"
-                  role="menuitem"
-                  onClick={() => {
-                    setShowDataMenu(false);
-                    void saveUciGame();
-                  }}
-                  disabled={analysisReplayActive && !analysisReplayFinished}
-                >
-                  Save PGN
-                </button>
-
-                <button
-                  className="data-menu-item"
-                  role="menuitem"
-                  onClick={() => {
-                    setShowDataMenu(false);
-                    openUciFilePicker();
-                  }}
-                  disabled={analysisReplayActive && !analysisReplayFinished}
-                >
-                  Load PGN
-                </button>
-
-                <button
-                  className="data-menu-item"
-                  role="menuitem"
-                  onClick={() => {
-                    setShowDataMenu(false);
-                    setShowChessDatabaseDialog(true);
-                  }}
-                  disabled={analysisReplayActive && !analysisReplayFinished}
-                >
-                  Chess Database…
-                </button>
-
-                <div className="data-menu-separator" role="separator" />
-
-                <button
-                  className="data-menu-item data-menu-item-danger"
-                  role="menuitem"
-                  onClick={() => void terminateProgram()}
-                  disabled={isTerminatingProgram}
-                >
-                  {isTerminatingProgram ? "Terminating..." : "Terminate Program"}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <button
-            className="top-engine-button engine-settings"
-            onClick={() => setShowEngineConfig((prev) => !prev)}
-            title="Manage engines and profiles"
-          >
-            Engine Settings
-          </button>
-
-          <button
-            className="top-engine-button engine-settings"
-            onClick={() => setShowEngineManager(true)}
-            title="Engine-Prozesse und UCI-Protokoll anzeigen"
-          >
-            Engine Manager
-          </button>
-        </div>
-      </header>
+      <ChessHeader
+        analysisReplayActive={analysisReplayActive}
+        analysisReplayRunning={isAnalysisReplayRunning}
+        analysisReplayFinished={analysisReplayFinished}
+        gameEnded={Boolean(gameEndState)}
+        uciAnalysisLoaded={uciAnalysisLoaded}
+        terminatingProgram={isTerminatingProgram}
+        onCancelAnalysis={() => void cancelAnalysisReplay()}
+        onOpenOptions={reopenGameEndDialog}
+        onOpenAnalysis={openAnalysisSettingsDialog}
+        onNewGame={openGameSettingsDialog}
+        onExportCurrentGame={() => void saveUciGame()}
+        onImportNewGame={openUciFilePicker}
+        onOpenDatabase={() => setShowChessDatabaseDialog(true)}
+        onTerminateProgram={() => void terminateProgram()}
+        onToggleEngineSettings={() => setShowEngineConfig((prev) => !prev)}
+        onOpenEngineManager={() => setShowEngineManager(true)}
+      />
 
       {showEngineManager && (
         <EngineManager onClose={() => setShowEngineManager(false)} />

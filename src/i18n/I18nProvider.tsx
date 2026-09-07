@@ -22,6 +22,7 @@ type TranslationKey = keyof typeof translations;
 const STORAGE_KEY = "chess.language";
 
 const translations = {
+  "app.title": { en: "Chess Analysis Tool", de: "Schach-Analysetool", fr: "Outil d’analyse d’échecs" },
   "language.label": { en: "Language", de: "Sprache", fr: "Langue" },
   "language.english": { en: "English", de: "Englisch", fr: "Anglais" },
   "language.german": { en: "German", de: "Deutsch", fr: "Allemand" },
@@ -44,6 +45,40 @@ const translations = {
   "common.status": { en: "Status", de: "Status", fr: "Statut" },
   "common.file": { en: "File", de: "Datei", fr: "Fichier" },
   "common.size": { en: "Size", de: "Größe", fr: "Taille" },
+
+  "data.label": { en: "Data", de: "Daten", fr: "Données" },
+  "data.title": {
+    en: "Load or save a game, start a new game, or exit the program",
+    de: "Partie importieren oder exportieren, neue Partie starten oder Programm beenden",
+    fr: "Importer ou exporter une partie, démarrer une nouvelle partie ou quitter le programme",
+  },
+  "data.newGame": { en: "New Game", de: "Neue Partie", fr: "Nouvelle partie" },
+  "data.exportCurrentGame": {
+    en: "Export Current Game",
+    de: "Aktuelle Partie exportieren",
+    fr: "Exporter la partie actuelle",
+  },
+  "data.importNewGame": {
+    en: "Import New Game",
+    de: "Neue Partie importieren",
+    fr: "Importer une nouvelle partie",
+  },
+  "data.chessDatabase": {
+    en: "Chess Database…",
+    de: "Schachdatenbank…",
+    fr: "Base de données d’échecs…",
+  },
+  "data.terminateProgram": {
+    en: "Terminate Program",
+    de: "Programm beenden",
+    fr: "Arrêter le programme",
+  },
+  "data.terminating": {
+    en: "Terminating…",
+    de: "Wird beendet…",
+    fr: "Arrêt…",
+  },
+
   "database.title": { en: "Chess Database", de: "Schachdatenbank", fr: "Base de données d’échecs" },
   "database.local": { en: "Local chess database", de: "Lokale Schachdatenbank", fr: "Base de données d’échecs locale" },
   "database.loadingStatus": { en: "Loading database status…", de: "Datenbankstatus wird geladen…", fr: "Chargement de l’état de la base…" },
@@ -61,7 +96,23 @@ const translations = {
   "database.selectMove": { en: "Select a move to query the local chess database.", de: "Wähle einen Zug, um die lokale Schachdatenbank abzufragen.", fr: "Sélectionnez un coup pour interroger la base d’échecs locale." },
   "database.querying": { en: "Querying chess database…", de: "Schachdatenbank wird abgefragt…", fr: "Interrogation de la base d’échecs…" },
   "database.noPosition": { en: "No imported database game contains this position.", de: "Keine importierte Datenbankpartie enthält diese Position.", fr: "Aucune partie importée ne contient cette position." },
+
   "engine.manager": { en: "Engine Manager", de: "Engine-Verwaltung", fr: "Gestionnaire de moteurs" },
+  "engine.managerTitle": {
+    en: "Show engine processes and UCI communication",
+    de: "Engine-Prozesse und UCI-Kommunikation anzeigen",
+    fr: "Afficher les processus des moteurs et les communications UCI",
+  },
+  "engine.settings": {
+    en: "Engine Settings",
+    de: "Engine-Einstellungen",
+    fr: "Paramètres des moteurs",
+  },
+  "engine.settingsTitle": {
+    en: "Manage engines and profiles",
+    de: "Engines und Profile verwalten",
+    fr: "Gérer les moteurs et les profils",
+  },
   "engine.currentSubtitle": { en: "Current UCI instances, processes and communication", de: "Aktuelle UCI-Instanzen, Prozesse und Kommunikation", fr: "Instances UCI, processus et communications actuels" },
   "engine.history": { en: "History", de: "Historie", fr: "Historique" },
   "engine.historyTitle": { en: "Engine History", de: "Engine-Historie", fr: "Historique des moteurs" },
@@ -80,20 +131,49 @@ const translations = {
   "engine.executable": { en: "Executable", de: "Programmdatei", fr: "Exécutable" },
   "engine.protocol": { en: "UCI protocol", de: "UCI-Protokoll", fr: "Protocole UCI" },
   "engine.noCommunication": { en: "No communication has been logged yet.", de: "Noch keine Kommunikation protokolliert.", fr: "Aucune communication n’a encore été enregistrée." },
+
   "evaluation.failed": { en: "Failed to load the engine evaluation.", de: "Engine-Bewertung konnte nicht geladen werden.", fr: "Impossible de charger l’évaluation du moteur." },
   "evaluation.analysisFailed": { en: "Failed to load the analysis evaluation.", de: "Analysebewertung konnte nicht geladen werden.", fr: "Impossible de charger l’évaluation de l’analyse." },
+
   "analysis.complete": { en: "Analysis complete", de: "Analyse abgeschlossen", fr: "Analyse terminée" },
   "analysis.failed": { en: "Analysis replay failed.", de: "Analyse-Wiedergabe fehlgeschlagen.", fr: "Échec de la relecture de l’analyse." },
   "analysis.preparing": { en: "Preparing analysis…", de: "Analyse wird vorbereitet…", fr: "Préparation de l’analyse…" },
   "analysis.cancelled": { en: "Analysis canceled.", de: "Analyse abgebrochen.", fr: "Analyse annulée." },
   "analysis.startFailed": { en: "Could not start analysis replay.", de: "Analyse-Wiedergabe konnte nicht gestartet werden.", fr: "Impossible de démarrer la relecture de l’analyse." },
+  "analysis.cancelRunning": { en: "Cancel analysis", de: "Analyse abbrechen", fr: "Annuler l’analyse" },
+  "analysis.cancelRunningTitle": {
+    en: "Cancel running analysis",
+    de: "Laufende Analyse abbrechen",
+    fr: "Annuler l’analyse en cours",
+  },
+  "analysis.options": { en: "Options", de: "Optionen", fr: "Options" },
+  "analysis.optionsTitle": {
+    en: "Open options after the completed analysis",
+    de: "Optionen nach der abgeschlossenen Analyse öffnen",
+    fr: "Ouvrir les options après l’analyse terminée",
+  },
+  "analysis.analyzeAgain": { en: "Analyze again", de: "Erneut analysieren", fr: "Analyser à nouveau" },
+  "analysis.analyzeAgainTitle": {
+    en: "Analyze the loaded PGN game again",
+    de: "Geladene PGN-Partie erneut analysieren",
+    fr: "Analyser à nouveau la partie PGN chargée",
+  },
+  "analysis.analyze": { en: "Analyze", de: "Analysieren", fr: "Analyser" },
+  "analysis.analyzeTitle": {
+    en: "Analyze the loaded PGN game",
+    de: "Geladene PGN-Partie analysieren",
+    fr: "Analyser la partie PGN chargée",
+  },
+
   "game.startFailed": { en: "Failed to start a new game.", de: "Neue Partie konnte nicht gestartet werden.", fr: "Impossible de démarrer une nouvelle partie." },
   "game.moveFailed": { en: "Failed to execute the move.", de: "Zug konnte nicht ausgeführt werden.", fr: "Impossible d’exécuter le coup." },
   "game.engineMoveFailed": { en: "Failed to execute the engine move.", de: "Engine-Zug konnte nicht ausgeführt werden.", fr: "Impossible d’exécuter le coup du moteur." },
   "game.savePgnFailed": { en: "Could not save the PGN file.", de: "PGN-Datei konnte nicht gespeichert werden.", fr: "Impossible d’enregistrer le fichier PGN." },
+
   "program.terminate": { en: "Terminate Program?", de: "Programm beenden?", fr: "Arrêter le programme ?" },
   "program.terminateText": { en: "The chess server and, in development mode, the frontend server will be stopped.", de: "Der Schachserver und im Entwicklungsmodus auch der Frontend-Server werden beendet.", fr: "Le serveur d’échecs et, en mode développement, le serveur frontend seront arrêtés." },
   "program.terminateFailed": { en: "Could not terminate the program.", de: "Programm konnte nicht beendet werden.", fr: "Impossible d’arrêter le programme." },
+
   "settings.loadFailed": { en: "Engine settings could not be loaded.", de: "Engine-Einstellungen konnten nicht geladen werden.", fr: "Impossible de charger les paramètres du moteur." },
   "settings.defaultSaved": { en: "Default profile assignments saved.", de: "Standard-Profilzuweisungen gespeichert.", fr: "Affectations de profils par défaut enregistrées." },
   "settings.engineCreated": { en: "Engine created.", de: "Engine erstellt.", fr: "Moteur créé." },
@@ -175,7 +255,9 @@ function translateDynamicText(text: string, language: Language): string | null {
 
   match = /^Mate for (White|Black)$/.exec(text);
   if (match) {
-    const color = match[1] === "White" ? translations["common.white"][language] : translations["common.black"][language];
+    const color = match[1] === "White"
+      ? translations["common.white"][language]
+      : translations["common.black"][language];
     return language === "de"
       ? `Matt für ${color}`
       : language === "fr"
@@ -186,13 +268,18 @@ function translateDynamicText(text: string, language: Language): string | null {
   match = /^Mate (?:for|für) (White|Black|Weiß|Schwarz)(?: in (\d+))?$/.exec(text);
   if (match) {
     const isWhite = match[1] === "White" || match[1] === "Weiß";
-    const color = isWhite ? translations["common.white"][language] : translations["common.black"][language];
+    const color = isWhite
+      ? translations["common.white"][language]
+      : translations["common.black"][language];
     const distance = match[2];
+
     if (language === "de") {
       return distance ? `Matt für ${color} in ${distance}` : `Matt für ${color}`;
     }
     if (language === "fr") {
-      return distance ? `Mat pour les ${color.toLowerCase()} en ${distance}` : `Mat pour les ${color.toLowerCase()}`;
+      return distance
+        ? `Mat pour les ${color.toLowerCase()} en ${distance}`
+        : `Mat pour les ${color.toLowerCase()}`;
     }
     return distance ? `Mate for ${color} in ${distance}` : `Mate for ${color}`;
   }
@@ -208,15 +295,29 @@ function translateDynamicText(text: string, language: Language): string | null {
 
   match = /^(\d[\d.,\s]*) white wins$/.exec(text);
   if (match) {
-    return language === "de" ? `${match[1]} Siege für Weiß` : language === "fr" ? `${match[1]} victoires des Blancs` : text;
+    return language === "de"
+      ? `${match[1]} Siege für Weiß`
+      : language === "fr"
+        ? `${match[1]} victoires des Blancs`
+        : text;
   }
+
   match = /^(\d[\d.,\s]*) black wins$/.exec(text);
   if (match) {
-    return language === "de" ? `${match[1]} Siege für Schwarz` : language === "fr" ? `${match[1]} victoires des Noirs` : text;
+    return language === "de"
+      ? `${match[1]} Siege für Schwarz`
+      : language === "fr"
+        ? `${match[1]} victoires des Noirs`
+        : text;
   }
+
   match = /^(\d[\d.,\s]*) draws$/.exec(text);
   if (match) {
-    return language === "de" ? `${match[1]} Remis` : language === "fr" ? `${match[1]} nulles` : text;
+    return language === "de"
+      ? `${match[1]} Remis`
+      : language === "fr"
+        ? `${match[1]} nulles`
+        : text;
   }
 
   return null;
@@ -242,6 +343,7 @@ function translateText(text: string, language: Language): string {
 function translateElement(root: ParentNode, language: Language) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let current = walker.nextNode();
+
   while (current) {
     const parent = current.parentElement;
     if (parent && !["SCRIPT", "STYLE", "CODE", "PRE"].includes(parent.tagName)) {
@@ -253,7 +355,10 @@ function translateElement(root: ParentNode, language: Language) {
     current = walker.nextNode();
   }
 
-  const elements = root instanceof Element ? [root, ...root.querySelectorAll("*")] : [...root.querySelectorAll("*")];
+  const elements = root instanceof Element
+    ? [root, ...root.querySelectorAll("*")]
+    : [...root.querySelectorAll("*")];
+
   for (const element of elements) {
     for (const attribute of ["title", "aria-label", "placeholder"] as const) {
       const value = element.getAttribute(attribute);
@@ -280,15 +385,17 @@ export function I18nProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, language);
     document.documentElement.lang = language;
-    document.title = language === "de" ? "Schach" : language === "fr" ? "Échecs" : "Chess";
+    document.title = translations["app.title"][language];
 
     translateElement(document.body, language);
+
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === "characterData" && mutation.target.parentNode) {
           translateElement(mutation.target.parentNode as ParentNode, language);
           continue;
         }
+
         for (const node of mutation.addedNodes) {
           if (node.nodeType === Node.ELEMENT_NODE) {
             translateElement(node as Element, language);
@@ -299,7 +406,12 @@ export function I18nProvider({ children }: PropsWithChildren) {
       }
     });
 
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
     return () => observer.disconnect();
   }, [language]);
 
