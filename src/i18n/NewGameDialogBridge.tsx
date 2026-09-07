@@ -65,7 +65,10 @@ export default function NewGameDialogBridge() {
           .find((button) => button.style.display !== "none");
         actions.insertBefore(cancelButton, visibleStartButton ?? null);
       }
-      cancelButton.textContent = cancelLabel;
+
+      if (cancelButton.textContent !== cancelLabel) {
+        cancelButton.textContent = cancelLabel;
+      }
     };
 
     const handleClick = (event: MouseEvent) => {
