@@ -18,8 +18,10 @@ interface EngineEvaluation {
 }
 
 interface AnalysisEvaluationEventDetail {
+  key: string | null;
   ply: number | null;
   evaluation: EngineEvaluation | null;
+  variation?: boolean;
   stop?: boolean;
 }
 
@@ -121,6 +123,27 @@ function parsePly(url: string): number | null {
   }
 }
 
+function parseVariationRequest(init?: RequestInit): { key: string; ply: number | null } {
+  try {
+    if (typeof init?.body !== "string") {
+      return { key: "variation", ply: null };
+    }
+
+    const parsed = JSON.parse(init.body) as {
+      anchorPly?: number;
+      moves?: string[];
+    };
+    const anchorPly = Number.isInteger(parsed.anchorPly) ? parsed.anchorPly! : null;
+    const moves = Array.isArray(parsed.moves) ? parsed.moves : [];
+    return {
+      key: `variation:${anchorPly ?? "?"}:${moves.join(" ")}`,
+      ply: anchorPly,
+    };
+  } catch {
+    return { key: "variation", ply: null };
+  }
+}
+
 function dispatchEvaluation(detail: AnalysisEvaluationEventDetail) {
   window.dispatchEvent(
     new CustomEvent<AnalysisEvaluationEventDetail>(ANALYSIS_EVALUATION_EVENT, {
@@ -195,7 +218,8 @@ export default function AnalysisEvaluationOutputPortal() {
   const [animationIndex, setAnimationIndex] = useState(0);
   const [activeEngineView, setActiveEngineView] =
     useState<AnalysisEngineView>("deep");
-  const activePlyRef = useRef<number | null>(null);
+  const [variationMode, setVariationMode] = useState(false);
+  const activeKeyRef = useRef<string | null>(null);
   const activeEngineViewRef = useRef<AnalysisEngineView>("deep");
 
   useEffect(() => {
@@ -319,6 +343,7 @@ export default function AnalysisEvaluationOutputPortal() {
 
       if (url.includes("/api/analysis-eval/stop")) {
         dispatchEvaluation({
+          key: null,
           ply: null,
           evaluation: null,
           stop: true,
@@ -326,11 +351,15 @@ export default function AnalysisEvaluationOutputPortal() {
         return response;
       }
 
-      if (!url.includes("/api/analysis-eval?")) {
+      const isVariation = url.includes("/api/analysis-eval/variation");
+      const isOriginalPly = url.includes("/api/analysis-eval?");
+      if (!isVariation && !isOriginalPly) {
         return response;
       }
 
-      const ply = parsePly(url);
+      const variationRequest = isVariation ? parseVariationRequest(init) : null;
+      const ply = variationRequest?.ply ?? parsePly(url);
+      const key = variationRequest?.key ?? (ply != null ? `ply:${ply}` : null);
 
       void response
         .clone()
@@ -340,7 +369,9 @@ export default function AnalysisEvaluationOutputPortal() {
           const isTerminalMate = Math.abs(data.eval ?? 0) >= 99;
 
           dispatchEvaluation({
+            key,
             ply,
+            variation: isVariation,
             evaluation: hasUsableLines || isTerminalMate ? data : null,
           });
         })
@@ -365,16 +396,23 @@ export default function AnalysisEvaluationOutputPortal() {
       const detail = (event as CustomEvent<AnalysisEvaluationEventDetail>).detail;
 
       if (detail.stop) {
-        activePlyRef.current = null;
+        activeKeyRef.current = null;
         setActivePly(null);
         setEvaluation(null);
+        setVariationMode(false);
         setSelectedLineIndex(0);
         setAnimationIndex(0);
         return;
       }
 
-      if (detail.ply !== activePlyRef.current) {
-        activePlyRef.current = detail.ply;
+      setVariationMode(Boolean(detail.variation));
+      if (detail.variation) {
+        activeEngineViewRef.current = "live";
+        setActiveEngineView("live");
+      }
+
+      if (detail.key !== activeKeyRef.current) {
+        activeKeyRef.current = detail.key;
         setActivePly(detail.ply);
         setEvaluation(detail.evaluation);
         setSelectedLineIndex(0);
@@ -383,7 +421,7 @@ export default function AnalysisEvaluationOutputPortal() {
       }
 
       // Temporary empty parser snapshots must not overwrite the most recent
-      // valid result for the currently selected ply.
+      // valid result for the currently selected logical position.
       if (detail.evaluation) {
         setEvaluation(detail.evaluation);
       }
@@ -549,6 +587,8 @@ export default function AnalysisEvaluationOutputPortal() {
             .filter(Boolean)
             .join(" ")}
           onClick={() => setActiveEngineView("deep")}
+          disabled={variationMode}
+          title={variationMode ? "Deep Analysis belongs to the original game position." : undefined}
         >
           Deep Analysis
         </button>
@@ -572,9 +612,13 @@ export default function AnalysisEvaluationOutputPortal() {
         <section className="analysis-detail-row analysis-evaluation-panel">
           <div className="analysis-position-panel analysis-evaluation-position-panel">
             <div className="analysis-detail-title">
-              {activePly
-                ? `EvaluationEngine continuation from ply ${activePly}`
-                : "EvaluationEngine continuation"}
+              {variationMode
+                ? activePly
+                  ? `EvaluationEngine variation from ply ${activePly}`
+                  : "EvaluationEngine variation"
+                : activePly
+                  ? `EvaluationEngine continuation from ply ${activePly}`
+                  : "EvaluationEngine continuation"}
             </div>
             {renderEvaluationBoard()}
           </div>
@@ -586,9 +630,11 @@ export default function AnalysisEvaluationOutputPortal() {
 
             {!evaluation && (
               <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
-                {activePly
-                  ? `Evaluation for ply ${activePly} is being calculated…`
-                  : "Enable the evaluation bar to analyze the selected position infinitely."}
+                {variationMode
+                  ? "Evaluation for the analysis variation is being calculated…"
+                  : activePly
+                    ? `Evaluation for ply ${activePly} is being calculated…`
+                    : "Enable the evaluation bar to analyze the selected position infinitely."}
               </div>
             )}
 
