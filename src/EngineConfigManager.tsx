@@ -104,6 +104,7 @@ export default function EngineConfigManager({
   const [selectedEngineId, setSelectedEngineId] = useState<string | null>(null);
   const [engineDraft, setEngineDraft] = useState<EngineDefinition | null>(null);
   const [creatingEngine, setCreatingEngine] = useState(false);
+  const [newEnginePath, setNewEnginePath] = useState("");
   const [newEngineName, setNewEngineName] = useState("");
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -214,6 +215,7 @@ export default function EngineConfigManager({
     setCreatingEngine(true);
     setSelectedEngineId(null);
     setEngineDraft(null);
+    setNewEnginePath("");
     setNewEngineName("");
     setProfileOptionEditor(null);
     setOptionFilter("");
@@ -275,6 +277,44 @@ export default function EngineConfigManager({
       setEngineDraft(null);
       setMessage(null);
       setError(e instanceof Error ? e.message : "Engine could not be selected or inspected.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function inspectEngineByPath() {
+    const engine = newEnginePath.trim();
+    if (!engine) {
+      setError("Please enter an engine executable path first.");
+      return;
+    }
+
+    try {
+      setBusy(true);
+      setError(null);
+      setMessage("Starting engine and reading its UCI definition…");
+      const response = await fetch("/api/engine-configs/engines/inspect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          engine,
+          name: newEngineName.trim() || null,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(await response.text() || `HTTP ${response.status}`);
+      }
+      const inspected = (await response.json()) as EngineDefinition;
+      setEngineDraft(copyEngine(inspected));
+      setNewEngineName(inspected.name);
+      setOptionFilter("");
+      setMessage(
+        `${inspected.engineName} detected · ${Object.keys(inspected.options).length} UCI options`
+      );
+    } catch (e) {
+      setEngineDraft(null);
+      setMessage(null);
+      setError(e instanceof Error ? e.message : "Engine could not be inspected.");
     } finally {
       setBusy(false);
     }
@@ -348,6 +388,7 @@ export default function EngineConfigManager({
 
       setCreatingEngine(false);
       setCreatingProfile(false);
+      setNewEnginePath("");
       setNewEngineName("");
       setNewProfileEngineId("");
       setOptionFilter("");
@@ -946,7 +987,7 @@ export default function EngineConfigManager({
                         <div className="engine-config-details-heading">
                           <div>
                             <strong>Neue Engine definieren</strong>
-                            <span>Step 1 · Select the executable using the system file picker</span>
+                            <span>Step 1 · Select the executable using the system file picker or enter its path</span>
                           </div>
                         </div>
                         <div className="engine-config-form-grid">
@@ -958,13 +999,32 @@ export default function EngineConfigManager({
                               placeholder="Otherwise taken from the UCI engine"
                             />
                           </label>
+                          <label>
+                            <span>Engine path (fallback)</span>
+                            <input
+                              value={newEnginePath}
+                              onChange={(event) => setNewEnginePath(event.target.value)}
+                              placeholder="C:\\Engines\\stockfish.exe or /usr/games/stockfish"
+                            />
+                          </label>
                         </div>
                         <div className="engine-config-default-info">
-                          The file dialog opens on the computer running the backend. After selection, the engine is inspected automatically through UCI.
+                          The file dialog opens on the computer running the backend. Enter an engine name first to enable it. If the native file picker cannot be used, enter the executable path directly instead.
                         </div>
                         <div className="engine-config-actions">
-                          <button type="button" onClick={() => void inspectEngine()} disabled={busy}>
+                          <button
+                            type="button"
+                            onClick={() => void inspectEngine()}
+                            disabled={busy || !newEngineName.trim()}
+                          >
                             {busy ? "File picker is open…" : "Select engine file…"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void inspectEngineByPath()}
+                            disabled={busy || !newEnginePath.trim()}
+                          >
+                            {busy ? "Inspecting…" : "Use entered path…"}
                           </button>
                         </div>
                       </div>
@@ -1067,7 +1127,7 @@ export default function EngineConfigManager({
                             <button
                               type="button"
                               onClick={() => void inspectEngine()}
-                              disabled={busy}
+                              disabled={busy || !engineDraft.name.trim()}
                             >
                               {busy ? "File picker is open…" : "Select another engine…"}
                             </button>
