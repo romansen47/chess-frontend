@@ -44,7 +44,7 @@ export default function ChessHeader({
 
   return (
     <header className="app-header">
-      <h1>{t("app.title")}</h1>
+      <h1 translate="no">ChessAnalysisTool</h1>
 
       <div className="top-engine-controls">
         {analysisReplayActive && analysisReplayRunning && (
