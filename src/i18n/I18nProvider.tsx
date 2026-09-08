@@ -513,7 +513,11 @@ function translateElement(root: ParentNode, language: Language) {
 
   while (current) {
     const parent = current.parentElement;
-    if (parent && !["SCRIPT", "STYLE", "CODE", "PRE"].includes(parent.tagName)) {
+    if (
+      parent
+      && !parent.closest(".language-selector")
+      && !["SCRIPT", "STYLE", "CODE", "PRE"].includes(parent.tagName)
+    ) {
       const translated = translateText(current.textContent ?? "", language);
       if (translated !== current.textContent) {
         current.textContent = translated;
