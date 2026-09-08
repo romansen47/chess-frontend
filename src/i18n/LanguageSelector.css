@@ -1,7 +1,6 @@
 .language-selector {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   height: 26px;
   margin: 0;
   padding: 0 4px;
@@ -10,12 +9,8 @@
   white-space: nowrap;
 }
 
-.language-selector span {
-  font-weight: 600;
-}
-
 .language-selector select {
-  min-width: 96px;
+  min-width: 112px;
   height: 26px;
   padding: 0 24px 0 7px;
   border: 1px solid #555;
@@ -34,11 +29,7 @@
 }
 
 @media (max-width: 980px) {
-  .language-selector span {
-    display: none;
-  }
-
   .language-selector select {
-    min-width: 88px;
+    min-width: 104px;
   }
 }
