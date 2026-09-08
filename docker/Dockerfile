@@ -39,9 +39,14 @@ RUN git clone --branch ${GIT_BRANCH} --single-branch \
     mvn -f /build/chess/pom.xml clean install -DskipTests
 
 RUN git clone --branch ${GIT_BRANCH} --single-branch \
+        https://github.com/romansen47/chess-database.git \
+        /build/chess-database && \
+    mvn -f /build/chess-database/pom.xml clean install -DskipTests
+
+RUN git clone --branch ${GIT_BRANCH} --single-branch \
         https://github.com/romansen47/chess-api.git \
         /build/chess-api && \
-    mvn -f /build/chess-api/pom.xml clean package -DskipTests
+    mvn -f /build/chess-api/pom.xml clean package -DskipTests -Dexec.skip=true
 
 FROM ubuntu:24.04
 
@@ -73,7 +78,7 @@ RUN mkdir -p /etc/ssl/certs /etc/ssl/private && \
 
 WORKDIR /app
 
-COPY --from=api-build /build/chess-api/target/chess-api-0.0.1-SNAPSHOT.jar /app/chess-api.jar
+COPY --from=api-build /build/chess-api/target/chess-app.jar /app/chess-api.jar
 COPY --from=frontend-build /build/chess-frontend/dist/ /var/www/html/
 
 COPY docker/apache-config.conf /etc/apache2/sites-available/000-default.conf
@@ -82,4 +87,4 @@ RUN a2ensite default-ssl.conf
 
 EXPOSE 80 443
 
-CMD service apache2 start && java -Xmx4g -Xms512m -jar /app/chess-api.jar
+CMD ["bash", "-lc", "service apache2 start && exec java -Xmx4g -Xms512m -jar /app/chess-api.jar"]
