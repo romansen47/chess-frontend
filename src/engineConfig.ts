@@ -40,10 +40,42 @@ export interface EngineConfigOverview {
   version: number;
 }
 
+export type EngineRuntimeTarget = "white" | "black" | "evaluation";
+
+export interface EngineRuntimeAssignments {
+  whitePlayerProfileId: string | null;
+  blackPlayerProfileId: string | null;
+  evaluationProfileId: string | null;
+}
+
 export async function fetchEngineConfigOverview(): Promise<EngineConfigOverview> {
   const response = await fetch("/api/engine-configs");
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
   return (await response.json()) as EngineConfigOverview;
+}
+
+export async function fetchEngineRuntimeAssignments(): Promise<EngineRuntimeAssignments> {
+  const response = await fetch("/api/engine-configs/runtime");
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return (await response.json()) as EngineRuntimeAssignments;
+}
+
+export async function updateEngineRuntimeProfile(
+  target: EngineRuntimeTarget,
+  profileId: string | null,
+): Promise<EngineRuntimeAssignments> {
+  const response = await fetch(`/api/engine-configs/runtime/${encodeURIComponent(target)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ profileId }),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `HTTP ${response.status}`);
+  }
+  return (await response.json()) as EngineRuntimeAssignments;
 }
