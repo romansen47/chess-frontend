@@ -40,6 +40,9 @@ import MovePanel from "./chess/game/MovePanel";
 import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 
+const LIVE_EVALUATION_FAST_POLL_MS = 250;
+const LIVE_EVALUATION_NORMAL_POLL_MS = 2000;
+
 function squareName(file: number, rank: number): string {
   const fileChar = String.fromCharCode("a".charCodeAt(0) + file - 1);
   return `${fileChar}${rank}`;
@@ -401,6 +404,8 @@ export const ChessBoard: React.FC = () => {
   const [evalError, setEvalError] = useState<string | null>(null);
   const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(true);
   const engineAutoUpdateRef = useRef<boolean>(true);
+  const [liveEvaluationFastPolling, setLiveEvaluationFastPolling] = useState<boolean>(true);
+  const liveEvaluationRequestInFlightRef = useRef<boolean>(false);
   const [whiteComputerEnabled, setWhiteComputerEnabled] = useState<boolean>(false);
   const [blackComputerEnabled, setBlackComputerEnabled] = useState<boolean>(false);
   const whiteComputerEnabledRef = useRef<boolean>(false);
@@ -729,7 +734,8 @@ export const ChessBoard: React.FC = () => {
   }
 
   async function loadEvaluation() {
-    if (!engineAutoUpdateRef.current) return;
+    if (!engineAutoUpdateRef.current || liveEvaluationRequestInFlightRef.current) return;
+    liveEvaluationRequestInFlightRef.current = true;
     try {
       setIsLoadingEval(true);
       setEvalError(null);
@@ -737,11 +743,15 @@ export const ChessBoard: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data: EngineEvaluation = await response.json();
       if (!engineAutoUpdateRef.current) return;
-      if (data.lines && data.lines.length > 0) setEngineEval(data);
+      const hasLines = Boolean(data.lines && data.lines.length > 0);
+      setLiveEvaluationFastPolling(!hasLines);
+      if (hasLines) setEngineEval(data);
     } catch (e) {
       console.error("[loadEvaluation] error", e);
       setEvalError("Failed to load the engine evaluation.");
+      setLiveEvaluationFastPolling(false);
     } finally {
+      liveEvaluationRequestInFlightRef.current = false;
       setIsLoadingEval(false);
     }
   }
@@ -808,6 +818,7 @@ export const ChessBoard: React.FC = () => {
   function toggleEngineAutoUpdate() {
     const nextValue = !engineAutoUpdateRef.current;
     setEngineAutoUpdate(nextValue);
+    setLiveEvaluationFastPolling(true);
     if (!nextValue) {
       setEngineEval(null);
       setEvalError(null);
@@ -845,14 +856,18 @@ export const ChessBoard: React.FC = () => {
       return { ...prev, engineProfileId: preferred?.id ?? data.profiles[0]?.id ?? null };
     });
     setEngineEval(null);
+    setLiveEvaluationFastPolling(true);
     if (engineAutoUpdateRef.current) void loadEvaluation();
   }
 
   useEffect(() => {
     if (!engineAutoUpdate || clock?.gameState) return;
-    const intervalId = window.setInterval(() => { loadEvaluation(); }, 2000);
+    const intervalId = window.setInterval(
+      () => { void loadEvaluation(); },
+      liveEvaluationFastPolling ? LIVE_EVALUATION_FAST_POLL_MS : LIVE_EVALUATION_NORMAL_POLL_MS,
+    );
     return () => window.clearInterval(intervalId);
-  }, [engineAutoUpdate, clock?.gameState]);
+  }, [engineAutoUpdate, clock?.gameState, liveEvaluationFastPolling]);
 
   useEffect(() => { setAnalysisLineAnimationIndex(0); }, [analysisSelectedPosition?.ply, analysisSelectedLineIndex]);
 
@@ -1389,7 +1404,10 @@ export const ChessBoard: React.FC = () => {
   async function synchronizeAfterMoveSequence() {
     await loadBoardFromBackend();
     await loadClock();
-    if (engineAutoUpdateRef.current && !gameEndStateRef.current) loadEvaluation();
+    if (engineAutoUpdateRef.current && !gameEndStateRef.current) {
+      setLiveEvaluationFastPolling(true);
+      void loadEvaluation();
+    }
   }
 
   function runComputerMoveSequence(initialSideToMove: string | null | undefined) {
