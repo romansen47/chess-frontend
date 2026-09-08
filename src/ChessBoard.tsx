@@ -400,6 +400,7 @@ export const ChessBoard: React.FC = () => {
   }
 
   const [engineEval, setEngineEval] = useState<EngineEvaluation | null>(null);
+  const [liveEvaluationBar, setLiveEvaluationBar] = useState<number | null>(null);
   const [isLoadingEval, setIsLoadingEval] = useState(false);
   const [evalError, setEvalError] = useState<string | null>(null);
   const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(true);
@@ -685,7 +686,7 @@ export const ChessBoard: React.FC = () => {
     loadEngineConfigs();
     loadGameSettings();
     loadClock();
-    loadBoardFromBackend().then(() => { if (engineAutoUpdate) loadEvaluation(); });
+    loadBoardFromBackend();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -756,6 +757,47 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
+  useEffect(() => {
+    if (!engineAutoUpdate || analysisReplayActive || uciAnalysisLoaded || clock?.gameState) {
+      setLiveEvaluationBar(null);
+      return;
+    }
+
+    const source = new EventSource("/api/eval/stream");
+
+    const handleReady = () => {
+      void loadEvaluation();
+    };
+
+    const handleBar = (event: Event) => {
+      try {
+        const data = JSON.parse((event as MessageEvent<string>).data) as {
+          eval?: number;
+          bar?: number;
+          depth?: number;
+        };
+        if (!engineAutoUpdateRef.current || analysisReplayActiveRef.current
+            || uciAnalysisLoadedRef.current || gameEndStateRef.current) return;
+        if (typeof data.bar !== "number" || !Number.isFinite(data.bar)) return;
+        setLiveEvaluationBar(Math.max(0, Math.min(1, data.bar)));
+      } catch (error) {
+        console.warn("[liveEvaluationBar] invalid SSE update", error);
+      }
+    };
+
+    source.addEventListener("ready", handleReady);
+    source.addEventListener("bar", handleBar);
+    source.onerror = () => {
+      console.debug("[liveEvaluationBar] SSE connection interrupted; waiting for reconnect");
+    };
+
+    return () => {
+      source.removeEventListener("ready", handleReady);
+      source.removeEventListener("bar", handleBar);
+      source.close();
+    };
+  }, [engineAutoUpdate, analysisReplayActive, uciAnalysisLoaded, clock?.gameState]);
+
   async function stopLiveEvaluation() {
     try {
       await fetch("/api/eval/stop", { method: "POST", headers: { "Content-Type": "application/json" } });
@@ -818,6 +860,7 @@ export const ChessBoard: React.FC = () => {
   function toggleEngineAutoUpdate() {
     const nextValue = !engineAutoUpdateRef.current;
     setEngineAutoUpdate(nextValue);
+    setLiveEvaluationBar(null);
     setLiveEvaluationFastPolling(true);
     if (!nextValue) {
       setEngineEval(null);
@@ -856,6 +899,7 @@ export const ChessBoard: React.FC = () => {
       return { ...prev, engineProfileId: preferred?.id ?? data.profiles[0]?.id ?? null };
     });
     setEngineEval(null);
+    setLiveEvaluationBar(null);
     setLiveEvaluationFastPolling(true);
     if (engineAutoUpdateRef.current) void loadEvaluation();
   }
@@ -1000,6 +1044,7 @@ export const ChessBoard: React.FC = () => {
       await disablePlayerEngines();
       setShowGameEndDialog(false);
       setEngineAutoUpdate(false);
+      setLiveEvaluationBar(null);
       setAnalysisTotalPlies(0);
       setAnalysisSelectedPosition(null);
       setAnalysisSelectedLineIndex(null);
@@ -1118,6 +1163,7 @@ export const ChessBoard: React.FC = () => {
       await stopAnalysisEvaluation();
       setEngineAutoUpdate(false);
       setEngineEval(null);
+      setLiveEvaluationBar(null);
       setAnalysisEvaluationEnabled(false);
       setAnalysisEvaluation(null);
       setAnalysisEvaluationError(null);
@@ -1233,6 +1279,7 @@ export const ChessBoard: React.FC = () => {
       setGameEndState(null);
       setShowGameSettingsDialog(false);
       setEngineEval(null);
+      setLiveEvaluationBar(null);
       setClock({
         whiteTime: appliedSettings.timeForEachPlayerSeconds,
         blackTime: appliedSettings.timeForEachPlayerSeconds,
@@ -1302,7 +1349,7 @@ export const ChessBoard: React.FC = () => {
   function moveMovePreview(event: React.MouseEvent<HTMLElement>) {
     setHoverPreview((prev) => prev ? { ...prev, x: event.clientX, y: event.clientY } : prev);
   }
-  function hideMovePreview() { setHoverPreview(null); }
+  function hidePreview() { setHoverPreview(null); }
 
   function selectAnalysisPosition(position: string | undefined, san: string | undefined, ply: number) {
     if (!analysisReplayActiveRef.current || !position || position.length !== 64) return;
@@ -1340,6 +1387,7 @@ export const ChessBoard: React.FC = () => {
     if (!gameState) return false;
     setGameEndState(gameState);
     setEngineAutoUpdate(false);
+    setLiveEvaluationBar(null);
     void stopLiveEvaluation();
     setClock((prev) => prev ? { ...prev, gameState, whiteRunning: false, blackRunning: false } : prev);
     setShowGameEndDialog(true);
@@ -1405,6 +1453,7 @@ export const ChessBoard: React.FC = () => {
     await loadBoardFromBackend();
     await loadClock();
     if (engineAutoUpdateRef.current && !gameEndStateRef.current) {
+      setLiveEvaluationBar(null);
       setLiveEvaluationFastPolling(true);
       void loadEvaluation();
     }
@@ -1987,7 +2036,7 @@ export const ChessBoard: React.FC = () => {
               computerThinking: isComputerThinking,
               error: loadError,
             }}
-            actions={{ showPreview: showMovePreview, movePreview: moveMovePreview, hidePreview: hideMovePreview, selectPosition: selectAnalysisPosition }}
+            actions={{ showPreview: showMovePreview, movePreview: moveMovePreview, hidePreview, selectPosition: selectAnalysisPosition }}
           />
 
           <section className="board-column">
@@ -2021,8 +2070,8 @@ export const ChessBoard: React.FC = () => {
                   onClick={toggleEngineAutoUpdate} aria-pressed={engineAutoUpdate}
                   aria-label={engineAutoUpdate ? "Disable evaluation engine" : "Enable evaluation engine"}
                   title={engineAutoUpdate ? "Disable evaluation engine" : "Enable evaluation engine · evaluation 0.0"}>
-                  <div className="engine-bar-white" style={{ height: `${(engineAutoUpdate && engineEval ? engineEval.bar : 0.5) * 100}%` }} />
-                  <div className="engine-bar-black" style={{ height: `${(1 - (engineAutoUpdate && engineEval ? engineEval.bar : 0.5)) * 100}%` }} />
+                  <div className="engine-bar-white" style={{ height: `${(engineAutoUpdate && liveEvaluationBar != null ? liveEvaluationBar : 0.5) * 100}%` }} />
+                  <div className="engine-bar-black" style={{ height: `${(1 - (engineAutoUpdate && liveEvaluationBar != null ? liveEvaluationBar : 0.5)) * 100}%` }} />
                 </button>
               )}
               {analysisReplayActive && analysisReplayFinished && (
