@@ -39,6 +39,25 @@ export interface MoveResult {
   gameState?: string | null;
 }
 
+export interface AnalysisVariationRequest {
+  anchorPly: number;
+  moves: string[];
+  from?: string | null;
+  to?: string | null;
+  promotion?: PieceType | null;
+}
+
+export interface AnalysisVariationMoveResult {
+  success: boolean;
+  message: string | null;
+  from: string | null;
+  to: string | null;
+  uci: string | null;
+  sideToMove: string | null;
+  position: string | null;
+  gameState: string | null;
+}
+
 export interface UciGameMove {
   ply: number;
   uci: string;
