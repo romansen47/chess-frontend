@@ -6,8 +6,18 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
+import {
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES,
+  detectSupportedLanguage,
+  getLanguageDefinition,
+  isSupportedLanguage,
+  type Language,
+} from "./languages";
+import { italianTranslations } from "./translations/it";
+import { spanishTranslations } from "./translations/es";
 
-export type Language = "en" | "de" | "fr";
+export type { Language } from "./languages";
 
 interface I18nContextValue {
   language: Language;
@@ -16,7 +26,8 @@ interface I18nContextValue {
   t: (key: TranslationKey, values?: Record<string, string | number>) => string;
 }
 
-type Translation = Record<Language, string>;
+type BaseLanguage = "en" | "de" | "fr";
+type Translation = Record<BaseLanguage, string>;
 type TranslationKey = keyof typeof translations;
 
 const STORAGE_KEY = "chess.language";
@@ -321,6 +332,11 @@ const translations = {
   "settings.deleteProfileConfirm": { en: 'Delete engine profile "{name}"?', de: 'Engine-Profil "{name}" löschen?', fr: 'Supprimer le profil de moteur "{name}" ?' },
 } satisfies Record<string, Translation>;
 
+const additionalTranslations: Record<"it" | "es", Record<string, string>> = {
+  it: italianTranslations,
+  es: spanishTranslations,
+};
+
 const aliases: Record<string, TranslationKey> = {
   "Aktualisieren": "common.refresh",
   "Historie": "engine.history",
@@ -332,13 +348,26 @@ const aliases: Record<string, TranslationKey> = {
   "Prozess seit": "engine.processSince",
 };
 
-const localeByLanguage: Record<Language, string> = {
-  en: "en-US",
-  de: "de-DE",
-  fr: "fr-FR",
-};
-
 const I18nContext = createContext<I18nContextValue | null>(null);
+
+function getTranslation(key: TranslationKey, language: Language): string {
+  if (language === "it" || language === "es") {
+    return additionalTranslations[language][key];
+  }
+  return translations[key][language];
+}
+
+function validateAdditionalTranslations() {
+  const keys = Object.keys(translations) as TranslationKey[];
+  for (const language of ["it", "es"] as const) {
+    const missing = keys.filter((key) => !Object.prototype.hasOwnProperty.call(additionalTranslations[language], key));
+    if (missing.length > 0) {
+      throw new Error(`Missing ${language} translations: ${missing.join(", ")}`);
+    }
+  }
+}
+
+validateAdditionalTranslations();
 
 function interpolate(template: string, values?: Record<string, string | number>): string {
   if (!values) {
@@ -351,18 +380,10 @@ function interpolate(template: string, values?: Record<string, string | number>)
 
 function detectInitialLanguage(): Language {
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === "en" || stored === "de" || stored === "fr") {
+  if (isSupportedLanguage(stored)) {
     return stored;
   }
-
-  const browserLanguage = window.navigator.language.toLowerCase();
-  if (browserLanguage.startsWith("de")) {
-    return "de";
-  }
-  if (browserLanguage.startsWith("fr")) {
-    return "fr";
-  }
-  return "en";
+  return detectSupportedLanguage(window.navigator.language);
 }
 
 function findTranslationKey(text: string): TranslationKey | null {
@@ -370,95 +391,100 @@ function findTranslationKey(text: string): TranslationKey | null {
     return aliases[text];
   }
 
-  for (const [key, translation] of Object.entries(translations)) {
-    if (translation.en === text || translation.de === text || translation.fr === text) {
-      return key as TranslationKey;
+  for (const key of Object.keys(translations) as TranslationKey[]) {
+    if (SUPPORTED_LANGUAGES.some(({ code }) => getTranslation(key, code) === text)) {
+      return key;
     }
   }
   return null;
 }
 
+type DynamicFormatter<T extends unknown[]> = Record<Language, (...args: T) => string>;
+
+const analyzingText: DynamicFormatter<[string, string]> = {
+  en: (current, total) => `Analyzing ${current} / ${total}…`,
+  de: (current, total) => `Analyse ${current} / ${total}…`,
+  fr: (current, total) => `Analyse ${current} / ${total}…`,
+  it: (current, total) => `Analisi ${current} / ${total}…`,
+  es: (current, total) => `Analizando ${current} / ${total}…`,
+};
+
+const mateText: DynamicFormatter<[boolean, string | undefined]> = {
+  en: (white, distance) => `Mate for ${white ? "White" : "Black"}${distance ? ` in ${distance}` : ""}`,
+  de: (white, distance) => `Matt für ${white ? "Weiß" : "Schwarz"}${distance ? ` in ${distance}` : ""}`,
+  fr: (white, distance) => `Mat pour les ${white ? "Blancs" : "Noirs"}${distance ? ` en ${distance}` : ""}`,
+  it: (white, distance) => `Matto per il ${white ? "Bianco" : "Nero"}${distance ? ` in ${distance}` : ""}`,
+  es: (white, distance) => `Mate para las ${white ? "Blancas" : "Negras"}${distance ? ` en ${distance}` : ""}`,
+};
+
+const continuationsText: DynamicFormatter<[string]> = {
+  en: (count) => `${count} continuations`,
+  de: (count) => `${count} Fortsetzungen`,
+  fr: (count) => `${count} continuations`,
+  it: (count) => `${count} continuazioni`,
+  es: (count) => `${count} continuaciones`,
+};
+
+const whiteWinsText: DynamicFormatter<[string]> = {
+  en: (count) => `${count} white wins`,
+  de: (count) => `${count} Siege für Weiß`,
+  fr: (count) => `${count} victoires des Blancs`,
+  it: (count) => `${count} vittorie del Bianco`,
+  es: (count) => `${count} victorias de las Blancas`,
+};
+
+const blackWinsText: DynamicFormatter<[string]> = {
+  en: (count) => `${count} black wins`,
+  de: (count) => `${count} Siege für Schwarz`,
+  fr: (count) => `${count} victoires des Noirs`,
+  it: (count) => `${count} vittorie del Nero`,
+  es: (count) => `${count} victorias de las Negras`,
+};
+
+const drawsText: DynamicFormatter<[string]> = {
+  en: (count) => `${count} draws`,
+  de: (count) => `${count} Remis`,
+  fr: (count) => `${count} nulles`,
+  it: (count) => `${count} patte`,
+  es: (count) => `${count} tablas`,
+};
+
 function translateDynamicText(text: string, language: Language): string | null {
-  let match = /^Analyzing\s+(\d+)\s*\/\s*(\d+)…?$/.exec(text);
+  let match = /^(?:Analyzing|Analyse|Analisi|Analizando)\s+(\d+)\s*\/\s*(\d+)…?$/.exec(text);
   if (match) {
-    const [, current, total] = match;
-    return language === "de"
-      ? `Analyse ${current} / ${total}…`
-      : language === "fr"
-        ? `Analyse ${current} / ${total}…`
-        : `Analyzing ${current} / ${total}…`;
+    return analyzingText[language](match[1], match[2]);
   }
 
-  match = /^Analysis complete \((.+)\)\.$/.exec(text);
-  if (match) {
-    return `${translations["analysis.complete"][language]} (${match[1]}).`;
+  const completeLabels = SUPPORTED_LANGUAGES.map(({ code }) => getTranslation("analysis.complete", code));
+  const completePrefix = completeLabels.find((label) => text.startsWith(`${label} (`));
+  if (completePrefix && text.endsWith(").")) {
+    return `${getTranslation("analysis.complete", language)} ${text.slice(completePrefix.length + 1)}`;
   }
 
-  match = /^Mate for (White|Black)$/.exec(text);
+  match = /^(?:Mate for|Matt für|Mat pour les|Matto per il|Mate para las)\s+(White|Black|Weiß|Schwarz|Blancs|Noirs|Bianco|Nero|Blancas|Negras)(?:\s+(?:in|en)\s+(\d+))?$/.exec(text);
   if (match) {
-    const color = match[1] === "White"
-      ? translations["common.white"][language]
-      : translations["common.black"][language];
-    return language === "de"
-      ? `Matt für ${color}`
-      : language === "fr"
-        ? `Mat pour les ${color.toLowerCase()}`
-        : `Mate for ${color}`;
+    const white = ["White", "Weiß", "Blancs", "Bianco", "Blancas"].includes(match[1]);
+    return mateText[language](white, match[2]);
   }
 
-  match = /^Mate (?:for|für) (White|Black|Weiß|Schwarz)(?: in (\d+))?$/.exec(text);
+  match = /^(\d[\d.,\s]*)\s+(?:continuations|Fortsetzungen|continuazioni|continuaciones)$/.exec(text);
   if (match) {
-    const isWhite = match[1] === "White" || match[1] === "Weiß";
-    const color = isWhite
-      ? translations["common.white"][language]
-      : translations["common.black"][language];
-    const distance = match[2];
-
-    if (language === "de") {
-      return distance ? `Matt für ${color} in ${distance}` : `Matt für ${color}`;
-    }
-    if (language === "fr") {
-      return distance
-        ? `Mat pour les ${color.toLowerCase()} en ${distance}`
-        : `Mat pour les ${color.toLowerCase()}`;
-    }
-    return distance ? `Mate for ${color} in ${distance}` : `Mate for ${color}`;
+    return continuationsText[language](match[1]);
   }
 
-  match = /^(\d[\d.,\s]*) continuations$/.exec(text);
+  match = /^(\d[\d.,\s]*)\s+(?:white wins|Siege für Weiß|victoires des Blancs|vittorie del Bianco|victorias de las Blancas)$/.exec(text);
   if (match) {
-    return language === "de"
-      ? `${match[1]} Fortsetzungen`
-      : language === "fr"
-        ? `${match[1]} continuations`
-        : text;
+    return whiteWinsText[language](match[1]);
   }
 
-  match = /^(\d[\d.,\s]*) white wins$/.exec(text);
+  match = /^(\d[\d.,\s]*)\s+(?:black wins|Siege für Schwarz|victoires des Noirs|vittorie del Nero|victorias de las Negras)$/.exec(text);
   if (match) {
-    return language === "de"
-      ? `${match[1]} Siege für Weiß`
-      : language === "fr"
-        ? `${match[1]} victoires des Blancs`
-        : text;
+    return blackWinsText[language](match[1]);
   }
 
-  match = /^(\d[\d.,\s]*) black wins$/.exec(text);
+  match = /^(\d[\d.,\s]*)\s+(?:draws|Remis|nulles|patte|tablas)$/.exec(text);
   if (match) {
-    return language === "de"
-      ? `${match[1]} Siege für Schwarz`
-      : language === "fr"
-        ? `${match[1]} victoires des Noirs`
-        : text;
-  }
-
-  match = /^(\d[\d.,\s]*) draws$/.exec(text);
-  if (match) {
-    return language === "de"
-      ? `${match[1]} Remis`
-      : language === "fr"
-        ? `${match[1]} nulles`
-        : text;
+    return drawsText[language](match[1]);
   }
 
   return null;
@@ -474,7 +500,7 @@ function translateText(text: string, language: Language): string {
 
   const key = findTranslationKey(core);
   if (key) {
-    return `${leading}${translations[key][language]}${trailing}`;
+    return `${leading}${getTranslation(key, language)}${trailing}`;
   }
 
   const dynamic = translateDynamicText(core, language);
@@ -487,7 +513,11 @@ function translateElement(root: ParentNode, language: Language) {
 
   while (current) {
     const parent = current.parentElement;
-    if (parent && !["SCRIPT", "STYLE", "CODE", "PRE"].includes(parent.tagName)) {
+    if (
+      parent
+      && !parent.closest(".language-selector")
+      && !["SCRIPT", "STYLE", "CODE", "PRE"].includes(parent.tagName)
+    ) {
       const translated = translateText(current.textContent ?? "", language);
       if (translated !== current.textContent) {
         current.textContent = translated;
@@ -518,15 +548,15 @@ export function I18nProvider({ children }: PropsWithChildren) {
 
   const value = useMemo<I18nContextValue>(() => ({
     language,
-    locale: localeByLanguage[language],
+    locale: getLanguageDefinition(language).locale,
     setLanguage: (nextLanguage) => setLanguageState(nextLanguage),
-    t: (key, values) => interpolate(translations[key][language], values),
+    t: (key, values) => interpolate(getTranslation(key, language), values),
   }), [language]);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, language);
     document.documentElement.lang = language;
-    document.title = translations["app.title"][language];
+    document.title = getTranslation("app.title", language);
 
     translateElement(document.body, language);
 
