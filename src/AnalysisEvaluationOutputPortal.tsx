@@ -28,6 +28,7 @@ interface AnalysisEvaluationEventDetail {
 type AnalysisEngineView = "deep" | "live";
 
 const ANALYSIS_EVALUATION_EVENT = "chess-analysis-evaluation-update";
+const ANALYSIS_VARIATION_STARTED_EVENT = "chess-analysis-variation-started";
 
 function formatEngineScore(evaluation: number): string {
   if (Math.abs(evaluation) >= 99) {
@@ -203,6 +204,32 @@ function keepAnalysisMoveTimeEditable() {
   }
 }
 
+function keepAnalysisBarAtEvaluation(evaluation: EngineEvaluation | null) {
+  if (!evaluation) {
+    return;
+  }
+
+  const bar = document.querySelector<HTMLButtonElement>(
+    '.engine-panel .engine-bar-wrapper[aria-pressed="true"]'
+  );
+  const white = bar?.querySelector<HTMLElement>(".engine-bar-white");
+  const black = bar?.querySelector<HTMLElement>(".engine-bar-black");
+
+  if (!white || !black) {
+    return;
+  }
+
+  const whiteHeight = `${evaluation.bar * 100}%`;
+  const blackHeight = `${(1 - evaluation.bar) * 100}%`;
+
+  if (white.style.height !== whiteHeight) {
+    white.style.height = whiteHeight;
+  }
+  if (black.style.height !== blackHeight) {
+    black.style.height = blackHeight;
+  }
+}
+
 /**
  * Adds the EvaluationEngine as an alternative analysis-lines view. ChessBoard
  * remains the owner of polling, DeepAnalysis and the evaluation bar. This
@@ -221,6 +248,9 @@ export default function AnalysisEvaluationOutputPortal() {
   const [variationMode, setVariationMode] = useState(false);
   const activeKeyRef = useRef<string | null>(null);
   const activeEngineViewRef = useRef<AnalysisEngineView>("deep");
+  const lastStableEvaluationRef = useRef<EngineEvaluation | null>(null);
+  const pendingVariationEvaluationRef = useRef(false);
+  const variationTerminalRef = useRef(false);
 
   useEffect(() => {
     let createdHost: HTMLElement | null = null;
@@ -335,11 +365,76 @@ export default function AnalysisEvaluationOutputPortal() {
   }, []);
 
   useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) {
+      return;
+    }
+
+    let scheduled = false;
+    const preservePendingBar = () => {
+      if (scheduled) {
+        return;
+      }
+
+      scheduled = true;
+      queueMicrotask(() => {
+        scheduled = false;
+        if (pendingVariationEvaluationRef.current) {
+          keepAnalysisBarAtEvaluation(lastStableEvaluationRef.current);
+        }
+      });
+    };
+
+    preservePendingBar();
+    const observer = new MutationObserver(preservePendingBar);
+    observer.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "aria-pressed"],
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleVariationStarted = () => {
+      variationTerminalRef.current = false;
+      pendingVariationEvaluationRef.current = lastStableEvaluationRef.current !== null;
+      activeEngineViewRef.current = "live";
+      setVariationMode(true);
+      setActiveEngineView("live");
+      keepAnalysisBarAtEvaluation(lastStableEvaluationRef.current);
+    };
+
+    window.addEventListener(ANALYSIS_VARIATION_STARTED_EVENT, handleVariationStarted);
+    return () => {
+      window.removeEventListener(ANALYSIS_VARIATION_STARTED_EVENT, handleVariationStarted);
+    };
+  }, []);
+
+  useEffect(() => {
     const originalFetch = window.fetch.bind(window);
 
     const observedFetch: typeof window.fetch = async (input, init) => {
       const url = getRequestUrl(input);
       const response = await originalFetch(input, init);
+
+      if (url.includes("/api/analysis-variation/move") && response.ok) {
+        void response
+          .clone()
+          .json()
+          .then((data: { gameState?: string | null }) => {
+            variationTerminalRef.current = Boolean(data.gameState);
+          })
+          .catch(() => {
+            variationTerminalRef.current = false;
+          });
+        window.dispatchEvent(new Event(ANALYSIS_VARIATION_STARTED_EVENT));
+        return response;
+      }
 
       if (url.includes("/api/analysis-eval/stop")) {
         dispatchEvaluation({
@@ -366,13 +461,14 @@ export default function AnalysisEvaluationOutputPortal() {
         .json()
         .then((data: EngineEvaluation) => {
           const hasUsableLines = Array.isArray(data.lines) && data.lines.length > 0;
-          const isTerminalMate = Math.abs(data.eval ?? 0) >= 99;
+          const isTerminalPosition = Math.abs(data.eval ?? 0) >= 99
+            || (isVariation && variationTerminalRef.current);
 
           dispatchEvaluation({
             key,
             ply,
             variation: isVariation,
-            evaluation: hasUsableLines || isTerminalMate ? data : null,
+            evaluation: hasUsableLines || isTerminalPosition ? data : null,
           });
         })
         .catch(() => {
@@ -397,6 +493,9 @@ export default function AnalysisEvaluationOutputPortal() {
 
       if (detail.stop) {
         activeKeyRef.current = null;
+        lastStableEvaluationRef.current = null;
+        pendingVariationEvaluationRef.current = false;
+        variationTerminalRef.current = false;
         setActivePly(null);
         setEvaluation(null);
         setVariationMode(false);
@@ -411,10 +510,19 @@ export default function AnalysisEvaluationOutputPortal() {
         setActiveEngineView("live");
       }
 
+      if (detail.evaluation) {
+        lastStableEvaluationRef.current = detail.evaluation;
+        pendingVariationEvaluationRef.current = false;
+      }
+
       if (detail.key !== activeKeyRef.current) {
         activeKeyRef.current = detail.key;
         setActivePly(detail.ply);
-        setEvaluation(detail.evaluation);
+        if (detail.evaluation) {
+          setEvaluation(detail.evaluation);
+        } else if (!detail.variation) {
+          setEvaluation(null);
+        }
         setSelectedLineIndex(0);
         setAnimationIndex(0);
         return;
@@ -576,22 +684,22 @@ export default function AnalysisEvaluationOutputPortal() {
         role="tablist"
         aria-label="Analysis engine lines"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeEngineView === "deep"}
-          className={[
-            "analysis-engine-view-tab",
-            activeEngineView === "deep" ? "analysis-engine-view-tab-active" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          onClick={() => setActiveEngineView("deep")}
-          disabled={variationMode}
-          title={variationMode ? "Deep Analysis belongs to the original game position." : undefined}
-        >
-          Deep Analysis
-        </button>
+        {!variationMode && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeEngineView === "deep"}
+            className={[
+              "analysis-engine-view-tab",
+              activeEngineView === "deep" ? "analysis-engine-view-tab-active" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onClick={() => setActiveEngineView("deep")}
+          >
+            Deep Analysis
+          </button>
+        )}
         <button
           type="button"
           role="tab"
