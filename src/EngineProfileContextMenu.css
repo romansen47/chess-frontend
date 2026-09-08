@@ -85,6 +85,10 @@
   font-size: 0.68rem;
 }
 
+.engine-profile-context-menu-literal {
+  font-family: inherit;
+}
+
 .engine-profile-context-menu-status {
   padding: 8px 9px;
   color: #bdbdbd;

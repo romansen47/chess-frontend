@@ -193,12 +193,14 @@ export default function EngineProfileContextMenu() {
             <span className="engine-profile-context-menu-check">{runtimeProfileId == null ? "✓" : ""}</span>
             <span className="engine-profile-context-menu-label">
               <span className="engine-profile-context-menu-profile">
-                {t("settings.defaults")} · {defaultProfile?.name ?? t("settings.noProfile")}
+                {t("settings.defaults")} · {defaultProfile
+                  ? <code className="engine-profile-context-menu-literal">{defaultProfile.name}</code>
+                  : t("settings.noProfile")}
               </span>
               {defaultProfile && (
-                <span className="engine-profile-context-menu-engine">
+                <code className="engine-profile-context-menu-engine engine-profile-context-menu-literal">
                   {engineNameForProfile(defaultProfile.engineId)}
-                </span>
+                </code>
               )}
             </span>
           </button>
@@ -217,8 +219,8 @@ export default function EngineProfileContextMenu() {
             >
               <span className="engine-profile-context-menu-check">{runtimeProfileId === profile.id ? "✓" : ""}</span>
               <span className="engine-profile-context-menu-label">
-                <span className="engine-profile-context-menu-profile">{profile.name}</span>
-                <span className="engine-profile-context-menu-engine">{engineNameForProfile(profile.engineId)}</span>
+                <code className="engine-profile-context-menu-profile engine-profile-context-menu-literal">{profile.name}</code>
+                <code className="engine-profile-context-menu-engine engine-profile-context-menu-literal">{engineNameForProfile(profile.engineId)}</code>
               </span>
             </button>
           ))}
