@@ -1,0 +1,12 @@
+.engine-content-column.sse-live-evaluation-active > .engine-lines,
+.engine-content-column.sse-live-evaluation-active > .engine-placeholder-text {
+  display: none;
+}
+
+.sse-live-evaluation-host {
+  min-width: 0;
+}
+
+.sse-live-evaluation-output {
+  min-width: 0;
+}
