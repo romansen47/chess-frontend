@@ -1,0 +1,90 @@
+.pgn-import-problem-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.68);
+}
+
+.pgn-import-problem-dialog {
+  width: min(520px, calc(100vw - 48px));
+  padding: 22px 24px 20px;
+  box-sizing: border-box;
+  border: 1px solid #5d5d5d;
+  border-radius: 10px;
+  background: #2b2b2b;
+  color: #f5f5f5;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.68);
+  text-align: center;
+}
+
+.pgn-import-problem-icon {
+  margin-bottom: 8px;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.pgn-import-problem-dialog h2 {
+  margin: 0 0 14px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.pgn-import-problem-message,
+.pgn-import-problem-instruction {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #dddddd;
+}
+
+.pgn-import-problem-instruction {
+  margin-top: 18px;
+  color: #f5f5f5;
+  font-weight: 600;
+}
+
+.pgn-import-problem-path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 9px;
+  padding: 10px 12px;
+  border: 1px solid #555555;
+  border-radius: 6px;
+  background: #222222;
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.pgn-import-problem-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pgn-import-problem-actions button {
+  min-width: 120px;
+  padding: 7px 14px;
+  border: 1px solid #666666;
+  border-radius: 5px;
+  background: #f5f5f5;
+  color: #111111;
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.pgn-import-problem-actions button:hover,
+.pgn-import-problem-actions button:focus-visible {
+  outline: none;
+  background: #ffffff;
+  border-color: #888888;
+}
