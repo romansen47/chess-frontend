@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import LanguageSelector from "../../i18n/LanguageSelector";
 import { useI18n } from "../../i18n/I18nProvider";
 import DataMenu from "./DataMenu";
@@ -39,8 +40,16 @@ export default function ChessHeader({
   onToggleEngineSettings,
   onOpenEngineManager,
 }: ChessHeaderProps) {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const analysisBusy = analysisReplayActive && !analysisReplayFinished;
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      document.title = "ChessAnalysisTool";
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [language]);
 
   return (
     <header className="app-header">
