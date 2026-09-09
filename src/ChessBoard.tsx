@@ -1658,12 +1658,12 @@ export const ChessBoard: React.FC = () => {
             {!analysisReplayActive && !uciAnalysisLoaded && (
               <div className="clock-area">
                 <button type="button" className={["clock-box", clock?.sideToMove === "white" ? "clock-active" : "", clock?.whiteRunning ? "clock-running" : "", whiteComputerEnabled ? "clock-computer-enabled" : ""].filter(Boolean).join(" ")}
-                  onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabledRef.current)} aria-pressed={whiteComputerEnabled}
+                  onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabled)} aria-pressed={whiteComputerEnabled}
                   title={whiteComputerEnabled ? "Disable White player engine" : "Enable White player engine"}>
                   <div className="clock-time">{formatClockTime(clock?.whiteTime)}</div>
                 </button>
                 <button type="button" className={["clock-box", clock?.sideToMove === "black" ? "clock-active" : "", clock?.blackRunning ? "clock-running" : "", blackComputerEnabled ? "clock-computer-enabled" : ""].filter(Boolean).join(" ")}
-                  onClick={() => updateBlackComputerEnabled(!blackComputerEnabledRef.current)} aria-pressed={blackComputerEnabled}
+                  onClick={() => updateBlackComputerEnabled(!blackComputerEnabled)} aria-pressed={blackComputerEnabled}
                   title={blackComputerEnabled ? "Disable Black player engine" : "Enable Black player engine"}>
                   <div className="clock-time">{formatClockTime(clock?.blackTime)}</div>
                 </button>
