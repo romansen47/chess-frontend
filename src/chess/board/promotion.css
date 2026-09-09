@@ -1,0 +1,49 @@
+.promotion-options {
+  justify-content: center;
+}
+
+.promotion-button {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
+  line-height: 1;
+  border-radius: 8px;
+  transition: transform 120ms ease-out, background 120ms ease-out, border-color 120ms ease-out;
+}
+
+.promotion-button::before {
+  display: block;
+  font-size: 2.7rem;
+  line-height: 1;
+  color: #111111;
+}
+
+.promotion-button:nth-child(1)::before {
+  content: "♛";
+}
+
+.promotion-button:nth-child(2)::before {
+  content: "♜";
+}
+
+.promotion-button:nth-child(3)::before {
+  content: "♝";
+}
+
+.promotion-button:nth-child(4)::before {
+  content: "♞";
+}
+
+.promotion-button:hover {
+  transform: translateY(-2px);
+  border-color: #888888;
+}
+
+.promotion-button:focus-visible {
+  outline: 3px solid #d6c26a;
+  outline-offset: 2px;
+}
