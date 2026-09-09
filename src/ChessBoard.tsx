@@ -12,7 +12,6 @@ import type {
   AnalysisReplayStep,
   AnalysisVariationMoveResult,
   AnalysisVariationRequest,
-  BackendPiece,
   BoardResponse,
   ClockState,
   DragState,
@@ -31,7 +30,6 @@ import type {
   PieceType,
   PossibleMovesResponse,
   PromotionContext,
-  UciGameMove,
   UciGameResponse,
 } from "./chess/types";
 import ChessHeader from "./chess/header/ChessHeader";
@@ -39,14 +37,35 @@ import NewGameDialog from "./chess/game/NewGameDialog";
 import MovePanel from "./chess/game/MovePanel";
 import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
+import {
+  createInitialPieces,
+  getCastlingSquares,
+  getPieceSymbol,
+  getRankFromSquare,
+  getSquareCoords,
+  squareName,
+} from "./chess/board/boardUtils";
+import {
+  getPieceSymbolFromPositionChar,
+  getPromotionTypeForLocalMove,
+  isWhitePositionPiece,
+  mapBackendPiecesToLocalPieces,
+  mapPositionStringToLocalPieces,
+} from "./chess/board/positionUtils";
+import {
+  formatClockTime,
+  formatGameState,
+  formatPlayerDisplayName,
+  formatTimeControlFromSettings,
+  getAnalysisBlackPlayerName,
+  getAnalysisWhitePlayerName,
+  getDisplayedBlackPlayerName,
+  getDisplayedWhitePlayerName,
+  mapImportedUciMovesToRows,
+} from "./chess/game/gameFormatters";
 
 const LIVE_EVALUATION_FAST_POLL_MS = 250;
 const LIVE_EVALUATION_NORMAL_POLL_MS = 2000;
-
-function squareName(file: number, rank: number): string {
-  const fileChar = String.fromCharCode("a".charCodeAt(0) + file - 1);
-  return `${fileChar}${rank}`;
-}
 
 function formatEngineScore(evaluation: number): string {
   if (Math.abs(evaluation) >= 99) {
@@ -66,295 +85,6 @@ function formatEngineLineScore(line: EngineLine): string {
   return formatEngineScore(line.eval);
 }
 
-function getPieceSymbol(piece: Piece): string {
-  switch (piece.type) {
-    case "pawn":
-      return "♟";
-    case "rook":
-      return "♜";
-    case "knight":
-      return "♞";
-    case "bishop":
-      return "♝";
-    case "queen":
-      return "♛";
-    case "king":
-      return "♚";
-    default:
-      return "";
-  }
-}
-
-function getPieceSymbolFromPositionChar(pieceChar: string): string {
-  switch (pieceChar) {
-    case "P":
-      return "♙";
-    case "N":
-      return "♘";
-    case "B":
-      return "♗";
-    case "R":
-      return "♖";
-    case "Q":
-      return "♕";
-    case "K":
-      return "♔";
-    case "p":
-      return "♟";
-    case "n":
-      return "♞";
-    case "b":
-      return "♝";
-    case "r":
-      return "♜";
-    case "q":
-      return "♛";
-    case "k":
-      return "♚";
-    default:
-      return "";
-  }
-}
-
-function isWhitePositionPiece(pieceChar: string): boolean {
-  return pieceChar >= "A" && pieceChar <= "Z";
-}
-
-function createInitialPieces(): Piece[] {
-  const pieces: Piece[] = [];
-
-  for (let file = 1; file <= 8; file++) {
-    pieces.push({ id: `wp${file}`, color: "white", type: "pawn", file, rank: 2 });
-  }
-
-  for (let file = 1; file <= 8; file++) {
-    pieces.push({ id: `bp${file}`, color: "black", type: "pawn", file, rank: 7 });
-  }
-
-  const backRankOrder: PieceType[] = [
-    "rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook",
-  ];
-
-  for (let file = 1; file <= 8; file++) {
-    pieces.push({
-      id: `w${backRankOrder[file - 1]}${file}`,
-      color: "white",
-      type: backRankOrder[file - 1],
-      file,
-      rank: 1,
-    });
-  }
-
-  for (let file = 1; file <= 8; file++) {
-    pieces.push({
-      id: `b${backRankOrder[file - 1]}${file}`,
-      color: "black",
-      type: backRankOrder[file - 1],
-      file,
-      rank: 8,
-    });
-  }
-
-  return pieces;
-}
-
-function getRankFromSquare(square: string): number {
-  if (!square || square.length < 2) return -1;
-  const rank = parseInt(square.charAt(1), 10);
-  return Number.isNaN(rank) ? -1 : rank;
-}
-
-function getFileFromSquare(square: string): number {
-  if (!square || square.length < 2) return -1;
-  const file = square.charAt(0).toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1;
-  return file >= 1 && file <= 8 ? file : -1;
-}
-
-function getSquareCoords(square: string): { file: number; rank: number } | null {
-  const file = getFileFromSquare(square);
-  const rank = getRankFromSquare(square);
-  if (file < 1 || file > 8 || rank < 1 || rank > 8) return null;
-  return { file, rank };
-}
-
-function getCastlingSquares(
-  movingPiece: Piece | undefined,
-  from: string,
-  to: string
-): { kingTo: string; rookFrom: string; rookTo: string } | null {
-  if (!movingPiece || movingPiece.type !== "king") return null;
-  const fromCoords = getSquareCoords(from);
-  const toCoords = getSquareCoords(to);
-  if (!fromCoords || !toCoords) return null;
-  if (fromCoords.file !== 5 || fromCoords.rank !== toCoords.rank) return null;
-  if (toCoords.rank !== 1 && toCoords.rank !== 8) return null;
-
-  if (toCoords.file === 7 || toCoords.file === 8) {
-    return {
-      kingTo: squareName(7, toCoords.rank),
-      rookFrom: squareName(8, toCoords.rank),
-      rookTo: squareName(6, toCoords.rank),
-    };
-  }
-  if (toCoords.file === 3 || toCoords.file === 1) {
-    return {
-      kingTo: squareName(3, toCoords.rank),
-      rookFrom: squareName(1, toCoords.rank),
-      rookTo: squareName(4, toCoords.rank),
-    };
-  }
-  return null;
-}
-
-function mapBackendPiecesToLocalPieces(backendPieces: BackendPiece[]): Piece[] {
-  return backendPieces.map((bp) => ({
-    id: `${bp.color}_${bp.type}_${bp.square.toLowerCase()}`,
-    color: bp.color,
-    type: bp.type,
-    file: bp.square.charAt(0).toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1,
-    rank: parseInt(bp.square.charAt(1), 10),
-  }));
-}
-
-function pieceTypeFromPositionChar(pieceChar: string): PieceType | null {
-  switch (pieceChar.toLowerCase()) {
-    case "p": return "pawn";
-    case "r": return "rook";
-    case "n": return "knight";
-    case "b": return "bishop";
-    case "q": return "queen";
-    case "k": return "king";
-    default: return null;
-  }
-}
-
-function mapPositionStringToLocalPieces(position: string): Piece[] {
-  if (!position || position.length !== 64) return [];
-  const result: Piece[] = [];
-  for (let index = 0; index < 64; index++) {
-    const pieceChar = position.charAt(index);
-    const type = pieceTypeFromPositionChar(pieceChar);
-    if (!type) continue;
-    const file = (index % 8) + 1;
-    const rank = 8 - Math.floor(index / 8);
-    const color: PieceColor = isWhitePositionPiece(pieceChar) ? "white" : "black";
-    const square = squareName(file, rank);
-    result.push({ id: `${color}_${type}_${square}_${index}`, color, type, file, rank });
-  }
-  return result;
-}
-
-function mapImportedUciMovesToRows(importedMoves: UciGameMove[]): MoveRow[] {
-  const rows: MoveRow[] = [];
-  for (const move of importedMoves ?? []) {
-    const ply = Math.max(1, move.ply);
-    const moveNumber = Math.ceil(ply / 2);
-    let row = rows.find((candidate) => candidate.moveNumber === moveNumber);
-    if (!row) {
-      row = { moveNumber };
-      rows.push(row);
-    }
-    const displayMove = move.san && move.san.trim().length > 0 ? move.san : move.uci;
-    if (ply % 2 === 1) {
-      row.white = displayMove;
-      row.whitePosition = move.position;
-    } else {
-      row.black = displayMove;
-      row.blackPosition = move.position;
-    }
-  }
-  return rows.sort((a, b) => a.moveNumber - b.moveNumber);
-}
-
-function getPieceTypeAtSquareFromPosition(
-  position: string | null | undefined,
-  square: string
-): PieceType | null {
-  if (!position || position.length !== 64) return null;
-  const coords = getSquareCoords(square);
-  if (!coords) return null;
-  const index = (8 - coords.rank) * 8 + (coords.file - 1);
-  return pieceTypeFromPositionChar(position.charAt(index));
-}
-
-function getPromotionTypeForLocalMove(
-  movingPiece: Piece | undefined,
-  to: string,
-  requestedPromotion: PieceType | null | undefined,
-  resultingPosition: string | null | undefined
-): PieceType | null {
-  if (!movingPiece || movingPiece.type !== "pawn") return null;
-  const targetCoords = getSquareCoords(to);
-  if (!targetCoords) return null;
-  const reachesPromotionRank =
-    (movingPiece.color === "white" && targetCoords.rank === 8) ||
-    (movingPiece.color === "black" && targetCoords.rank === 1);
-  if (!reachesPromotionRank) return null;
-  if (requestedPromotion && requestedPromotion !== "pawn") return requestedPromotion;
-  const promotedType = getPieceTypeAtSquareFromPosition(resultingPosition, to);
-  return promotedType && promotedType !== "pawn" ? promotedType : null;
-}
-
-function formatPlayerDisplayName(name: string | null | undefined, fallback: string): string {
-  const trimmed = name?.trim();
-  if (!trimmed || trimmed === "ChessGame" || trimmed === "Simulation") return fallback;
-  return trimmed;
-}
-
-function getDisplayedWhitePlayerName(clock: ClockState | null, whiteComputerEnabled: boolean): string {
-  return whiteComputerEnabled
-    ? formatPlayerDisplayName(clock?.whitePlayerEngineName, "White Engine")
-    : formatPlayerDisplayName(clock?.whitePlayerName, "White");
-}
-
-function getDisplayedBlackPlayerName(clock: ClockState | null, blackComputerEnabled: boolean): string {
-  return blackComputerEnabled
-    ? formatPlayerDisplayName(clock?.blackPlayerEngineName, "Black Engine")
-    : formatPlayerDisplayName(clock?.blackPlayerName, "Black");
-}
-
-function getAnalysisWhitePlayerName(clock: ClockState | null, storedAnalysisName: string | null): string {
-  return storedAnalysisName
-    || formatPlayerDisplayName(clock?.whitePlayerEngineName, "")
-    || formatPlayerDisplayName(clock?.whitePlayerName, "White");
-}
-
-function getAnalysisBlackPlayerName(clock: ClockState | null, storedAnalysisName: string | null): string {
-  return storedAnalysisName
-    || formatPlayerDisplayName(clock?.blackPlayerEngineName, "")
-    || formatPlayerDisplayName(clock?.blackPlayerName, "Black");
-}
-
-function formatClockTime(totalSeconds: number | null | undefined): string {
-  if (totalSeconds == null) return "--:--";
-  const safeSeconds = Math.max(0, totalSeconds);
-  const minutes = Math.floor(safeSeconds / 60);
-  const seconds = safeSeconds % 60;
-  return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-}
-
-function formatLostOnTime(clock: ClockState | null | undefined): string {
-  if (clock?.whiteTime === 0 && clock.blackTime > 0) return "Black wins because White ran out of time.";
-  if (clock?.blackTime === 0 && clock.whiteTime > 0) return "White wins because Black ran out of time.";
-  if (clock?.sideToMove === "white") return "Black wins because White ran out of time.";
-  if (clock?.sideToMove === "black") return "White wins because Black ran out of time.";
-  return "Game ended on time.";
-}
-
-function formatGameState(gameState: string | null | undefined, clock?: ClockState | null): string {
-  switch (gameState) {
-    case "WHITE_MATED": return "Black wins by checkmate.";
-    case "BLACK_MATED": return "White wins by checkmate.";
-    case "STALEMATE": return "Remis durch Patt.";
-    case "WHITE_RESIGNED": return "Black wins because White resigned.";
-    case "BLACK_RESIGNED": return "White wins because Black resigned.";
-    case "LOST_ON_TIME": return formatLostOnTime(clock);
-    case "DRAW_BY_50_MOVES_RULE": return "Draw by the fifty-move rule.";
-    case "DRAW_BY_THREEFOLD_REPETITION": return "Draw by threefold repetition.";
-    default: return gameState ? `Game ended: ${gameState}` : "The game has ended.";
-  }
-}
-
 function createDefaultGameSettings(): GameSettings {
   return {
     timeForEachPlayerSeconds: 5 * 60,
@@ -368,16 +98,6 @@ function createDefaultGameSettings(): GameSettings {
 
 function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
   return { engineProfileId: null, depth: 0, moveTimeSeconds: 5 };
-}
-
-function formatTimeControlFromSettings(settings: GameSettings): string {
-  const base = settings.timeForEachPlayerSeconds % 60 === 0
-    ? `${settings.timeForEachPlayerSeconds / 60}`
-    : `${settings.timeForEachPlayerSeconds}s`;
-  if (settings.incrementForWhiteSeconds === settings.incrementForBlackSeconds) {
-    return `${base}+${settings.incrementForWhiteSeconds}`;
-  }
-  return `${base}+${settings.incrementForWhiteSeconds}/${settings.incrementForBlackSeconds}`;
 }
 
 export const ChessBoard: React.FC = () => {
@@ -1092,7 +812,9 @@ export const ChessBoard: React.FC = () => {
 
   async function terminateProgram() {
     const confirmed = window.confirm(
-      "Terminate Program?\n\nThe chess server and, in development mode, the frontend server will be stopped."
+      "Terminate Program?\
+\
+The chess server and, in development mode, the frontend server will be stopped."
     );
     if (!confirmed) return;
     setIsTerminatingProgram(true);
