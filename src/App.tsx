@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import "./App.css";
+import "./chess/board/promotion.css";
 import { ChessBoard } from "./ChessBoard";
 import EngineProfileContextMenu from "./EngineProfileContextMenu";
 import { stopAnalysisEvaluationRequest } from "./chess/api/analysisApi";
