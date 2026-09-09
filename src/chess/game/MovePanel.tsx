@@ -30,8 +30,33 @@ interface MovePanelProps {
   actions: MovePanelActions;
 }
 
+interface PgnImportErrorPayload {
+  code?: string;
+  gameCount?: number;
+}
+
+function parsePgnImportError(error: string | null): PgnImportErrorPayload | null {
+  if (!error) return null;
+
+  try {
+    const parsed = JSON.parse(error) as PgnImportErrorPayload;
+    if (parsed && typeof parsed === "object" && typeof parsed.code === "string") {
+      return parsed;
+    }
+  } catch {
+    // Non-JSON errors keep the normal generic error presentation.
+  }
+
+  return null;
+}
+
 export default function MovePanel({ state, actions }: MovePanelProps) {
   const { t } = useI18n();
+  const pgnImportError = parsePgnImportError(state.error);
+  const multiplePgnGames = pgnImportError?.code === "PGN_MULTIPLE_GAMES";
+  const gameCount = typeof pgnImportError?.gameCount === "number"
+    ? pgnImportError.gameCount
+    : null;
 
   return (
     <section className="moves-panel">
@@ -66,6 +91,23 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
           <span className="player-name-value">{state.blackPlayerName}</span>
         </div>
       </div>
+
+      {state.error && (
+        multiplePgnGames ? (
+          <div className="moves-import-warning" role="alert">
+            <strong>
+              ⚠ {gameCount ?? "?"} {t("common.games")}
+            </strong>
+            <span>
+              {t("data.label")} → {t("data.chessDatabase")} → {t("database.importPgn")}
+            </span>
+          </div>
+        ) : (
+          <div className="moves-error-banner" role="alert">
+            {t("moves.error", { message: state.error })}
+          </div>
+        )
+      )}
 
       <div className="moves-list">
         {state.moves.length === 0 && (
@@ -129,12 +171,6 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
         {(state.loadingMoves || state.computerThinking) && (
           <div className="moves-empty">
             {state.computerThinking ? t("moves.computerThinking") : t("moves.loading")}
-          </div>
-        )}
-
-        {state.error && (
-          <div className="moves-empty">
-            {t("moves.error", { message: state.error })}
           </div>
         )}
       </div>
