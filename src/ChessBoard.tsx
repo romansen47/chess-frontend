@@ -10,9 +10,7 @@ import type {
   AnalysisProfilePoint,
   AnalysisReplaySettings,
   AnalysisReplayStep,
-  AnalysisVariationMoveResult,
   AnalysisVariationRequest,
-  BoardResponse,
   ClockState,
   DragState,
   EngineEvaluation,
@@ -21,14 +19,12 @@ import type {
   GameSound,
   HoverPreview,
   LastMove,
-  MoveRequest,
   MoveResult,
   MoveRow,
   PerformMoveOptions,
   Piece,
   PieceColor,
   PieceType,
-  PossibleMovesResponse,
   PromotionContext,
   UciGameResponse,
 } from "./chess/types";
@@ -63,6 +59,30 @@ import {
   getDisplayedWhitePlayerName,
   mapImportedUciMovesToRows,
 } from "./chess/game/gameFormatters";
+import { fetchBoard, fetchPossibleMoves, submitMove } from "./chess/api/boardApi";
+import {
+  createNewGame,
+  exportPgn,
+  fetchClock,
+  fetchGameSettings,
+  importPgn,
+} from "./chess/api/gameApi";
+import {
+  cancelComputerMove,
+  requestComputerMove as requestComputerMoveApi,
+} from "./chess/api/computerMoveApi";
+import { fetchEvaluation, openEvaluationStream, stopEvaluation } from "./chess/api/evaluationApi";
+import {
+  cancelAnalysisReplayRequest,
+  fetchAnalysisEvaluation as fetchAnalysisEvaluationRequest,
+  fetchAnalysisPossibleMoves,
+  fetchAnalysisVariationEvaluation,
+  fetchNextAnalysisReplayStep,
+  startAnalysisReplayRequest,
+  stopAnalysisEvaluationRequest,
+  submitAnalysisVariationMove,
+} from "./chess/api/analysisApi";
+import { terminateBackend, terminateDevelopmentFrontend } from "./chess/api/programApi";
 
 const LIVE_EVALUATION_FAST_POLL_MS = 250;
 const LIVE_EVALUATION_NORMAL_POLL_MS = 2000;
@@ -323,11 +343,8 @@ export const ChessBoard: React.FC = () => {
     invalidateComputerMoveSequences();
     if (activeComputerMoveSideRef.current === side) setComputerThinkingForSide(null, false);
     try {
-      const response = await fetch(`/api/computer-move/cancel?side=${encodeURIComponent(side)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) console.warn(`[cancelPlayerEngine] backend returned HTTP ${response.status} for ${side}`);
+      const result = await cancelComputerMove(side);
+      if (!result.ok) console.warn(`[cancelPlayerEngine] backend returned HTTP ${result.status} for ${side}`);
     } catch (error) {
       console.warn(`[cancelPlayerEngine] could not cancel ${side} engine`, error);
     }
@@ -357,9 +374,7 @@ export const ChessBoard: React.FC = () => {
 
   async function loadBoardFromBackend() {
     try {
-      const response = await fetch("/api/board");
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data: BoardResponse = await response.json();
+      const data = await fetchBoard();
       setPieces(mapBackendPiecesToLocalPieces(data.pieces ?? []));
     } catch (e) {
       console.error("[loadBoardFromBackend] error:", e);
@@ -369,9 +384,7 @@ export const ChessBoard: React.FC = () => {
 
   async function loadGameSettings() {
     try {
-      const response = await fetch("/api/game-settings");
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data: GameSettings = await response.json();
+      const data = await fetchGameSettings();
       setGameSettings(data);
       setGameSettingsError(null);
     } catch (e) {
@@ -383,9 +396,7 @@ export const ChessBoard: React.FC = () => {
   async function loadClock(): Promise<ClockState | null> {
     if (uciAnalysisLoadedRef.current) return null;
     try {
-      const response = await fetch("/api/clock");
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data: ClockState = await response.json();
+      const data = await fetchClock();
       setClock(data);
       if (data.gameState) {
         setGameEndState(data.gameState);
@@ -419,28 +430,13 @@ export const ChessBoard: React.FC = () => {
     try {
       setIsLoadingMoves(true);
       setLoadError(null);
-      let response: Response;
-
-      if (analysisReplayActiveRef.current && analysisReplayFinished && analysisSelectedPosition) {
-        const request: AnalysisVariationRequest = {
-          anchorPly: analysisSelectedPosition.ply,
-          moves: [...analysisVariationMovesRef.current],
-          from,
-        };
-        response = await fetch("/api/analysis-variation/possible-moves", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(request),
-        });
-      } else {
-        response = await fetch(`/api/possible-moves?from=${encodeURIComponent(from)}`);
-      }
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `HTTP ${response.status}`);
-      }
-      const data: PossibleMovesResponse = await response.json();
+      const data = analysisReplayActiveRef.current && analysisReplayFinished && analysisSelectedPosition
+        ? await fetchAnalysisPossibleMoves({
+            anchorPly: analysisSelectedPosition.ply,
+            moves: [...analysisVariationMovesRef.current],
+            from,
+          })
+        : await fetchPossibleMoves(from);
       const targets = data.targets ?? [];
       updatePossibleTargets(targets);
       return targets;
@@ -460,9 +456,7 @@ export const ChessBoard: React.FC = () => {
     try {
       setIsLoadingEval(true);
       setEvalError(null);
-      const response = await fetch("/api/eval");
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data: EngineEvaluation = await response.json();
+      const data = await fetchEvaluation();
       if (!engineAutoUpdateRef.current) return;
       const hasLines = Boolean(data.lines && data.lines.length > 0);
       setLiveEvaluationFastPolling(!hasLines);
@@ -483,7 +477,7 @@ export const ChessBoard: React.FC = () => {
       return;
     }
 
-    const source = new EventSource("/api/eval/stream");
+    const source = openEvaluationStream();
 
     const handleReady = () => {
       void loadEvaluation();
@@ -520,7 +514,7 @@ export const ChessBoard: React.FC = () => {
 
   async function stopLiveEvaluation() {
     try {
-      await fetch("/api/eval/stop", { method: "POST", headers: { "Content-Type": "application/json" } });
+      await stopEvaluation();
     } catch (e) {
       console.warn("[stopLiveEvaluation] backend stop failed", e);
     }
@@ -528,7 +522,7 @@ export const ChessBoard: React.FC = () => {
 
   async function stopAnalysisEvaluation() {
     try {
-      await fetch("/api/analysis-eval/stop", { method: "POST", headers: { "Content-Type": "application/json" } });
+      await stopAnalysisEvaluationRequest();
     } catch (e) {
       console.warn("[stopAnalysisEvaluation] backend stop failed", e);
     }
@@ -540,20 +534,9 @@ export const ChessBoard: React.FC = () => {
 
     try {
       setAnalysisEvaluationError(null);
-      const response = variationMoves.length > 0
-        ? await fetch("/api/analysis-eval/variation", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ anchorPly: ply, moves: variationMoves } satisfies AnalysisVariationRequest),
-          })
-        : await fetch(`/api/analysis-eval?ply=${encodeURIComponent(String(ply))}`);
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-
-      const data: EngineEvaluation = await response.json();
+      const data = variationMoves.length > 0
+        ? await fetchAnalysisVariationEvaluation(ply, variationMoves)
+        : await fetchAnalysisEvaluationRequest(ply);
       if (analysisEvaluationEnabledRef.current && analysisEvaluationKeyRef.current === key) {
         setAnalysisEvaluation(data);
       }
@@ -707,14 +690,7 @@ export const ChessBoard: React.FC = () => {
           selectAnalysisPositionByPly(activePly);
           setAnalysisReplayStatus(`Analyzing ${activePly} / ${currentStep.totalPlies}…`);
         }
-        const response = await fetch("/api/analysis-replay/next", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-        });
-        if (!response.ok) {
-          const message = await response.text();
-          throw new Error(message || `HTTP ${response.status}`);
-        }
-        const step: AnalysisReplayStep = await response.json();
+        const step = await fetchNextAnalysisReplayStep();
         applyAnalysisReplayStep(step);
         currentStep = step;
         const progressText = `${step.currentPly} / ${step.totalPlies}`;
@@ -770,16 +746,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisSelectedLineIndex(null);
       setAnalysisLineAnimationIndex(0);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
-      const response = await fetch("/api/analysis-replay/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(analysisSettings),
-      });
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-      const step: AnalysisReplayStep = await response.json();
+      const step = await startAnalysisReplayRequest(analysisSettings);
       applyAnalysisReplayStep(step);
       setAnalysisReplayStatus(`Analyzing 0 / ${step.totalPlies}…`);
       await runAnalysisReplayLoop(step);
@@ -798,7 +765,7 @@ export const ChessBoard: React.FC = () => {
     setAnalysisReplayFinished(true);
     setAnalysisReplayStatus("Analysis canceled.");
     try {
-      await fetch("/api/analysis-replay/cancel", { method: "POST", headers: { "Content-Type": "application/json" } });
+      await cancelAnalysisReplayRequest();
     } catch (error) {
       console.warn("[cancelAnalysisReplay] backend cancel failed", error);
     }
@@ -818,14 +785,10 @@ export const ChessBoard: React.FC = () => {
     setIsTerminatingProgram(true);
     setLoadError(null);
     try {
-      const response = await fetch("/api/program/terminate", { method: "POST", headers: { "X-Chess-Terminate": "terminate" } });
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
+      await terminateBackend();
       if (import.meta.env.DEV) {
         try {
-          await fetch("/__chess/terminate", { method: "POST", headers: { "X-Chess-Terminate": "terminate" } });
+          await terminateDevelopmentFrontend();
         } catch (error) {
           console.warn("[terminateProgram] frontend dev server termination failed", error);
         }
@@ -841,16 +804,7 @@ export const ChessBoard: React.FC = () => {
   async function saveUciGame() {
     try {
       setLoadError(null);
-      const params = new URLSearchParams({
-        whiteComputer: String(whiteComputerEnabledRef.current),
-        blackComputer: String(blackComputerEnabledRef.current),
-      });
-      const response = await fetch(`/api/game/pgn?${params.toString()}`);
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-      const blob = await response.blob();
+      const blob = await exportPgn(whiteComputerEnabledRef.current, blackComputerEnabledRef.current);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -932,16 +886,7 @@ export const ChessBoard: React.FC = () => {
       setIsLoadingMoves(true);
       setLoadError(null);
       const content = await file.text();
-      const response = await fetch("/api/game/pgn", {
-        method: "POST",
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
-        body: content,
-      });
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-      const imported: UciGameResponse = await response.json();
+      const imported = await importPgn(content);
       await applyImportedGame(imported);
     } catch (error) {
       console.error("[handleUciFileSelected] error", error);
@@ -979,13 +924,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisWhitePlayerName(null);
       setAnalysisBlackPlayerName(null);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
-      const response = await fetch("/api/new-game", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const appliedSettings: GameSettings = await response.json();
+      const appliedSettings = await createNewGame(settings);
       setGameSettings(appliedSettings);
       setUciAnalysisLoaded(false);
       setPieces(createInitialPieces());
@@ -1120,15 +1059,15 @@ export const ChessBoard: React.FC = () => {
     try {
       setComputerThinkingForSide(requestedSide, true);
       setLoadError(null);
-      const response = await fetch("/api/computer-move", { method: "POST", headers: { "Content-Type": "application/json" } });
-      const data: MoveResult = await response.json();
+      const result = await requestComputerMoveApi();
+      const data = result.data;
       if (!isComputerMoveSequenceCurrent(sequenceId)) return { gameEnded: false, sideToMove: data.sideToMove ?? null, success: false };
-      if (!response.ok || !data.success) {
+      if (!result.ok || !data.success) {
         if (handleGameEndState(data.gameState)) {
           await loadClock();
           return { gameEnded: true, sideToMove: data.sideToMove ?? null, success: false };
         }
-        const message = data.message || `HTTP ${response.status}`;
+        const message = data.message || `HTTP ${result.status}`;
         if (message !== "Computer move was cancelled") setLoadError(message);
         return { gameEnded: false, sideToMove: data.sideToMove ?? null, success: false };
       }
@@ -1197,14 +1136,11 @@ export const ChessBoard: React.FC = () => {
     try {
       setIsLoadingMoves(true);
       setLoadError(null);
-      const body: MoveRequest = { from, to, promotion: promotion ?? null };
-      const response = await fetch("/api/move", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-      });
-      const data: MoveResult = await response.json();
-      if (!response.ok || !data.success) {
+      const result = await submitMove({ from, to, promotion: promotion ?? null });
+      const data = result.data;
+      if (!result.ok || !data.success) {
         if (handleGameEndState(data.gameState)) { await loadClock(); return; }
-        setLoadError(data.message || `HTTP ${response.status}`);
+        setLoadError(data.message || `HTTP ${result.status}`);
         return;
       }
       if (!options?.localMoveAlreadyApplied) animateMoveLocally(from, to, promotion, data.position);
@@ -1238,14 +1174,10 @@ export const ChessBoard: React.FC = () => {
     try {
       setIsLoadingMoves(true);
       setLoadError(null);
-      const response = await fetch("/api/analysis-variation/move", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request),
-      });
-      const data: AnalysisVariationMoveResult = await response.json();
-      if (!response.ok || !data.success || !data.uci || !data.position) {
-        setLoadError(data.message || `HTTP ${response.status}`);
+      const result = await submitAnalysisVariationMove(request);
+      const data = result.data;
+      if (!result.ok || !data.success || !data.uci || !data.position) {
+        setLoadError(data.message || `HTTP ${result.status}`);
         return;
       }
       const nextMoves = [...previousMoves, data.uci];
