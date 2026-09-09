@@ -44,7 +44,22 @@ export default function ChessHeader({
 
   return (
     <header className="app-header">
-      <h1 translate="no">ChessAnalysisTool</h1>
+      <h1 className="app-title" translate="no" aria-label="ChessAnalysisTool">
+        <img
+          className="app-title-logo"
+          src="/favicon.png"
+          alt=""
+          aria-hidden="true"
+        />
+        <span className="app-title-name" aria-hidden="true">
+          <span className="app-title-initial">C</span>
+          <span className="app-title-rest">hess</span>
+          <span className="app-title-initial">A</span>
+          <span className="app-title-rest">nalysis</span>
+          <span className="app-title-initial">T</span>
+          <span className="app-title-rest">ool</span>
+        </span>
+      </h1>
 
       <div className="top-engine-controls">
         {analysisReplayActive && analysisReplayRunning && (
