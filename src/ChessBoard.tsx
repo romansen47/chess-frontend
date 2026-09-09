@@ -1692,7 +1692,7 @@ export const ChessBoard: React.FC = () => {
                 <p>Promotion for {promotionContext.color === "white" ? "white" : "black"} pawn ({promotionContext.from} → {promotionContext.to}):</p>
                 <div className="promotion-options">
                   {(["queen", "rook", "bishop", "knight"] as PieceType[]).map((ptype) => (
-                    <button key={ptype} className="promotion-button" onClick={async () => {
+                    <button key={ptype} className={`promotion-button promotion-button-${promotionContext.color}`} onClick={async () => {
                       const ctx = promotionContext;
                       if (!ctx) return;
                       setPromotionContext(null);
