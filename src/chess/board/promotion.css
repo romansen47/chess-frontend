@@ -19,23 +19,52 @@
   display: block;
   font-size: 2.7rem;
   line-height: 1;
-  color: #111111;
 }
 
-.promotion-button:nth-child(1)::before {
+.promotion-button-white:nth-child(1)::before {
+  content: "♕";
+}
+
+.promotion-button-white:nth-child(2)::before {
+  content: "♖";
+}
+
+.promotion-button-white:nth-child(3)::before {
+  content: "♗";
+}
+
+.promotion-button-white:nth-child(4)::before {
+  content: "♘";
+}
+
+.promotion-button-white::before {
+  color: #ffffff;
+  text-shadow:
+    -1px -1px 0 #222222,
+    1px -1px 0 #222222,
+    -1px 1px 0 #222222,
+    1px 1px 0 #222222,
+    0 0 2px #000000;
+}
+
+.promotion-button-black:nth-child(1)::before {
   content: "♛";
 }
 
-.promotion-button:nth-child(2)::before {
+.promotion-button-black:nth-child(2)::before {
   content: "♜";
 }
 
-.promotion-button:nth-child(3)::before {
+.promotion-button-black:nth-child(3)::before {
   content: "♝";
 }
 
-.promotion-button:nth-child(4)::before {
+.promotion-button-black:nth-child(4)::before {
   content: "♞";
+}
+
+.promotion-button-black::before {
+  color: #111111;
 }
 
 .promotion-button:hover {
@@ -46,4 +75,10 @@
 .promotion-button:focus-visible {
   outline: 3px solid #d6c26a;
   outline-offset: 2px;
+}
+
+.promotion-cancel-button {
+  display: block;
+  min-width: 112px;
+  margin: 0 auto;
 }
