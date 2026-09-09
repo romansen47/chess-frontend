@@ -33,6 +33,7 @@ interface MovePanelProps {
 interface PgnImportErrorPayload {
   code?: string;
   gameCount?: number;
+  earlyAbort?: boolean;
 }
 
 function parsePgnImportError(error: string | null): PgnImportErrorPayload | null {
@@ -57,6 +58,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
   const gameCount = typeof pgnImportError?.gameCount === "number"
     ? pgnImportError.gameCount
     : null;
+  const countPrefix = pgnImportError?.earlyAbort ? "≥ " : "";
 
   return (
     <section className="moves-panel">
@@ -96,7 +98,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
         multiplePgnGames ? (
           <div className="moves-import-warning" role="alert">
             <strong>
-              ⚠ {gameCount ?? "?"} {t("common.games")}
+              ⚠ {countPrefix}{gameCount ?? "?"} {t("common.games")}
             </strong>
             <span>
               {t("data.label")} → {t("data.chessDatabase")} → {t("database.importPgn")}
