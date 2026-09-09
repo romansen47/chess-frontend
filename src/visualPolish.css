@@ -61,3 +61,32 @@
   font-weight: 600;
   line-height: 1;
 }
+
+/* Import and other errors stay visible even when the move list itself is long. */
+.moves-error-banner,
+.moves-import-warning {
+  margin-bottom: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.moves-error-banner {
+  background: rgba(150, 45, 45, 0.24);
+  color: #ffd0d0;
+}
+
+.moves-import-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(145, 117, 43, 0.24);
+  color: #f3e5b0;
+}
+
+.moves-import-warning strong {
+  color: #fff1bd;
+  font-size: 0.75rem;
+}
