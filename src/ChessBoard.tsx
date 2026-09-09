@@ -32,6 +32,8 @@ import ChessHeader from "./chess/header/ChessHeader";
 import NewGameDialog from "./chess/game/NewGameDialog";
 import MovePanel from "./chess/game/MovePanel";
 import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
+import AnalysisEngineTabs, { type AnalysisEngineView } from "./chess/analysis/AnalysisEngineTabs";
+import LiveEvaluationView from "./chess/analysis/LiveEvaluationView";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 import {
   createInitialPieces,
@@ -190,6 +192,7 @@ export const ChessBoard: React.FC = () => {
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const [analysisSelectedPosition, setAnalysisSelectedPosition] = useState<AnalysisPositionSelection | null>(null);
   const [analysisDetailsTab, setAnalysisDetailsTab] = useState<"engine" | "database">("engine");
+  const [analysisEngineView, setAnalysisEngineView] = useState<AnalysisEngineView>("deep");
   const [analysisSelectedLineIndex, setAnalysisSelectedLineIndex] = useState<number | null>(null);
   const [analysisLineAnimationIndex, setAnalysisLineAnimationIndex] = useState<number>(0);
   const [analysisWhitePlayerName, setAnalysisWhitePlayerName] = useState<string | null>(null);
@@ -537,7 +540,11 @@ export const ChessBoard: React.FC = () => {
       const data = variationMoves.length > 0
         ? await fetchAnalysisVariationEvaluation(ply, variationMoves)
         : await fetchAnalysisEvaluationRequest(ply);
-      if (analysisEvaluationEnabledRef.current && analysisEvaluationKeyRef.current === key) {
+      const hasUsableLines = Boolean(data.lines && data.lines.length > 0);
+      const isTerminalPosition = Math.abs(data.eval ?? 0) >= 99
+        || (variationMoves.length > 0 && Boolean(analysisVariationGameState));
+      if (analysisEvaluationEnabledRef.current && analysisEvaluationKeyRef.current === key
+          && (hasUsableLines || isTerminalPosition)) {
         setAnalysisEvaluation(data);
       }
     } catch (e) {
@@ -639,7 +646,7 @@ export const ChessBoard: React.FC = () => {
     const key = analysisEvaluationKey(ply, variationSnapshot);
     analysisEvaluationPlyRef.current = ply;
     analysisEvaluationKeyRef.current = key;
-    setAnalysisEvaluation(null);
+    if (variationSnapshot.length === 0) setAnalysisEvaluation(null);
     setAnalysisEvaluationError(null);
     void loadAnalysisEvaluation(ply, variationSnapshot);
     const intervalId = window.setInterval(() => { void loadAnalysisEvaluation(ply, variationSnapshot); }, 2000);
@@ -1189,7 +1196,7 @@ export const ChessBoard: React.FC = () => {
       updatePossibleTargets([]);
       setAnalysisSelectedLineIndex(null);
       setAnalysisLineAnimationIndex(0);
-      setAnalysisEvaluation(null);
+      setAnalysisEngineView("live");
       setAnalysisEvaluationError(null);
       analysisEvaluationKeyRef.current = analysisEvaluationKey(analysisSelectedPosition.ply, nextMoves);
       void playGameSound(data.gameState ? "notify" : "move");
@@ -1581,13 +1588,19 @@ export const ChessBoard: React.FC = () => {
     </>;
   };
 
-  const renderAnalysisDetails = () => {
+  const renderAnalysisSourceTabs = () => {
     const databaseTabActive = analysisDetailsTab === "database";
-    return <>
+    return (
       <div className="analysis-detail-tabs" role="tablist" aria-label="Analysis source">
         <button type="button" role="tab" aria-selected={!databaseTabActive} className={["analysis-detail-tab", !databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("engine")}>Engine</button>
         <button type="button" role="tab" aria-selected={databaseTabActive} className={["analysis-detail-tab", databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("database")}>Database</button>
       </div>
+    );
+  };
+
+  const renderAnalysisDetails = () => {
+    const databaseTabActive = analysisDetailsTab === "database";
+    return (
       <div className="analysis-detail-row">
         <div className="analysis-position-panel">
           <div className="analysis-detail-title">{databaseTabActive
@@ -1600,32 +1613,47 @@ export const ChessBoard: React.FC = () => {
           {databaseTabActive ? <AnalysisDatabasePanel ply={analysisSelectedPosition?.ply ?? null} /> : renderAnalysisLinesForSelection()}
         </div>
       </div>
-    </>;
+    );
   };
 
-  const renderAnalysisVariationNotice = () => (
-    <div className="analysis-detail-row">
-      <div className="analysis-position-panel">
-        <div className="analysis-detail-title">Temporary variation from {analysisSelectedPosition?.label ?? "selected position"}</div>
-        <div className="analysis-detail-placeholder">
-          The main board is now following a temporary analysis variation. The original move list remains unchanged.
-        </div>
-      </div>
-      <div className="analysis-lines-panel">
-        <div className="analysis-detail-title">Deep Analysis unavailable for this variation</div>
-        <div className="analysis-detail-placeholder">
-          Variation: {analysisVariationMoves.join(" ")}. Enable Live Evaluation to analyze the current position, or click any original move to return to the stored game analysis.
-        </div>
-      </div>
-    </div>
-  );
 
-  const renderAnalysisReplayContent = () => (
-    <div className="analysis-replay-content">
-      {renderAnalysisProfile()}
-      {analysisVariationMoves.length > 0 ? renderAnalysisVariationNotice() : renderAnalysisDetails()}
-    </div>
-  );
+  const renderAnalysisReplayContent = () => {
+    const variationMode = analysisVariationMoves.length > 0;
+    const liveViewActive = variationMode || analysisEngineView === "live";
+    const evaluationKey = analysisEvaluationKeyRef.current;
+
+    return (
+      <div className="analysis-replay-content">
+        {renderAnalysisProfile()}
+        {!variationMode && renderAnalysisSourceTabs()}
+        {variationMode ? (
+          <>
+            <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={setAnalysisEngineView} />
+            <LiveEvaluationView
+              evaluation={analysisEvaluation}
+              evaluationKey={evaluationKey}
+              activePly={analysisSelectedPosition?.ply ?? null}
+              variationMode
+            />
+          </>
+        ) : analysisDetailsTab === "database" ? (
+          renderAnalysisDetails()
+        ) : (
+          <>
+            <AnalysisEngineTabs activeView={analysisEngineView} showDeepAnalysis onChange={setAnalysisEngineView} />
+            {liveViewActive ? (
+              <LiveEvaluationView
+                evaluation={analysisEvaluation}
+                evaluationKey={evaluationKey}
+                activePly={analysisSelectedPosition?.ply ?? null}
+                variationMode={false}
+              />
+            ) : renderAnalysisDetails()}
+          </>
+        )}
+      </div>
+    );
+  };
 
   const renderPieces = () => pieces.map((piece) => {
     const x = (piece.file - 1) * 80;

@@ -1,6 +1,5 @@
 import "./App.css";
 import AnalysisEvaluationLifecycleGuard from "./AnalysisEvaluationLifecycleGuard";
-import AnalysisEvaluationOutputPortal from "./AnalysisEvaluationOutputPortal";
 import { ChessBoard } from "./ChessBoard";
 import EngineProfileContextMenu from "./EngineProfileContextMenu";
 import BrowserLocaleBridge from "./i18n/BrowserLocaleBridge";
@@ -13,7 +12,6 @@ function App() {
       <div className="app">
         <ChessBoard />
         <AnalysisEvaluationLifecycleGuard />
-        <AnalysisEvaluationOutputPortal />
         <EngineProfileContextMenu />
       </div>
     </I18nProvider>

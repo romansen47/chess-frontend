@@ -82,7 +82,6 @@ export default function AnalysisSettingsDialog({
               type="number"
               min={1}
               value={settings.moveTimeSeconds}
-              disabled={settings.depth > 0}
               onChange={(event) =>
                 onSettingsChange({
                   ...settings,
