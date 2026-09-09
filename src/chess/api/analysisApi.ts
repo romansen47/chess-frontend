@@ -58,8 +58,12 @@ export async function fetchAnalysisVariationEvaluation(ply: number, moves: strin
   return (await response.json()) as EngineEvaluation;
 }
 
-export async function stopAnalysisEvaluationRequest(): Promise<void> {
-  await fetch("/api/analysis-eval/stop", { method: "POST", headers: { "Content-Type": "application/json" } });
+export async function stopAnalysisEvaluationRequest(options?: { keepalive?: boolean }): Promise<void> {
+  await fetch("/api/analysis-eval/stop", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    keepalive: options?.keepalive ?? false,
+  });
 }
 
 export async function startAnalysisReplayRequest(settings: AnalysisReplaySettings): Promise<AnalysisReplayStep> {
