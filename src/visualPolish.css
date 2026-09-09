@@ -1,6 +1,23 @@
 /* Small visual refinements for the main chess UI. */
 
 /*
+ * Keep all scrollable areas usable with mouse wheel, touchpad, touch gestures
+ * and keyboard navigation while removing the visual scrollbar chrome. This
+ * applies consistently to the main layout, engine lines, analysis panels,
+ * dialogs, tables, manager lists/logs and context menus.
+ */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/*
  * The selected analysis position is already clear from the move list and the
  * active Engine/Database context, so the extra caption above the compact board
  * stays hidden.
@@ -9,14 +26,38 @@
   display: none;
 }
 
-/* Keep mouse-wheel/touchpad scrolling in the move list, but hide the scrollbar. */
-.moves-list {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+/* CAT branding in the fixed-height application header. */
+.app-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  line-height: 1;
 }
 
-.moves-list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+.app-title-logo {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: 0 0 1.4rem;
+  display: block;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.app-title-name {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.app-title-initial {
+  font-size: 1em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.app-title-rest {
+  font-size: 0.7em;
+  font-weight: 600;
+  line-height: 1;
 }
