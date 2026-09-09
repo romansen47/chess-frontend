@@ -4,20 +4,25 @@ import { useI18n, type Language } from "./I18nProvider";
 const TERMINATE_PROGRAM_TEXT =
   "Terminate Program?\n\nThe chess server and, in development mode, the frontend server will be stopped.";
 
+/**
+ * ChessBoard's legacy single-game import still awaits File.text() before it
+ * calls fetch(). Materializing a very large PGN as a JavaScript string would
+ * duplicate the complete file in the browser heap.
+ *
+ * The bridge therefore substitutes this marker only for the dedicated
+ * single-game PGN input and replaces it with the original File object again
+ * immediately before the request is handed to the browser's native fetch.
+ * The browser can then stream the file-backed Blob without creating the full
+ * PGN string in JavaScript memory.
+ */
+const SINGLE_PGN_FILE_MARKER = "__CAT_SINGLE_PGN_FILE_STREAM__";
+
 const noGameText: Record<Language, string> = {
   en: "The selected PGN file does not contain a game.",
   de: "Die ausgewählte PGN-Datei enthält keine Partie.",
   fr: "Le fichier PGN sélectionné ne contient aucune partie.",
   it: "Il file PGN selezionato non contiene alcuna partita.",
   es: "El archivo PGN seleccionado no contiene ninguna partida.",
-};
-
-const multipleGamesText: Record<Language, (countText: string) => string> = {
-  en: (countText) => `This PGN contains multiple games${countText}. “Import New Game” accepts exactly one game. Please use Chess Database → Import PGN for multi-game PGN files.`,
-  de: (countText) => `Diese PGN-Datei enthält mehrere Partien${countText}. „Neue Partie importieren“ akzeptiert genau eine Partie. Bitte verwende für PGN-Dateien mit mehreren Partien Schachdatenbank → PGN importieren.`,
-  fr: (countText) => `Ce fichier PGN contient plusieurs parties${countText}. « Importer une nouvelle partie » accepte exactement une partie. Pour les fichiers PGN contenant plusieurs parties, utilisez Base de données d’échecs → Importer un PGN.`,
-  it: (countText) => `Questo file PGN contiene più partite${countText}. “Importa nuova partita” accetta esattamente una partita. Per i file PGN con più partite usa Database scacchistico → Importa PGN.`,
-  es: (countText) => `Este archivo PGN contiene varias partidas${countText}. “Importar nueva partida” acepta exactamente una partida. Para archivos PGN con varias partidas usa Base de datos de ajedrez → Importar PGN.`,
 };
 
 const terminateProgramText: Record<Language, string> = {
@@ -38,20 +43,30 @@ const terminateEngineText: Record<Language, (pid: string, label: string) => stri
 
 function localizeSingleGameImportError(
   code: string,
-  gameCount: number | undefined,
   language: Language,
 ): string | null {
   if (code === "PGN_NO_GAME") {
     return noGameText[language];
   }
 
-  if (code === "PGN_MULTIPLE_GAMES") {
-    const count = Number.isFinite(gameCount) ? gameCount : undefined;
-    const countText = count == null ? "" : ` (${count})`;
-    return multipleGamesText[language](countText);
+  // PGN_MULTIPLE_GAMES deliberately remains structured JSON. The dedicated
+  // modal dialog owns that error because it also explains the database import path.
+  return null;
+}
+
+function isSingleGamePgnInput(input: HTMLInputElement): boolean {
+  if (input.type !== "file") {
+    return false;
   }
 
-  return null;
+  // The database dialog already uploads its File directly via FormData and
+  // must never participate in this compatibility bridge.
+  if (input.classList.contains("chess-database-hidden-input")) {
+    return false;
+  }
+
+  const accept = input.accept.toLowerCase();
+  return accept.includes(".pgn") || accept.includes("application/x-chess-pgn");
 }
 
 export default function BrowserLocaleBridge() {
@@ -68,6 +83,29 @@ export default function BrowserLocaleBridge() {
     const nativeNumberToLocaleString = Number.prototype.toLocaleString;
     const nativeDateToLocaleString = Date.prototype.toLocaleString;
     const nativeDateToLocaleTimeString = Date.prototype.toLocaleTimeString;
+    const nativeFileText = File.prototype.text;
+
+    let pendingSinglePgnFile: File | null = null;
+
+    const handleFileSelection = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement) || !isSingleGamePgnInput(target)) {
+        return;
+      }
+
+      pendingSinglePgnFile = target.files?.[0] ?? null;
+    };
+
+    const streamingFileText: typeof File.prototype.text = function (this: Blob) {
+      if (pendingSinglePgnFile === this) {
+        return Promise.resolve(SINGLE_PGN_FILE_MARKER);
+      }
+
+      return nativeFileText.call(this);
+    };
+
+    document.addEventListener("change", handleFileSelection, true);
+    File.prototype.text = streamingFileText;
 
     window.confirm = (message?: string) => {
       const currentLanguage = languageRef.current;
@@ -87,7 +125,6 @@ export default function BrowserLocaleBridge() {
     };
 
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const response = await nativeFetch(input, init);
       const url = typeof input === "string"
         ? input
         : input instanceof URL
@@ -95,13 +132,28 @@ export default function BrowserLocaleBridge() {
           : input.url;
       const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
 
+      let effectiveInit = init;
+      if (
+        method === "POST"
+        && url.includes("/api/game/pgn")
+        && init?.body === SINGLE_PGN_FILE_MARKER
+        && pendingSinglePgnFile
+      ) {
+        effectiveInit = {
+          ...init,
+          body: pendingSinglePgnFile,
+        };
+        pendingSinglePgnFile = null;
+      }
+
+      const response = await nativeFetch(input, effectiveInit);
+
       if (method === "POST" && url.includes("/api/game/pgn") && !response.ok) {
         try {
-          const payload = await response.clone().json() as { code?: string; gameCount?: number };
+          const payload = await response.clone().json() as { code?: string };
           if (payload.code) {
             const localized = localizeSingleGameImportError(
               payload.code,
-              payload.gameCount,
               languageRef.current,
             );
             if (localized) {
@@ -135,6 +187,10 @@ export default function BrowserLocaleBridge() {
     };
 
     return () => {
+      document.removeEventListener("change", handleFileSelection, true);
+      if (File.prototype.text === streamingFileText) {
+        File.prototype.text = nativeFileText;
+      }
       window.confirm = nativeConfirm;
       window.fetch = nativeFetch;
       Number.prototype.toLocaleString = nativeNumberToLocaleString;
