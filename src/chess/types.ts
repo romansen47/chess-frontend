@@ -74,6 +74,11 @@ export interface UciGameResponse {
   blackPlayerName: string | null;
 }
 
+export interface GameSnapshotResponse {
+  importedAnalysisGame: boolean;
+  game: UciGameResponse;
+}
+
 export interface BackendPiece {
   color: PieceColor;
   type: PieceType;

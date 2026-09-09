@@ -1,9 +1,15 @@
-import type { ClockState, GameSettings, UciGameResponse } from "../types";
+import type { ClockState, GameSettings, GameSnapshotResponse, UciGameResponse } from "../types";
 
 export async function fetchGameSettings(): Promise<GameSettings> {
   const response = await fetch("/api/game-settings");
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return (await response.json()) as GameSettings;
+}
+
+export async function fetchGameSnapshot(): Promise<GameSnapshotResponse> {
+  const response = await fetch("/api/game/state");
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return (await response.json()) as GameSnapshotResponse;
 }
 
 export async function fetchClock(): Promise<ClockState> {

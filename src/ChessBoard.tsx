@@ -67,6 +67,7 @@ import {
   exportPgn,
   fetchClock,
   fetchGameSettings,
+  fetchGameSnapshot,
   importPgn,
 } from "./chess/api/gameApi";
 import {
@@ -385,6 +386,43 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
+  async function loadCurrentGameSnapshot() {
+    try {
+      const snapshot = await fetchGameSnapshot();
+      const game = snapshot.game;
+      const restoredMoves = game.moves ?? [];
+
+      setMoves(mapImportedUciMovesToRows(restoredMoves));
+      if (game.position && game.position.length === 64) {
+        setPieces(mapPositionStringToLocalPieces(game.position));
+      }
+
+      const lastRestoredMove = restoredMoves[restoredMoves.length - 1];
+      setLastMove(lastRestoredMove?.uci && lastRestoredMove.uci.length >= 4
+        ? { from: lastRestoredMove.uci.substring(0, 2), to: lastRestoredMove.uci.substring(2, 4) }
+        : null);
+
+      const imported = Boolean(snapshot.importedAnalysisGame);
+      setUciAnalysisLoaded(imported);
+      if (imported) {
+        setClock(null);
+        setEngineAutoUpdate(false);
+        setEngineEval(null);
+        setLiveEvaluationBar(null);
+        setAnalysisWhitePlayerName(formatPlayerDisplayName(game.whitePlayerName, "White"));
+        setAnalysisBlackPlayerName(formatPlayerDisplayName(game.blackPlayerName, "Black"));
+        setAnalysisTotalPlies(Math.max(0, game.totalPlies ?? restoredMoves.length));
+      }
+
+      return snapshot;
+    } catch (e) {
+      console.error("[loadCurrentGameSnapshot] error", e);
+      setLoadError("Could not restore the current game after reload.");
+      await loadBoardFromBackend();
+      return null;
+    }
+  }
+
   async function loadGameSettings() {
     try {
       const data = await fetchGameSettings();
@@ -419,15 +457,17 @@ export const ChessBoard: React.FC = () => {
   useEffect(() => {
     loadEngineConfigs();
     loadGameSettings();
-    loadClock();
-    loadBoardFromBackend();
+    void loadCurrentGameSnapshot().then((snapshot) => {
+      if (!snapshot?.importedAnalysisGame) void loadClock();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    if (uciAnalysisLoaded) return;
     const intervalId = window.setInterval(() => { loadClock(); }, 500);
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [uciAnalysisLoaded]);
 
   async function loadPossibleMoves(from: string): Promise<string[]> {
     try {
