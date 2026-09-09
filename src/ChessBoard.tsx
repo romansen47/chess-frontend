@@ -812,9 +812,7 @@ export const ChessBoard: React.FC = () => {
 
   async function terminateProgram() {
     const confirmed = window.confirm(
-      "Terminate Program?\
-\
-The chess server and, in development mode, the frontend server will be stopped."
+      "Terminate Program?\n\nThe chess server and, in development mode, the frontend server will be stopped."
     );
     if (!confirmed) return;
     setIsTerminatingProgram(true);
