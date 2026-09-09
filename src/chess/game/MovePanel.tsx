@@ -1,6 +1,7 @@
 import type { MouseEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { MoveRow } from "../types";
+import PgnImportProblemDialog, { isPgnImportProblem } from "./PgnImportProblemDialog";
 
 interface MovePanelState {
   moves: MoveRow[];
@@ -30,35 +31,9 @@ interface MovePanelProps {
   actions: MovePanelActions;
 }
 
-interface PgnImportErrorPayload {
-  code?: string;
-  gameCount?: number;
-  earlyAbort?: boolean;
-}
-
-function parsePgnImportError(error: string | null): PgnImportErrorPayload | null {
-  if (!error) return null;
-
-  try {
-    const parsed = JSON.parse(error) as PgnImportErrorPayload;
-    if (parsed && typeof parsed === "object" && typeof parsed.code === "string") {
-      return parsed;
-    }
-  } catch {
-    // Non-JSON errors keep the normal generic error presentation.
-  }
-
-  return null;
-}
-
 export default function MovePanel({ state, actions }: MovePanelProps) {
   const { t } = useI18n();
-  const pgnImportError = parsePgnImportError(state.error);
-  const multiplePgnGames = pgnImportError?.code === "PGN_MULTIPLE_GAMES";
-  const gameCount = typeof pgnImportError?.gameCount === "number"
-    ? pgnImportError.gameCount
-    : null;
-  const countPrefix = pgnImportError?.earlyAbort ? "≥ " : "";
+  const pgnImportProblem = isPgnImportProblem(state.error);
 
   return (
     <section className="moves-panel">
@@ -94,21 +69,14 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
         </div>
       </div>
 
-      {state.error && (
-        multiplePgnGames ? (
-          <div className="moves-import-warning" role="alert">
-            <strong>
-              ⚠ {countPrefix}{gameCount ?? "?"} {t("common.games")}
-            </strong>
-            <span>
-              {t("data.label")} → {t("data.chessDatabase")} → {t("database.importPgn")}
-            </span>
-          </div>
-        ) : (
-          <div className="moves-error-banner" role="alert">
-            {t("moves.error", { message: state.error })}
-          </div>
-        )
+      {state.error && !pgnImportProblem && (
+        <div className="moves-error-banner" role="alert">
+          {t("moves.error", { message: state.error })}
+        </div>
+      )}
+
+      {state.error && pgnImportProblem && (
+        <PgnImportProblemDialog key={state.error} error={state.error} />
       )}
 
       <div className="moves-list">
