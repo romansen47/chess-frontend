@@ -33,11 +33,11 @@ import MovePanel from "./chess/game/MovePanel";
 import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
 import AnalysisEngineTabs, { type AnalysisEngineView } from "./chess/analysis/AnalysisEngineTabs";
 import LiveEvaluationView from "./chess/analysis/LiveEvaluationView";
+import Board from "./chess/board/Board";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 import {
   createInitialPieces,
   getCastlingSquares,
-  getPieceSymbol,
   getRankFromSquare,
   getSquareCoords,
   squareName,
@@ -721,10 +721,10 @@ export const ChessBoard: React.FC = () => {
       setPromotionContext(null);
       setAnalysisWhitePlayerName(uciAnalysisLoaded
         ? analysisWhitePlayerName || "White"
-        : getDisplayedWhitePlayerName(clock, whiteComputerEnabledRef.current));
+        : getDisplayedWhitePlayerName(clock, whiteComputerEnabled));
       setAnalysisBlackPlayerName(uciAnalysisLoaded
         ? analysisBlackPlayerName || "Black"
-        : getDisplayedBlackPlayerName(clock, blackComputerEnabledRef.current));
+        : getDisplayedBlackPlayerName(clock, blackComputerEnabled));
       setAnalysisReplayActive(true);
       setAnalysisEvaluationEnabled(false);
       setAnalysisEvaluation(null);
@@ -801,7 +801,7 @@ export const ChessBoard: React.FC = () => {
   async function saveUciGame() {
     try {
       setLoadError(null);
-      const blob = await exportPgn(whiteComputerEnabledRef.current, blackComputerEnabledRef.current);
+      const blob = await exportPgn(whiteComputerEnabled, blackComputerEnabled);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -1300,28 +1300,6 @@ export const ChessBoard: React.FC = () => {
     setSelectedSquare(null); updatePossibleTargets([]);
   };
 
-  const renderBoardSquares = () => {
-    const squares: ReactElement[] = [];
-    for (let rank = 8; rank >= 1; rank--) {
-      for (let file = 1; file <= 8; file++) {
-        const name = squareName(file, rank);
-        const squareClasses = [
-          "square",
-          (file + rank) % 2 !== 0 ? "square-light" : "square-dark",
-          selectedSquare === name ? "square-selected" : "",
-          lastMove && (lastMove.from === name || lastMove.to === name) ? "square-last-move" : "",
-          possibleTargets.includes(name) ? "square-possible" : "",
-        ].filter(Boolean).join(" ");
-        squares.push(
-          <div key={name} className={squareClasses} onClick={() => handleSquareClick(name)}>
-            <span className="square-label">{name}</span>
-          </div>
-        );
-      }
-    }
-    return squares;
-  };
-
   const renderHoverBoard = () => {
     if (!hoverPreview) return null;
     const previewSize = 240;
@@ -1545,7 +1523,6 @@ export const ChessBoard: React.FC = () => {
     );
   };
 
-
   const renderAnalysisReplayContent = () => {
     const variationMode = analysisVariationMoves.length > 0;
     const liveViewActive = variationMode || analysisEngineView === "live";
@@ -1583,22 +1560,6 @@ export const ChessBoard: React.FC = () => {
       </div>
     );
   };
-
-  const renderPieces = () => pieces.map((piece) => {
-    const x = (piece.file - 1) * 80;
-    const y = (8 - piece.rank) * 80;
-    const isDragging = dragState?.pieceId === piece.id;
-    const renderX = isDragging ? dragState.x : x;
-    const renderY = isDragging ? dragState.y : y;
-    const classes = ["piece", piece.color === "white" ? "piece-white" : "piece-black", isDragging ? "piece-dragging" : ""].filter(Boolean).join(" ");
-    return (
-      <div key={piece.id} className={classes} style={{ transform: `translate(${renderX}px, ${renderY}px)` }}
-        onPointerDown={(event) => handlePiecePointerDown(event, piece)} onPointerMove={handlePiecePointerMove}
-        onPointerUp={handlePiecePointerUp} onPointerCancel={handlePiecePointerCancel}>
-        {getPieceSymbol(piece)}
-      </div>
-    );
-  });
 
   return (
     <>
@@ -1650,10 +1611,19 @@ export const ChessBoard: React.FC = () => {
 
           <section className="board-column">
             <div className="board-wrapper">
-              <div className="board-container" ref={boardContainerRef}>
-                <div className="board">{renderBoardSquares()}</div>
-                <div className="pieces-layer">{renderPieces()}</div>
-              </div>
+              <Board
+                pieces={pieces}
+                selectedSquare={selectedSquare}
+                lastMove={lastMove}
+                possibleTargets={possibleTargets}
+                dragState={dragState}
+                boardContainerRef={boardContainerRef}
+                onSquareClick={handleSquareClick}
+                onPiecePointerDown={handlePiecePointerDown}
+                onPiecePointerMove={handlePiecePointerMove}
+                onPiecePointerUp={handlePiecePointerUp}
+                onPiecePointerCancel={handlePiecePointerCancel}
+              />
             </div>
             {!analysisReplayActive && !uciAnalysisLoaded && (
               <div className="clock-area">
