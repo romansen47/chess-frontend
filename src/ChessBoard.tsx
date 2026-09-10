@@ -653,13 +653,6 @@ export const ChessBoard: React.FC = () => {
     setShowAnalysisSettingsDialog(true);
   }
 
-  function reopenGameEndDialog() {
-    if (!gameEndStateRef.current) return;
-    setAnalysisReplayError(null);
-    setShowAnalysisSettingsDialog(false);
-    setShowGameEndDialog(true);
-  }
-
   function applyAnalysisReplayStep(step: AnalysisReplayStep) {
     if (step.board?.pieces && !analysisReplayActiveRef.current) setPieces(mapBackendPiecesToLocalPieces(step.board.pieces));
     if (step.from && step.to && !analysisReplayActiveRef.current) setLastMove({ from: step.from, to: step.to });
@@ -1567,11 +1560,9 @@ export const ChessBoard: React.FC = () => {
         analysisReplayActive={analysisReplayActive}
         analysisReplayRunning={isAnalysisReplayRunning}
         analysisReplayFinished={analysisReplayFinished}
-        gameEnded={Boolean(gameEndState)}
         uciAnalysisLoaded={uciAnalysisLoaded}
         terminatingProgram={isTerminatingProgram}
         onCancelAnalysis={() => void cancelAnalysisReplay()}
-        onOpenOptions={reopenGameEndDialog}
         onOpenAnalysis={openAnalysisSettingsDialog}
         onNewGame={openGameSettingsDialog}
         onExportCurrentGame={() => void saveUciGame()}

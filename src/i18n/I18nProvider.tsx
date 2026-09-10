@@ -164,17 +164,11 @@ const translations = {
     de: "Laufende Analyse abbrechen",
     fr: "Annuler l’analyse en cours",
   },
-  "analysis.options": { en: "Options", de: "Optionen", fr: "Options" },
-  "analysis.optionsTitle": {
-    en: "Open options after the completed analysis",
-    de: "Optionen nach der abgeschlossenen Analyse öffnen",
-    fr: "Ouvrir les options après l’analyse terminée",
-  },
   "analysis.analyzeAgain": { en: "Analyze again", de: "Erneut analysieren", fr: "Analyser à nouveau" },
   "analysis.analyzeAgainTitle": {
-    en: "Analyze the loaded PGN game again",
-    de: "Geladene PGN-Partie erneut analysieren",
-    fr: "Analyser à nouveau la partie PGN chargée",
+    en: "Analyze the game again",
+    de: "Partie erneut analysieren",
+    fr: "Analyser à nouveau la partie",
   },
   "analysis.analyze": { en: "Analyze", de: "Analysieren", fr: "Analyser" },
   "analysis.analyzeTitle": {
