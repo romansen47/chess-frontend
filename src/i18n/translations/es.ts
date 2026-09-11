@@ -344,4 +344,11 @@ export const spanishTranslations: Record<string, string> = {
   "game.loadPgnFailed": "No se pudo cargar el archivo PGN.",
   "analysis.noDeepProfile": "No hay ningún perfil de motor para análisis profundo disponible.",
   "analysis.variationMoveFailed": "No se pudo ejecutar el movimiento de la variante de análisis.",
+  "analysis.evaluationBoardUnavailable": "La posición del tablero de EvaluationEngine no está disponible.",
+  "analysis.variationFromPly": "Variante de EvaluationEngine desde el medio movimiento {ply}",
+  "analysis.continuationFromPly": "Continuación de EvaluationEngine desde el medio movimiento {ply}",
+  "analysis.variationsInfinite": "Variantes de EvaluationEngine · infinitas",
+  "analysis.evaluationPlyCalculating": "Calculando la evaluación del medio movimiento {ply}…",
+  "analysis.terminalPosition": "posición terminal",
+  "analysis.depthInfinite": "profundidad {depth} · infinita",
 };
