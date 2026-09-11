@@ -417,9 +417,9 @@ const translations = {
   "analysis.evaluationEngine": { en: "Evaluation engine", de: "Bewertungs-Engine", fr: "Moteur d’évaluation" },
   "analysis.history": { en: "Analysis history", de: "Analyseverlauf", fr: "Historique de l’analyse" },
   "analysis.moveAnnotationLoss": {
-    en: "Loss {loss} · Best move {best}",
-    de: "Verlust {loss} · Bester Zug {best}",
-    fr: "Perte {loss} · Meilleur coup {best}",
+    en: "Win chance loss {loss} pp · Best move {best}",
+    de: "Gewinnchancenverlust {loss} %-Punkte · Bester Zug {best}",
+    fr: "Perte de chances de gain {loss} points · Meilleur coup {best}",
   },
   "analysis.moveAnnotationOnlyMove": {
     en: "Only good move · Best move {best} · Second best {second}",
