@@ -3,6 +3,7 @@ import EngineManager from "./EngineManager";
 import EngineConfigManager from "./EngineConfigManager";
 import { fetchEngineConfigOverview } from "./engineConfig";
 import type { EngineConfigOverview } from "./engineConfig";
+import { useI18n } from "./i18n/I18nProvider";
 import ChessDatabaseDialog, { type ChessDatabaseLoadedGame } from "./ChessDatabaseDialog";
 import AnalysisDatabasePanel from "./AnalysisDatabasePanel";
 import type {
@@ -51,7 +52,6 @@ import {
 } from "./chess/board/positionUtils";
 import {
   formatClockTime,
-  formatGameState,
   formatPlayerDisplayName,
   formatTimeControlFromSettings,
   getAnalysisBlackPlayerName,
@@ -120,6 +120,29 @@ function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
 }
 
 export const ChessBoard: React.FC = () => {
+  const { t } = useI18n();
+
+  function localizedGameState(gameState: string | null | undefined, currentClock?: ClockState | null): string {
+    if (gameState === "LOST_ON_TIME") {
+      if (currentClock?.whiteTime === 0 && currentClock.blackTime > 0) return t("game.blackWinsWhiteTime");
+      if (currentClock?.blackTime === 0 && currentClock.whiteTime > 0) return t("game.whiteWinsBlackTime");
+      if (currentClock?.sideToMove === "white") return t("game.blackWinsWhiteTime");
+      if (currentClock?.sideToMove === "black") return t("game.whiteWinsBlackTime");
+      return t("game.endedOnTime");
+    }
+
+    switch (gameState) {
+      case "WHITE_MATED": return t("game.blackWinsCheckmate");
+      case "BLACK_MATED": return t("game.whiteWinsCheckmate");
+      case "STALEMATE": return t("game.stalemate");
+      case "WHITE_RESIGNED": return t("game.blackWinsWhiteResigned");
+      case "BLACK_RESIGNED": return t("game.whiteWinsBlackResigned");
+      case "DRAW_BY_50_MOVES_RULE": return t("game.drawFifty");
+      case "DRAW_BY_THREEFOLD_REPETITION": return t("game.drawThreefold");
+      case "DRAW_BY_INSUFFICIENT_MATERIAL": return t("game.drawInsufficient");
+      default: return gameState ? t("game.endedState", { state: gameState }) : t("game.ended");
+    }
+  }
   const [pieces, setPieces] = useState<Piece[]>(() => createInitialPieces());
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [moves, setMoves] = useState<MoveRow[]>([]);
@@ -332,7 +355,7 @@ export const ChessBoard: React.FC = () => {
       setPieces(mapBackendPiecesToLocalPieces(data.pieces ?? []));
     } catch (e) {
       console.error("[loadBoardFromBackend] error:", e);
-      setLoadError("Could not load the board from the server.");
+      setLoadError(t("game.boardLoadFailed"));
     }
   }
 
@@ -367,7 +390,7 @@ export const ChessBoard: React.FC = () => {
       return snapshot;
     } catch (e) {
       console.error("[loadCurrentGameSnapshot] error", e);
-      setLoadError("Could not restore the current game after reload.");
+      setLoadError(t("game.restoreFailed"));
       await loadBoardFromBackend();
       return null;
     }
@@ -380,7 +403,7 @@ export const ChessBoard: React.FC = () => {
       setGameSettingsError(null);
     } catch (e) {
       console.error("[loadGameSettings] error", e);
-      setGameSettingsError("Game settings could not be loaded.");
+      setGameSettingsError(t("game.settingsLoadFailed"));
     }
   }
 
@@ -399,7 +422,7 @@ export const ChessBoard: React.FC = () => {
       return data;
     } catch (e) {
       console.error("[loadClock] error", e);
-      setClockError("Could not load the clock.");
+      setClockError(t("game.clockLoadFailed"));
       return null;
     }
   }
@@ -435,7 +458,7 @@ export const ChessBoard: React.FC = () => {
       return targets;
     } catch (e) {
       console.error("[loadPossibleMoves] failed to load possible moves:", e);
-      setLoadError("Failed to load possible moves.");
+      setLoadError(t("game.possibleMovesFailed"));
       updatePossibleTargets([]);
       return [];
     } finally {
@@ -456,7 +479,7 @@ export const ChessBoard: React.FC = () => {
       if (hasLines) setEngineEval(data);
     } catch (e) {
       console.error("[loadEvaluation] error", e);
-      setEvalError("Failed to load the engine evaluation.");
+      setEvalError(t("evaluation.failed"));
       setLiveEvaluationFastPolling(false);
     } finally {
       liveEvaluationRequestInFlightRef.current = false;
@@ -540,7 +563,7 @@ export const ChessBoard: React.FC = () => {
     } catch (e) {
       console.error("[loadAnalysisEvaluation] error", e);
       if (analysisEvaluationKeyRef.current === key) {
-        setAnalysisEvaluationError("Failed to load the analysis evaluation.");
+        setAnalysisEvaluationError(t("evaluation.analysisFailed"));
       }
     }
   }
@@ -585,7 +608,7 @@ export const ChessBoard: React.FC = () => {
       return data;
     } catch (e) {
       console.error("[loadEngineConfigs] error", e);
-      setEngineConfigLoadError("Engine settings could not be loaded.");
+      setEngineConfigLoadError(t("settings.loadFailed"));
       return null;
     }
   }
@@ -692,7 +715,7 @@ export const ChessBoard: React.FC = () => {
       }
     } catch (error) {
       console.error("[runAnalysisReplayLoop] error", error);
-      setAnalysisReplayError("Analysis replay failed.");
+      setAnalysisReplayError(t("analysis.failed"));
     } finally {
       setIsAnalysisReplayRunning(false);
     }
@@ -700,9 +723,9 @@ export const ChessBoard: React.FC = () => {
 
   async function startAnalysisReplay() {
     try {
-      if (!analysisSettings.engineProfileId) throw new Error("No deep analysis engine profile is available.");
+      if (!analysisSettings.engineProfileId) throw new Error(t("analysis.noDeepProfile"));
       setAnalysisReplayError(null);
-      setAnalysisReplayStatus("Preparing analysis…");
+      setAnalysisReplayStatus(t("analysis.preparing"));
       setAnalysisReplayFinished(false);
       setIsAnalysisReplayRunning(true);
       setShowAnalysisSettingsDialog(false);
@@ -742,7 +765,7 @@ export const ChessBoard: React.FC = () => {
       await runAnalysisReplayLoop(step);
     } catch (error) {
       console.error("[startAnalysisReplay] error", error);
-      setAnalysisReplayError("Could not start analysis replay.");
+      setAnalysisReplayError(t("analysis.startFailed"));
       setAnalysisReplayFinished(false);
       setAnalysisReplayActive(false);
       setIsAnalysisReplayRunning(false);
@@ -753,7 +776,7 @@ export const ChessBoard: React.FC = () => {
     analysisReplayCancelledRef.current = true;
     setIsAnalysisReplayRunning(false);
     setAnalysisReplayFinished(true);
-    setAnalysisReplayStatus("Analysis canceled.");
+    setAnalysisReplayStatus(t("analysis.cancelled"));
     try {
       await cancelAnalysisReplayRequest();
     } catch (error) {
@@ -787,7 +810,7 @@ export const ChessBoard: React.FC = () => {
     } catch (error) {
       console.error("[terminateProgram] error", error);
       setIsTerminatingProgram(false);
-      setLoadError("Could not terminate the program.");
+      setLoadError(t("program.terminateFailed"));
     }
   }
 
@@ -805,7 +828,7 @@ export const ChessBoard: React.FC = () => {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("[saveUciGame] error", error);
-      setLoadError("Could not save the PGN file.");
+      setLoadError(t("game.savePgnFailed"));
     }
   }
 
@@ -881,7 +904,7 @@ export const ChessBoard: React.FC = () => {
     } catch (error) {
       console.error("[handleUciFileSelected] error", error);
       setUciAnalysisLoaded(hadImportedGame);
-      setLoadError(error instanceof Error ? error.message : "Could not load the PGN file.");
+      setLoadError(error instanceof Error ? error.message : t("game.loadPgnFailed"));
     } finally {
       setIsLoadingMoves(false);
     }
@@ -946,7 +969,7 @@ export const ChessBoard: React.FC = () => {
       await synchronizeAfterMoveSequence();
     } catch (e) {
       console.error("[startNewGame] error", e);
-      setGameSettingsError("Failed to start a new game.");
+      setGameSettingsError(t("game.startFailed"));
     } finally {
       setIsStartingNewGame(false);
       setIsLoadingMoves(false);
@@ -1084,7 +1107,7 @@ export const ChessBoard: React.FC = () => {
       await synchronizeAfterMoveSequence();
     } catch (e) {
       console.error("[performMove] move execution failed:", e);
-      setLoadError("Failed to execute the move.");
+      setLoadError(t("game.moveFailed"));
     } finally {
       setIsLoadingMoves(false);
     }
@@ -1124,7 +1147,7 @@ export const ChessBoard: React.FC = () => {
       void playGameSound(data.gameState ? "notify" : "move");
     } catch (e) {
       console.error("[performAnalysisVariationMove] failed", e);
-      setLoadError("Failed to execute the analysis variation move.");
+      setLoadError(t("analysis.variationMoveFailed"));
     } finally {
       setIsLoadingMoves(false);
     }
@@ -1346,7 +1369,7 @@ export const ChessBoard: React.FC = () => {
     return (
       <div className="analysis-profile-panel">
         <div className="analysis-profile-header">
-          <strong>Analysis history</strong>
+          <strong>{t("analysis.history")}</strong>
           <span>{latest?.ply ?? 0} plies · {formatEngineScore(latest?.evaluation ?? 0)}{latest?.depth ? ` · depth ${latest.depth}` : ""}</span>
         </div>
         <svg className="analysis-profile-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label="Evaluation history of the analyzed game">
@@ -1376,7 +1399,7 @@ export const ChessBoard: React.FC = () => {
           })}
         </svg>
         <div className="analysis-profile-footer">
-          <span>{analysisReplayStatus ?? "Analysis mode"}</span>
+          <span>{analysisReplayStatus ?? t("analysis.mode")}</span>
           {isAnalysisReplayRunning && <button className="analysis-cancel-button" onClick={cancelAnalysisReplay}>Cancel</button>}
         </div>
         {analysisReplayError && <div className="analysis-profile-error">{analysisReplayError}</div>}
@@ -1449,7 +1472,7 @@ export const ChessBoard: React.FC = () => {
 
   const renderAnalysisPositionBoard = () => {
     const animatedPosition = getAnimatedAnalysisPosition();
-    if (!animatedPosition) return <div className="analysis-detail-placeholder">Click a move in the move list to play an engine continuation.</div>;
+    if (!animatedPosition) return <div className="analysis-detail-placeholder">{t("analysis.clickMoveContinuation")}</div>;
     const squares: ReactElement[] = [];
     for (let i = 0; i < 64; i++) {
       const rankFromTop = Math.floor(i / 8);
@@ -1467,14 +1490,14 @@ export const ChessBoard: React.FC = () => {
   };
 
   const renderAnalysisLinesForSelection = () => {
-    if (!analysisSelectedPosition) return <div className="analysis-detail-placeholder">Select a move to show the stored engine variations here.</div>;
+    if (!analysisSelectedPosition) return <div className="analysis-detail-placeholder">{t("analysis.selectMoveStoredVariations")}</div>;
     const selectedPoint = getSelectedAnalysisPoint();
-    if (!selectedPoint) return <div className="analysis-detail-placeholder">No evaluation is available for this ply yet.</div>;
+    if (!selectedPoint) return <div className="analysis-detail-placeholder">{t("analysis.noEvaluationPly")}</div>;
     const lines = selectedPoint.lines ?? [];
-    if (lines.length === 0) return <div className="analysis-detail-placeholder">No engine variations were provided for this position.</div>;
+    if (lines.length === 0) return <div className="analysis-detail-placeholder">{t("analysis.noEngineVariations")}</div>;
     const effectiveLineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines);
     return <>
-      <div className="engine-lines-summary"><span>{engineEval?.engineName || "Analysis engine"}</span><span>depth {lines[0].depth}</span></div>
+      <div className="engine-lines-summary"><span>{engineEval?.engineName || t("analysis.analysisEngine")}</span><span>depth {lines[0].depth}</span></div>
       <div className="analysis-lines-list">{lines.map((line, index) => {
         const isSelected = index === effectiveLineIndex;
         return (
@@ -1491,9 +1514,9 @@ export const ChessBoard: React.FC = () => {
   const renderAnalysisSourceTabs = () => {
     const databaseTabActive = analysisDetailsTab === "database";
     return (
-      <div className="analysis-detail-tabs" role="tablist" aria-label="Analysis source">
-        <button type="button" role="tab" aria-selected={!databaseTabActive} className={["analysis-detail-tab", !databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("engine")}>Engine</button>
-        <button type="button" role="tab" aria-selected={databaseTabActive} className={["analysis-detail-tab", databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("database")}>Database</button>
+      <div className="analysis-detail-tabs" role="tablist" aria-label={t("analysis.source")}>
+        <button type="button" role="tab" aria-selected={!databaseTabActive} className={["analysis-detail-tab", !databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("engine")}>{t("analysis.engineSource")}</button>
+        <button type="button" role="tab" aria-selected={databaseTabActive} className={["analysis-detail-tab", databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("database")}>{t("analysis.databaseSource")}</button>
       </div>
     );
   };
@@ -1504,12 +1527,12 @@ export const ChessBoard: React.FC = () => {
       <div className="analysis-detail-row">
         <div className="analysis-position-panel">
           <div className="analysis-detail-title">{databaseTabActive
-            ? analysisSelectedPosition ? `Database position after ${analysisSelectedPosition.label}` : "Database position"
-            : analysisSelectedPosition ? `Engine continuation from ${analysisSelectedPosition.label}` : "Engine continuation"}</div>
+            ? analysisSelectedPosition ? t("analysis.databasePositionAfter", { label: analysisSelectedPosition.label }) : t("analysis.databasePosition")
+            : analysisSelectedPosition ? t("analysis.engineContinuationFrom", { label: analysisSelectedPosition.label }) : t("analysis.engineContinuation")}</div>
           {renderAnalysisPositionBoard()}
         </div>
         <div className="analysis-lines-panel">
-          <div className="analysis-detail-title">{databaseTabActive ? "Database continuations" : "Engine variations"}</div>
+          <div className="analysis-detail-title">{databaseTabActive ? t("analysis.databaseContinuations") : t("analysis.engineVariations")}</div>
           {databaseTabActive ? <AnalysisDatabasePanel ply={analysisSelectedPosition?.ply ?? null} /> : renderAnalysisLinesForSelection()}
         </div>
       </div>
@@ -1620,12 +1643,12 @@ export const ChessBoard: React.FC = () => {
               <div className="clock-area">
                 <button type="button" className={["clock-box", clock?.sideToMove === "white" ? "clock-active" : "", clock?.whiteRunning ? "clock-running" : "", whiteComputerEnabled ? "clock-computer-enabled" : ""].filter(Boolean).join(" ")}
                   onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabled)} aria-pressed={whiteComputerEnabled}
-                  title={whiteComputerEnabled ? "Disable White player engine" : "Enable White player engine"}>
+                  title={whiteComputerEnabled ? t("game.disableWhiteEngine") : t("game.enableWhiteEngine")}>
                   <div className="clock-time">{formatClockTime(clock?.whiteTime)}</div>
                 </button>
                 <button type="button" className={["clock-box", clock?.sideToMove === "black" ? "clock-active" : "", clock?.blackRunning ? "clock-running" : "", blackComputerEnabled ? "clock-computer-enabled" : ""].filter(Boolean).join(" ")}
                   onClick={() => updateBlackComputerEnabled(!blackComputerEnabled)} aria-pressed={blackComputerEnabled}
-                  title={blackComputerEnabled ? "Disable Black player engine" : "Enable Black player engine"}>
+                  title={blackComputerEnabled ? t("game.disableBlackEngine") : t("game.enableBlackEngine")}>
                   <div className="clock-time">{formatClockTime(clock?.blackTime)}</div>
                 </button>
                 {clockError && <div className="clock-error">{clockError}</div>}
@@ -1638,7 +1661,7 @@ export const ChessBoard: React.FC = () => {
               {!analysisReplayActive && !uciAnalysisLoaded && (
                 <button type="button" className={["engine-bar-wrapper", engineAutoUpdate ? "engine-bar-enabled" : "engine-bar-disabled"].join(" ")}
                   onClick={toggleEngineAutoUpdate} aria-pressed={engineAutoUpdate}
-                  aria-label={engineAutoUpdate ? "Disable evaluation engine" : "Enable evaluation engine"}
+                  aria-label={engineAutoUpdate ? t("game.disableEvaluationEngine") : t("game.enableEvaluationEngine")}
                   title={engineAutoUpdate ? "Disable evaluation engine" : "Enable evaluation engine · evaluation 0.0"}>
                   <div className="engine-bar-white" style={{ height: `${(engineAutoUpdate && liveEvaluationBar != null ? liveEvaluationBar : 0.5) * 100}%` }} />
                   <div className="engine-bar-black" style={{ height: `${(1 - (engineAutoUpdate && liveEvaluationBar != null ? liveEvaluationBar : 0.5)) * 100}%` }} />
@@ -1647,10 +1670,10 @@ export const ChessBoard: React.FC = () => {
               {analysisReplayActive && analysisReplayFinished && (
                 <button type="button" className={["engine-bar-wrapper", analysisEvaluationEnabled ? "engine-bar-enabled" : "engine-bar-disabled"].join(" ")}
                   onClick={toggleAnalysisEvaluation} aria-pressed={analysisEvaluationEnabled} disabled={!analysisSelectedPosition}
-                  aria-label={analysisEvaluationEnabled ? "Disable analysis evaluation" : "Enable analysis evaluation"}
-                  title={!analysisSelectedPosition ? "Select a move to use the evaluation engine"
-                    : analysisEvaluationEnabled ? "Disable evaluation engine"
-                    : analysisVariationMoves.length > 0 ? "Enable the evaluation engine for the current variation" : "Enable the evaluation engine for the selected move"}>
+                  aria-label={analysisEvaluationEnabled ? t("game.disableAnalysisEvaluation") : t("game.enableAnalysisEvaluation")}
+                  title={!analysisSelectedPosition ? t("game.selectMoveEvaluation")
+                    : analysisEvaluationEnabled ? t("game.disableEvaluationEngine")
+                    : analysisVariationMoves.length > 0 ? t("game.enableEvaluationVariation") : t("game.enableEvaluationSelectedMove")}>
                   <div className="engine-bar-white" style={{ height: `${(analysisEvaluationEnabled && analysisEvaluation ? analysisEvaluation.bar : 0.5) * 100}%` }} />
                   <div className="engine-bar-black" style={{ height: `${(1 - (analysisEvaluationEnabled && analysisEvaluation ? analysisEvaluation.bar : 0.5)) * 100}%` }} />
                 </button>
@@ -1664,12 +1687,12 @@ export const ChessBoard: React.FC = () => {
                   {evalError && <div className="engine-error">Error: {evalError}</div>}
                   {engineAutoUpdate && engineEval && !clock?.gameState && (
                     <div className="engine-lines">
-                      {engineEval.lines.length > 0 && <div className="engine-lines-summary"><span>{engineEval.engineName || "Evaluation engine"}</span><span>depth {engineEval.lines[0].depth}</span></div>}
-                      {engineEval.lines.length === 0 && <div className="engine-empty">No engine lines.</div>}
+                      {engineEval.lines.length > 0 && <div className="engine-lines-summary"><span>{engineEval.engineName || t("analysis.evaluationEngine")}</span><span>depth {engineEval.lines[0].depth}</span></div>}
+                      {engineEval.lines.length === 0 && <div className="engine-empty">{t("analysis.noEngineLines")}</div>}
                       {engineEval.lines.map((line, idx) => <div key={idx} className="engine-line"><div className="engine-line-header">#{idx + 1} · {formatEngineLineScore(line)}</div><div className="engine-line-moves">{line.moves}</div></div>)}
                     </div>
                   )}
-                  {engineAutoUpdate && !engineEval && !isLoadingEval && !evalError && !clock?.gameState && <div className="engine-placeholder-text">Engine output will appear here.</div>}
+                  {engineAutoUpdate && !engineEval && !isLoadingEval && !evalError && !clock?.gameState && <div className="engine-placeholder-text">{t("analysis.engineOutputPlaceholder")}</div>}
                 </>}
               </div>
             </div>
@@ -1680,7 +1703,11 @@ export const ChessBoard: React.FC = () => {
           {promotionContext && (
             <div className="promotion-dialog">
               <div className="promotion-dialog-content">
-                <p>Promotion for {promotionContext.color === "white" ? "white" : "black"} pawn ({promotionContext.from} → {promotionContext.to}):</p>
+                <p>{t("game.promotionPrompt", {
+                  color: promotionContext.color === "white" ? t("common.white") : t("common.black"),
+                  from: promotionContext.from,
+                  to: promotionContext.to,
+                })}</p>
                 <div className="promotion-options">
                   {(["queen", "rook", "bishop", "knight"] as PieceType[]).map((ptype) => (
                     <button key={ptype} className={`promotion-button promotion-button-${promotionContext.color}`} onClick={async () => {
@@ -1691,7 +1718,7 @@ export const ChessBoard: React.FC = () => {
                     }}>{ptype.toUpperCase()}</button>
                   ))}
                 </div>
-                <button className="promotion-cancel-button" onClick={() => setPromotionContext(null)}>Cancel</button>
+                <button className="promotion-cancel-button" onClick={() => setPromotionContext(null)}>{t("common.cancel")}</button>
               </div>
             </div>
           )}
@@ -1706,12 +1733,12 @@ export const ChessBoard: React.FC = () => {
 
           {showGameEndDialog && gameEndState && (
             <div className="game-end-dialog"><div className="game-end-dialog-content">
-              <h2>Game Over</h2><p>{formatGameState(gameEndState, clock)}</p>
+              <h2>{t("game.gameOver")}</h2><p>{localizedGameState(gameEndState, clock)}</p>
               <div className="game-end-dialog-actions">
-                <button className="game-end-dialog-button" onClick={saveUciGame}>Save PGN</button>
-                <button className="game-end-dialog-button" onClick={openUciFilePicker}>Load PGN</button>
-                <button className="game-end-dialog-button" onClick={openGameSettingsDialog}>New Game</button>
-                <button className="game-end-dialog-button" onClick={openAnalysisSettingsDialog}>Analyze</button>
+                <button className="game-end-dialog-button" onClick={saveUciGame}>{t("game.savePgn")}</button>
+                <button className="game-end-dialog-button" onClick={openUciFilePicker}>{t("game.loadPgn")}</button>
+                <button className="game-end-dialog-button" onClick={openGameSettingsDialog}>{t("game.newGame")}</button>
+                <button className="game-end-dialog-button" onClick={openAnalysisSettingsDialog}>{t("analysis.analyze")}</button>
               </div>
             </div></div>
           )}
