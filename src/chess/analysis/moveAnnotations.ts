@@ -121,9 +121,10 @@ function findBrilliantEvidence(
     1,
     Math.floor(finalDepth * BRILLIANT_EARLY_DEPTH_RATIO)
   );
-  const earlySnapshot = snapshots
-    .filter((snapshot) => snapshot.depth <= earlyDepthLimit)
-    .at(-1);
+  const earlySnapshots = snapshots.filter(
+    (snapshot) => snapshot.depth <= earlyDepthLimit
+  );
+  const earlySnapshot = earlySnapshots[earlySnapshots.length - 1];
   if (!earlySnapshot) {
     return null;
   }
