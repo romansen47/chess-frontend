@@ -58,6 +58,8 @@ const translations = {
   "common.file": { en: "File", de: "Datei", fr: "Fichier" },
   "common.size": { en: "Size", de: "Größe", fr: "Taille" },
 
+  "board.flip": { en: "Flip board", de: "Brett drehen", fr: "Retourner l’échiquier" },
+
   "moves.title": { en: "Moves", de: "Züge", fr: "Coups" },
   "moves.empty": { en: "No moves yet", de: "Noch keine Züge", fr: "Aucun coup pour le moment" },
   "moves.computerThinking": { en: "Computer is thinking…", de: "Computer denkt nach…", fr: "L’ordinateur réfléchit…" },
