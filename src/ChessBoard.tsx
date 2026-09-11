@@ -98,7 +98,7 @@ function formatEngineLineScore(line: EngineLine): string {
   if (line.mateDistance !== undefined && line.mateDistance !== null) {
     const winner = line.eval > 0 ? "White" : "Black";
     const distance = Math.abs(line.mateDistance);
-    return distance > 0 ? `Mate für ${winner} in ${distance}` : `Mate für ${winner}`;
+    return distance > 0 ? `Mate for ${winner} in ${distance}` : `Mate for ${winner}`;
   }
 
   return formatEngineScore(line.eval);
@@ -1662,7 +1662,7 @@ export const ChessBoard: React.FC = () => {
                 <button type="button" className={["engine-bar-wrapper", engineAutoUpdate ? "engine-bar-enabled" : "engine-bar-disabled"].join(" ")}
                   onClick={toggleEngineAutoUpdate} aria-pressed={engineAutoUpdate}
                   aria-label={engineAutoUpdate ? t("game.disableEvaluationEngine") : t("game.enableEvaluationEngine")}
-                  title={engineAutoUpdate ? "Disable evaluation engine" : "Enable evaluation engine · evaluation 0.0"}>
+                  title={engineAutoUpdate ? t("game.disableEvaluationEngine") : `${t("game.enableEvaluationEngine")} · 0.0`}>
                   <div className="engine-bar-white" style={{ height: `${(engineAutoUpdate && liveEvaluationBar != null ? liveEvaluationBar : 0.5) * 100}%` }} />
                   <div className="engine-bar-black" style={{ height: `${(1 - (engineAutoUpdate && liveEvaluationBar != null ? liveEvaluationBar : 0.5)) * 100}%` }} />
                 </button>
