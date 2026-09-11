@@ -18,6 +18,7 @@ interface ChessHeaderProps {
   onTerminateProgram: () => void;
   onToggleEngineSettings: () => void;
   onOpenEngineManager: () => void;
+  onFlipBoard: () => void;
 }
 
 export default function ChessHeader({
@@ -35,6 +36,7 @@ export default function ChessHeader({
   onTerminateProgram,
   onToggleEngineSettings,
   onOpenEngineManager,
+  onFlipBoard,
 }: ChessHeaderProps) {
   const { language, t } = useI18n();
   const analysisBusy = analysisReplayActive && !analysisReplayFinished;
@@ -122,6 +124,15 @@ export default function ChessHeader({
           title={t("engine.managerTitle")}
         >
           {t("engine.manager")}
+        </button>
+
+        <button
+          className="top-engine-button board-flip-button"
+          onClick={onFlipBoard}
+          title={t("board.flip")}
+          aria-label={t("board.flip")}
+        >
+          ↻
         </button>
 
         <LanguageSelector />
