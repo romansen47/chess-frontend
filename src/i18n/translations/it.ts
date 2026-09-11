@@ -344,4 +344,11 @@ export const italianTranslations: Record<string, string> = {
   "game.loadPgnFailed": "Impossibile caricare il file PGN.",
   "analysis.noDeepProfile": "Nessun profilo motore per l’analisi approfondita disponibile.",
   "analysis.variationMoveFailed": "Impossibile eseguire la mossa della variante di analisi.",
+  "analysis.evaluationBoardUnavailable": "La posizione della scacchiera di EvaluationEngine non è disponibile.",
+  "analysis.variationFromPly": "Variante EvaluationEngine dalla semimossa {ply}",
+  "analysis.continuationFromPly": "Continuazione EvaluationEngine dalla semimossa {ply}",
+  "analysis.variationsInfinite": "Varianti EvaluationEngine · infinite",
+  "analysis.evaluationPlyCalculating": "Calcolo della valutazione della semimossa {ply}…",
+  "analysis.terminalPosition": "posizione terminale",
+  "analysis.depthInfinite": "profondità {depth} · infinita",
 };
