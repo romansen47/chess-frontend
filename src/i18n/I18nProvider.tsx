@@ -416,6 +416,16 @@ const translations = {
   "analysis.enableSelectedInfinite": { en: "Enable the evaluation bar to analyze the selected position infinitely.", de: "Aktiviere die Bewertungsleiste, um die ausgewählte Stellung unbegrenzt zu analysieren.", fr: "Activez la barre d’évaluation pour analyser indéfiniment la position sélectionnée." },
   "analysis.evaluationEngine": { en: "Evaluation engine", de: "Bewertungs-Engine", fr: "Moteur d’évaluation" },
   "analysis.history": { en: "Analysis history", de: "Analyseverlauf", fr: "Historique de l’analyse" },
+  "analysis.moveAnnotationLoss": {
+    en: "Loss {loss} · Best move {best}",
+    de: "Verlust {loss} · Bester Zug {best}",
+    fr: "Perte {loss} · Meilleur coup {best}",
+  },
+  "analysis.moveAnnotationOnlyMove": {
+    en: "Only good move · PV1 {best} · PV2 {second}",
+    de: "Einziger guter Zug · PV1 {best} · PV2 {second}",
+    fr: "Seul bon coup · PV1 {best} · PV2 {second}",
+  },
   "analysis.mode": { en: "Analysis mode", de: "Analysemodus", fr: "Mode analyse" },
   "analysis.clickMoveContinuation": { en: "Click a move in the move list to play an engine continuation.", de: "Klicke auf einen Zug in der Zugliste, um eine Engine-Fortsetzung abzuspielen.", fr: "Cliquez sur un coup de la liste pour jouer une suite du moteur." },
   "analysis.selectMoveStoredVariations": { en: "Select a move to show the stored engine variations here.", de: "Wähle einen Zug aus, um hier die gespeicherten Engine-Varianten anzuzeigen.", fr: "Sélectionnez un coup pour afficher ici les variantes moteur enregistrées." },
