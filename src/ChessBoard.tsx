@@ -264,8 +264,29 @@ export const ChessBoard: React.FC = () => {
       !analysisReplayActive
       || !analysisReplayFinished
       || !analysisSelectedPosition
-      || analysisVariationMoves.length > 0
     ) return null;
+
+    if (analysisVariationMoves.length > 0) {
+      if (
+        !analysisEvaluationEnabled
+        || !analysisEvaluation?.moveAnnotationReady
+        || !analysisEvaluation.moveAnnotation
+      ) {
+        return null;
+      }
+
+      const latestVariationMove =
+        analysisVariationMoves[analysisVariationMoves.length - 1];
+      const destination = latestVariationMove?.substring(2, 4);
+      if (!destination || destination.length !== 2) return null;
+
+      return {
+        square: destination,
+        symbol: analysisEvaluation.moveAnnotation.symbol,
+        kind: analysisEvaluation.moveAnnotation.kind,
+      };
+    }
+
     const point = analysisProfile.find(
       (candidate) => candidate.ply === analysisSelectedPosition.ply
     );
@@ -282,7 +303,9 @@ export const ChessBoard: React.FC = () => {
     analysisReplayFinished,
     analysisSelectedPosition,
     analysisProfile,
-    analysisVariationMoves.length,
+    analysisVariationMoves,
+    analysisEvaluationEnabled,
+    analysisEvaluation,
     moveAnnotations,
   ]);
 
@@ -692,7 +715,7 @@ export const ChessBoard: React.FC = () => {
     const key = analysisEvaluationKey(ply, variationSnapshot);
     analysisEvaluationPlyRef.current = ply;
     analysisEvaluationKeyRef.current = key;
-    if (variationSnapshot.length === 0) setAnalysisEvaluation(null);
+    setAnalysisEvaluation(null);
     setAnalysisEvaluationError(null);
     void loadAnalysisEvaluation(ply, variationSnapshot);
     const intervalId = window.setInterval(() => { void loadAnalysisEvaluation(ply, variationSnapshot); }, 2000);
