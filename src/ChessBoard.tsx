@@ -260,7 +260,12 @@ export const ChessBoard: React.FC = () => {
   );
 
   const selectedBoardAnnotation = useMemo<BoardAnnotation | null>(() => {
-    if (!analysisReplayActive || !analysisSelectedPosition) return null;
+    if (
+      !analysisReplayActive
+      || !analysisReplayFinished
+      || !analysisSelectedPosition
+      || analysisVariationMoves.length > 0
+    ) return null;
     const point = analysisProfile.find(
       (candidate) => candidate.ply === analysisSelectedPosition.ply
     );
@@ -270,7 +275,13 @@ export const ChessBoard: React.FC = () => {
       symbol: point.annotation.symbol,
       kind: point.annotation.kind,
     };
-  }, [analysisReplayActive, analysisSelectedPosition, analysisProfile]);
+  }, [
+    analysisReplayActive,
+    analysisReplayFinished,
+    analysisSelectedPosition,
+    analysisProfile,
+    analysisVariationMoves.length,
+  ]);
 
   const squareToPieceMap = useMemo(() => {
     const map = new Map<string, Piece>();
