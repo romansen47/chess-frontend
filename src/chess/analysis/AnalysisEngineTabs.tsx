@@ -1,3 +1,4 @@
+import { useI18n } from "../../i18n/I18nProvider";
 import "./analysisViews.css";
 
 export type AnalysisEngineView = "deep" | "live";
@@ -13,11 +14,13 @@ export default function AnalysisEngineTabs({
   showDeepAnalysis,
   onChange,
 }: AnalysisEngineTabsProps) {
+  const { t } = useI18n();
+
   return (
     <div
       className="analysis-engine-view-tabs"
       role="tablist"
-      aria-label="Analysis engine lines"
+      aria-label={t("analysis.engineLinesAria")}
     >
       {showDeepAnalysis && (
         <button
@@ -32,7 +35,7 @@ export default function AnalysisEngineTabs({
             .join(" ")}
           onClick={() => onChange("deep")}
         >
-          Deep Analysis
+          {t("settings.deepAnalysis")}
         </button>
       )}
       <button
@@ -47,7 +50,7 @@ export default function AnalysisEngineTabs({
           .join(" ")}
         onClick={() => onChange("live")}
       >
-        Live Evaluation
+        {t("settings.liveEvaluation")}
       </button>
     </div>
   );
