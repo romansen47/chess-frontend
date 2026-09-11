@@ -1684,10 +1684,10 @@ export const ChessBoard: React.FC = () => {
                   {engineConfigLoadError && <div className="engine-error">{engineConfigLoadError}</div>}
                 </>}
                 {analysisReplayActive ? renderAnalysisReplayContent() : <>
-                  {evalError && <div className="engine-error">Error: {evalError}</div>}
+                  {evalError && <div className="engine-error">{t("common.error")}: {evalError}</div>}
                   {engineAutoUpdate && engineEval && !clock?.gameState && (
                     <div className="engine-lines">
-                      {engineEval.lines.length > 0 && <div className="engine-lines-summary"><span>{engineEval.engineName || t("analysis.evaluationEngine")}</span><span>depth {engineEval.lines[0].depth}</span></div>}
+                      {engineEval.lines.length > 0 && <div className="engine-lines-summary"><span>{engineEval.engineName || t("analysis.evaluationEngine")}</span><span>{t("analysis.searchDepth", { depth: engineEval.lines[0].depth })}</span></div>}
                       {engineEval.lines.length === 0 && <div className="engine-empty">{t("analysis.noEngineLines")}</div>}
                       {engineEval.lines.map((line, idx) => <div key={idx} className="engine-line"><div className="engine-line-header">#{idx + 1} · {formatEngineLineScore(line)}</div><div className="engine-line-moves">{line.moves}</div></div>)}
                     </div>
@@ -1709,14 +1709,22 @@ export const ChessBoard: React.FC = () => {
                   to: promotionContext.to,
                 })}</p>
                 <div className="promotion-options">
-                  {(["queen", "rook", "bishop", "knight"] as PieceType[]).map((ptype) => (
-                    <button key={ptype} className={`promotion-button promotion-button-${promotionContext.color}`} onClick={async () => {
-                      const ctx = promotionContext;
-                      if (!ctx) return;
-                      setPromotionContext(null);
-                      await performBoardMove(ctx.from, ctx.to, ptype);
-                    }}>{ptype.toUpperCase()}</button>
-                  ))}
+                  {(["queen", "rook", "bishop", "knight"] as PieceType[]).map((ptype) => {
+                    const pieceLabel = {
+                      queen: t("game.pieceQueen"),
+                      rook: t("game.pieceRook"),
+                      bishop: t("game.pieceBishop"),
+                      knight: t("game.pieceKnight"),
+                    }[ptype];
+                    return (
+                      <button key={ptype} className={`promotion-button promotion-button-${promotionContext.color}`} onClick={async () => {
+                        const ctx = promotionContext;
+                        if (!ctx) return;
+                        setPromotionContext(null);
+                        await performBoardMove(ctx.from, ctx.to, ptype);
+                      }}>{pieceLabel}</button>
+                    );
+                  })}
                 </div>
                 <button className="promotion-cancel-button" onClick={() => setPromotionContext(null)}>{t("common.cancel")}</button>
               </div>
