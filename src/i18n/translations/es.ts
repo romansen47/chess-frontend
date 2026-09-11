@@ -290,7 +290,7 @@ export const spanishTranslations: Record<string, string> = {
   "analysis.evaluationEngine": "Motor de evaluación",
   "analysis.history": "Historial del análisis",
   "analysis.moveAnnotationLoss": "Pérdida {loss} · Mejor jugada {best}",
-  "analysis.moveAnnotationOnlyMove": "Única buena jugada · PV1 {best} · PV2 {second}",
+  "analysis.moveAnnotationOnlyMove": "Única buena jugada · Mejor jugada {best} · Segunda mejor {second}",
   "analysis.mode": "Modo de análisis",
   "analysis.clickMoveContinuation": "Haz clic en un movimiento de la lista para reproducir una continuación del motor.",
   "analysis.selectMoveStoredVariations": "Selecciona un movimiento para mostrar aquí las variantes guardadas del motor.",
