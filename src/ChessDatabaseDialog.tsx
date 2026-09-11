@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "./i18n/I18nProvider";
 import "./ChessDatabaseDialog.css";
 
 export interface ChessDatabaseLoadedGame {
@@ -169,6 +170,7 @@ export default function ChessDatabaseDialog({
   onClose,
   onGameLoaded,
 }: ChessDatabaseDialogProps) {
+  const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [view, setView] = useState<DialogView>("overview");
   const [status, setStatus] = useState<DatabaseStatus | null>(null);
@@ -219,7 +221,7 @@ export default function ChessDatabaseDialog({
         setStatusError(nextStatus.message);
       }
     } catch (error) {
-      setStatusError(error instanceof Error ? error.message : "Could not read chess database status.");
+      setStatusError(error instanceof Error ? error.message : t("database.statusReadFailed"));
     } finally {
       setIsStatusLoading(false);
     }
@@ -280,7 +282,7 @@ export default function ChessDatabaseDialog({
         await loadStatus();
       }
     } catch (error) {
-      setImportStartError(error instanceof Error ? error.message : "Could not start PGN database import.");
+      setImportStartError(error instanceof Error ? error.message : t("database.importStartFailed"));
     } finally {
       setIsImportStarting(false);
     }
@@ -305,7 +307,7 @@ export default function ChessDatabaseDialog({
       setImportJob(nextJob);
     } catch (error) {
       setCancelRequested(false);
-      setImportStartError(error instanceof Error ? error.message : "Could not cancel database import.");
+      setImportStartError(error instanceof Error ? error.message : t("database.importCancelFailed"));
     }
   }
 
@@ -350,7 +352,7 @@ export default function ChessDatabaseDialog({
       const result: DatabaseGameSummary[] = await response.json();
       setSearchResults(result);
     } catch (error) {
-      setSearchError(error instanceof Error ? error.message : "Chess database search failed.");
+      setSearchError(error instanceof Error ? error.message : t("database.searchFailed"));
     } finally {
       setIsSearching(false);
     }
@@ -372,7 +374,7 @@ export default function ChessDatabaseDialog({
       await onGameLoaded(game);
       onClose();
     } catch (error) {
-      setSearchError(error instanceof Error ? error.message : "Could not load database game.");
+      setSearchError(error instanceof Error ? error.message : t("database.gameLoadFailed"));
     } finally {
       setLoadingGameId(null);
     }
@@ -398,7 +400,7 @@ export default function ChessDatabaseDialog({
       {view === "overview" && (
         <div className="chess-database-overlay" role="presentation">
           <section className="chess-database-dialog" role="dialog" aria-modal="true" aria-labelledby="chess-database-title">
-            <h2 id="chess-database-title">Chess Database</h2>
+            <h2 id="chess-database-title">{t("database.title")}</h2>
 
             <div className="chess-database-status-card">
               {isStatusLoading && <div className="chess-database-muted">Loading database status…</div>}
@@ -406,18 +408,18 @@ export default function ChessDatabaseDialog({
                 <>
                   <div className="chess-database-status-row">
                     <span>Database</span>
-                    <strong>{status.name || "Chess Database"}</strong>
+                    <strong>{status.name || t("database.title")}</strong>
                   </div>
                   <div className="chess-database-status-row">
-                    <span>File</span>
+                    <span>{t("common.file")}</span>
                     <strong className="chess-database-path" title={status.path}>{status.path}</strong>
                   </div>
                   <div className="chess-database-status-row">
-                    <span>Games</span>
+                    <span>{t("common.games")}</span>
                     <strong>{status.gameCount.toLocaleString()}</strong>
                   </div>
                   <div className="chess-database-status-row">
-                    <span>Size</span>
+                    <span>{t("common.size")}</span>
                     <strong>{formatBytes(status.sizeBytes)}</strong>
                   </div>
                 </>
@@ -426,12 +428,12 @@ export default function ChessDatabaseDialog({
             </div>
 
             <div className="chess-database-actions">
-              <button type="button" onClick={chooseImportFile}>Import PGN…</button>
-              <button type="button" onClick={() => setView("search")}>Search Games…</button>
+              <button type="button" onClick={chooseImportFile}>{t("database.importPgn")}</button>
+              <button type="button" onClick={() => setView("search")}>{t("database.searchGames")}</button>
             </div>
 
             <div className="chess-database-footer">
-              <button type="button" onClick={onClose}>Close</button>
+              <button type="button" onClick={onClose}>{t("common.close")}</button>
             </div>
           </section>
         </div>
@@ -440,7 +442,7 @@ export default function ChessDatabaseDialog({
       {view === "import" && (
         <div className="chess-database-overlay" role="presentation">
           <section className="chess-database-dialog chess-database-import-dialog" role="dialog" aria-modal="true" aria-labelledby="chess-database-import-title">
-            <h2 id="chess-database-import-title">Import PGN Database</h2>
+            <h2 id="chess-database-import-title">{t("database.importTitle")}</h2>
             <div className="chess-database-import-file" title={importJob?.fileName || importFileName}>
               {importJob?.fileName || importFileName}
             </div>
@@ -486,29 +488,29 @@ export default function ChessDatabaseDialog({
                       <div
                         className="chess-database-indeterminate"
                         role="progressbar"
-                        aria-label="Finalizing database"
+                        aria-label={t("database.finalizing")}
                       >
                         <div className="chess-database-indeterminate-bar" />
                       </div>
                     )}
                     <div className="chess-database-import-phase-detail">
                       {finalizationComplete
-                        ? "Database finalization complete."
+                        ? t("database.finalizationComplete")
                         : finalizationActive
                           ? "Merging position statistics and publishing staged games…"
-                          : "Starts after the PGN file has been fully processed."}
+                          : t("database.startsAfterPgn")}
                     </div>
                   </div>
                 </div>
 
                 <div className="chess-database-import-result">
-                  <div><span>Status</span><strong>{importStatusLabel(importJob)}</strong></div>
-                  <div><span>Current operation</span><strong>{importOperationLabel(importJob)}</strong></div>
-                  <div><span>Games processed</span><strong>{importJob.processedGames.toLocaleString()}</strong></div>
-                  <div><span>Games accepted</span><strong>{importJob.importedGames.toLocaleString()}</strong></div>
-                  <div><span>Games skipped</span><strong>{importJob.skippedGames.toLocaleString()}</strong></div>
-                  <div><span>Plies indexed</span><strong>{importJob.totalPlies.toLocaleString()}</strong></div>
-                  <div><span>Elapsed</span><strong>{formatElapsed(importJob.elapsedMillis)}</strong></div>
+                  <div><span>{t("common.status")}</span><strong>{importStatusLabel(importJob)}</strong></div>
+                  <div><span>{t("common.currentOperation")}</span><strong>{importOperationLabel(importJob)}</strong></div>
+                  <div><span>{t("database.gamesProcessed")}</span><strong>{importJob.processedGames.toLocaleString()}</strong></div>
+                  <div><span>{t("database.gamesAccepted")}</span><strong>{importJob.importedGames.toLocaleString()}</strong></div>
+                  <div><span>{t("database.gamesSkipped")}</span><strong>{importJob.skippedGames.toLocaleString()}</strong></div>
+                  <div><span>{t("database.pliesIndexed")}</span><strong>{importJob.totalPlies.toLocaleString()}</strong></div>
+                  <div><span>{t("common.elapsed")}</span><strong>{formatElapsed(importJob.elapsedMillis)}</strong></div>
                 </div>
 
                 {importJob.message && (
@@ -538,24 +540,24 @@ export default function ChessDatabaseDialog({
       {view === "search" && (
         <div className="chess-database-overlay" role="presentation">
           <section className="chess-database-dialog chess-database-search-dialog" role="dialog" aria-modal="true" aria-labelledby="chess-database-search-title">
-            <h2 id="chess-database-search-title">Search Chess Database</h2>
+            <h2 id="chess-database-search-title">{t("database.searchTitle")}</h2>
 
             <div className="chess-database-search-grid">
-              <label><span>Player</span><input value={searchForm.player} onChange={(event) => updateSearchField("player", event.target.value)} /></label>
-              <label><span>White</span><input value={searchForm.white} onChange={(event) => updateSearchField("white", event.target.value)} /></label>
-              <label><span>Black</span><input value={searchForm.black} onChange={(event) => updateSearchField("black", event.target.value)} /></label>
-              <label><span>From year</span><input type="number" min="1000" max="9999" value={searchForm.fromYear} onChange={(event) => updateSearchField("fromYear", event.target.value)} /></label>
-              <label><span>To year</span><input type="number" min="1000" max="9999" value={searchForm.toYear} onChange={(event) => updateSearchField("toYear", event.target.value)} /></label>
+              <label><span>{t("common.player")}</span><input value={searchForm.player} onChange={(event) => updateSearchField("player", event.target.value)} /></label>
+              <label><span>{t("common.white")}</span><input value={searchForm.white} onChange={(event) => updateSearchField("white", event.target.value)} /></label>
+              <label><span>{t("common.black")}</span><input value={searchForm.black} onChange={(event) => updateSearchField("black", event.target.value)} /></label>
+              <label><span>{t("database.fromYear")}</span><input type="number" min="1000" max="9999" value={searchForm.fromYear} onChange={(event) => updateSearchField("fromYear", event.target.value)} /></label>
+              <label><span>{t("database.toYear")}</span><input type="number" min="1000" max="9999" value={searchForm.toYear} onChange={(event) => updateSearchField("toYear", event.target.value)} /></label>
               <label>
-                <span>Result</span>
+                <span>{t("common.result")}</span>
                 <select value={searchForm.result} onChange={(event) => updateSearchField("result", event.target.value)}>
-                  <option value="">Any</option>
+                  <option value="">{t("common.any")}</option>
                   <option value="1-0">1-0</option>
                   <option value="0-1">0-1</option>
                   <option value="1/2-1/2">½-½</option>
                 </select>
               </label>
-              <label><span>Minimum Elo</span><input type="number" min="0" value={searchForm.minElo} onChange={(event) => updateSearchField("minElo", event.target.value)} /></label>
+              <label><span>{t("database.minimumElo")}</span><input type="number" min="0" value={searchForm.minElo} onChange={(event) => updateSearchField("minElo", event.target.value)} /></label>
             </div>
 
             <div className="chess-database-search-actions">
@@ -570,12 +572,12 @@ export default function ChessDatabaseDialog({
               <table className="chess-database-results">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>White</th>
-                    <th>Black</th>
-                    <th>Result</th>
-                    <th>ECO</th>
-                    <th>Event</th>
+                    <th>{t("common.date")}</th>
+                    <th>{t("common.white")}</th>
+                    <th>{t("common.black")}</th>
+                    <th>{t("common.result")}</th>
+                    <th>{t("database.eco")}</th>
+                    <th>{t("common.event")}</th>
                     <th />
                   </tr>
                 </thead>
@@ -603,8 +605,8 @@ export default function ChessDatabaseDialog({
             </div>
 
             <div className="chess-database-footer chess-database-search-footer">
-              <button type="button" onClick={() => setView("overview")} disabled={loadingGameId !== null}>Back</button>
-              <button type="button" onClick={onClose} disabled={loadingGameId !== null}>Close</button>
+              <button type="button" onClick={() => setView("overview")} disabled={loadingGameId !== null}>{t("common.back")}</button>
+              <button type="button" onClick={onClose} disabled={loadingGameId !== null}>{t("common.close")}</button>
             </div>
           </section>
         </div>
