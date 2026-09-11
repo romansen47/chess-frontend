@@ -1406,37 +1406,3 @@
   background: #eb5757;
   color: #ffffff;
 }
-
-.analysis-profile-annotation circle {
-  stroke: rgba(0, 0, 0, 0.35);
-  stroke-width: 0.8;
-}
-
-.analysis-profile-annotation text {
-  font-size: 8px;
-  font-weight: 800;
-}
-
-.analysis-profile-annotation-onlyMove circle {
-  fill: #2f80ed;
-}
-
-.analysis-profile-annotation-onlyMove text {
-  fill: #ffffff;
-}
-
-.analysis-profile-annotation-mistake circle {
-  fill: #f2c94c;
-}
-
-.analysis-profile-annotation-mistake text {
-  fill: #111111;
-}
-
-.analysis-profile-annotation-blunder circle {
-  fill: #eb5757;
-}
-
-.analysis-profile-annotation-blunder text {
-  fill: #ffffff;
-}
