@@ -292,6 +292,8 @@ export const italianTranslations: Record<string, string> = {
   "analysis.moveAnnotationLoss": "Perdita {loss} · Mossa migliore {best}",
   "analysis.moveAnnotationOnlyMove": "Unica buona mossa · Mossa migliore {best} · Seconda migliore {second}",
   "analysis.moveAnnotationBrilliant": "Mossa brillante · profondità {earlyDepth} → {finalDepth} · posizione {earlyRank} → {finalRank} · rivalutata nettamente durante la ricerca",
+  "analysis.moveAnnotationBrilliantMaterial": "Mossa brillante · investimento materiale {material} · posizione finale {finalRank}",
+  "analysis.moveAnnotationBrilliantCombined": "Mossa brillante · profondità {earlyDepth} → {finalDepth} · posizione {earlyRank} → {finalRank} · investimento materiale {material}",
   "analysis.mode": "Modalità analisi",
   "analysis.clickMoveContinuation": "Fai clic su una mossa nell’elenco per riprodurre una continuazione del motore.",
   "analysis.selectMoveStoredVariations": "Seleziona una mossa per mostrare qui le varianti del motore salvate.",
