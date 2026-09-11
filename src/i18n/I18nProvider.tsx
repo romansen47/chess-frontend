@@ -478,6 +478,18 @@ const translations = {
   "analysis.evaluationPlyCalculating": { en: "Evaluation for ply {ply} is being calculated…", de: "Bewertung für Halbzug {ply} wird berechnet…", fr: "Calcul de l’évaluation du demi-coup {ply}…" },
   "analysis.terminalPosition": { en: "terminal position", de: "Endstellung", fr: "position terminale" },
   "analysis.depthInfinite": { en: "depth {depth} · infinite", de: "Tiefe {depth} · unbegrenzt", fr: "profondeur {depth} · infinie" },
+  "common.database": { en: "Database", de: "Datenbank", fr: "Base de données" },
+  "settings.scanningSystem": { en: "Scanning /usr/games and validating UCI handshakes…", de: "/usr/games wird durchsucht und UCI-Handshakes werden geprüft…", fr: "Analyse de /usr/games et validation des handshakes UCI…" },
+  "settings.optionDefault": { en: "default", de: "Standard", fr: "défaut" },
+  "settings.optionMin": { en: "min", de: "Min.", fr: "min" },
+  "settings.optionMax": { en: "max", de: "Max.", fr: "max" },
+  "settings.optionAction": { en: "action", de: "Aktion", fr: "action" },
+  "settings.optionEmpty": { en: "<empty>", de: "<leer>", fr: "<vide>" },
+  "settings.defaultProfileName": { en: "{engine} Profile", de: "{engine} Profil", fr: "Profil {engine}" },
+  "settings.uciOptionsCount": { en: "{count} UCI options", de: "{count} UCI-Optionen", fr: "{count} options UCI" },
+  "engine.stateRunning": { en: "RUNNING", de: "LÄUFT", fr: "EN COURS" },
+  "engine.stateStopped": { en: "STOPPED", de: "GESTOPPT", fr: "ARRÊTÉ" },
+  "engine.stateClosed": { en: "CLOSED", de: "GESCHLOSSEN", fr: "FERMÉ" },
 } satisfies Record<string, Translation>;
 
 const additionalTranslations: Record<"it" | "es", Record<string, string>> = {
