@@ -170,6 +170,27 @@ export interface AnalysisReplaySettings {
   moveTimeSeconds: number;
 }
 
+export type MoveAnnotationSymbol = "!" | "!!" | "?" | "??";
+export type MoveAnnotationKind = "onlyMove" | "brilliant" | "mistake" | "blunder";
+export type BrilliantReason =
+  | "deepDiscovery"
+  | "materialInvestment"
+  | "deepDiscoveryAndMaterialInvestment";
+
+export interface MoveAnnotation {
+  symbol: MoveAnnotationSymbol;
+  kind: MoveAnnotationKind;
+  winChanceLoss?: number | null;
+  bestEvaluation: number;
+  secondBestEvaluation?: number | null;
+  brilliantReason?: BrilliantReason | null;
+  materialInvestment?: number | null;
+  earlyDepth?: number | null;
+  earlyRank?: number | null;
+  finalDepth?: number | null;
+  finalRank?: number | null;
+}
+
 export interface AnalysisProfilePoint {
   ply: number;
   from: string | null;
@@ -179,6 +200,7 @@ export interface AnalysisProfilePoint {
   bar: number;
   depth: number;
   lines?: EngineLine[];
+  annotation?: MoveAnnotation | null;
 }
 
 export interface AnalysisPositionSelection {

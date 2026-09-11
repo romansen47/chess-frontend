@@ -1392,7 +1392,8 @@
   box-sizing: border-box;
 }
 
-.move-annotation-onlyMove {
+.move-annotation-onlyMove,
+.move-annotation-brilliant {
   background: #2f80ed;
   color: #ffffff;
 }

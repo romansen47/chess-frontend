@@ -417,14 +417,29 @@ const translations = {
   "analysis.evaluationEngine": { en: "Evaluation engine", de: "Bewertungs-Engine", fr: "Moteur d’évaluation" },
   "analysis.history": { en: "Analysis history", de: "Analyseverlauf", fr: "Historique de l’analyse" },
   "analysis.moveAnnotationLoss": {
-    en: "Loss {loss} · Best move {best}",
-    de: "Verlust {loss} · Bester Zug {best}",
-    fr: "Perte {loss} · Meilleur coup {best}",
+    en: "Win chance loss {loss} pp · Best move {best}",
+    de: "Gewinnchancenverlust {loss} %-Punkte · Bester Zug {best}",
+    fr: "Perte de chances de gain {loss} points · Meilleur coup {best}",
   },
   "analysis.moveAnnotationOnlyMove": {
     en: "Only good move · Best move {best} · Second best {second}",
     de: "Einziger guter Zug · Bester Zug {best} · Zweitbester Zug {second}",
     fr: "Seul bon coup · Meilleur coup {best} · Deuxième meilleur {second}",
+  },
+  "analysis.moveAnnotationBrilliant": {
+    en: "Brilliant move · depth {earlyDepth} → {finalDepth} · became much stronger during the search",
+    de: "Brillanter Zug · Tiefe {earlyDepth} → {finalDepth} · während der Suche deutlich aufgewertet",
+    fr: "Coup brillant · profondeur {earlyDepth} → {finalDepth} · nettement revalorisé pendant la recherche",
+  },
+  "analysis.moveAnnotationBrilliantMaterial": {
+    en: "Brilliant move · material investment {material}",
+    de: "Brillanter Zug · Materialinvestition {material}",
+    fr: "Coup brillant · investissement matériel {material}",
+  },
+  "analysis.moveAnnotationBrilliantCombined": {
+    en: "Brilliant move · depth {earlyDepth} → {finalDepth} · material investment {material}",
+    de: "Brillanter Zug · Tiefe {earlyDepth} → {finalDepth} · Materialinvestition {material}",
+    fr: "Coup brillant · profondeur {earlyDepth} → {finalDepth} · investissement matériel {material}",
   },
   "analysis.mode": { en: "Analysis mode", de: "Analysemodus", fr: "Mode analyse" },
   "analysis.clickMoveContinuation": { en: "Click a move in the move list to play an engine continuation.", de: "Klicke auf einen Zug in der Zugliste, um eine Engine-Fortsetzung abzuspielen.", fr: "Cliquez sur un coup de la liste pour jouer une suite du moteur." },
