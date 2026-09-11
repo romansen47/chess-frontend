@@ -20,6 +20,8 @@ interface MovePanelActions {
   showPreview: (event: MouseEvent<HTMLElement>, position: string | undefined) => void;
   movePreview: (event: MouseEvent<HTMLElement>) => void;
   hidePreview: () => void;
+  showAnnotationTooltip: (text: string) => void;
+  hideAnnotationTooltip: () => void;
   selectPosition: (
     position: string | undefined,
     san: string | undefined,
@@ -111,8 +113,9 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
     return (
       <span
         className={`move-annotation move-annotation-${annotation.kind}`}
-        title={getAnnotationTitle(annotation)}
         aria-label={getAnnotationTitle(annotation)}
+        onMouseEnter={() => actions.showAnnotationTooltip(getAnnotationTitle(annotation))}
+        onMouseLeave={actions.hideAnnotationTooltip}
       >
         {annotation.symbol}
       </span>

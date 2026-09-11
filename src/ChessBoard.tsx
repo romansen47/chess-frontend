@@ -35,7 +35,7 @@ import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
 import AnalysisEngineTabs, { type AnalysisEngineView } from "./chess/analysis/AnalysisEngineTabs";
 import LiveEvaluationView from "./chess/analysis/LiveEvaluationView";
 import { buildMoveAnnotations } from "./chess/analysis/moveAnnotations";
-import Board from "./chess/board/Board";
+import Board, { type BoardAnnotation } from "./chess/board/Board";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 import {
   createInitialPieces,
@@ -149,6 +149,7 @@ export const ChessBoard: React.FC = () => {
   const [moves, setMoves] = useState<MoveRow[]>([]);
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
   const [hoverPreview, setHoverPreview] = useState<HoverPreview | null>(null);
+  const [hoverAnnotationText, setHoverAnnotationText] = useState<string | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const boardContainerRef = useRef<HTMLDivElement | null>(null);
   const possibleTargetsRef = useRef<string[]>([]);
@@ -258,6 +259,29 @@ export const ChessBoard: React.FC = () => {
     [analysisProfile]
   );
 
+  const selectedBoardAnnotation = useMemo<BoardAnnotation | null>(() => {
+    if (
+      !analysisReplayActive
+      || !analysisReplayFinished
+      || !analysisSelectedPosition
+      || analysisVariationMoves.length > 0
+    ) return null;
+    const point = analysisProfile.find(
+      (candidate) => candidate.ply === analysisSelectedPosition.ply
+    );
+    if (!point?.annotation || !point.to) return null;
+    return {
+      square: point.to,
+      symbol: point.annotation.symbol,
+      kind: point.annotation.kind,
+    };
+  }, [
+    analysisReplayActive,
+    analysisReplayFinished,
+    analysisSelectedPosition,
+    analysisProfile,
+    analysisVariationMoves.length,
+  ]);
 
   const squareToPieceMap = useMemo(() => {
     const map = new Map<string, Piece>();
@@ -1027,7 +1051,16 @@ export const ChessBoard: React.FC = () => {
   function moveMovePreview(event: React.MouseEvent<HTMLElement>) {
     setHoverPreview((prev) => prev ? { ...prev, x: event.clientX, y: event.clientY } : prev);
   }
-  function hidePreview() { setHoverPreview(null); }
+  function hidePreview() {
+    setHoverPreview(null);
+    setHoverAnnotationText(null);
+  }
+  function showAnnotationTooltip(text: string) {
+    setHoverAnnotationText(text);
+  }
+  function hideAnnotationTooltip() {
+    setHoverAnnotationText(null);
+  }
 
   function selectAnalysisPosition(position: string | undefined, san: string | undefined, ply: number) {
     if (!analysisReplayActiveRef.current || !position || position.length !== 64) return;
@@ -1326,8 +1359,18 @@ export const ChessBoard: React.FC = () => {
     if (!hoverPreview) return null;
     const previewSize = 240;
     const offset = 18;
-    const left = Math.max(offset, Math.min(hoverPreview.x + offset, window.innerWidth - previewSize - offset));
-    const top = Math.max(offset, Math.min(hoverPreview.y + offset, window.innerHeight - previewSize - offset));
+    const tooltipGap = 8;
+    const tooltipReserveHeight = hoverAnnotationText ? 72 : 0;
+    const combinedHeight = previewSize
+      + (hoverAnnotationText ? tooltipGap + tooltipReserveHeight : 0);
+    const left = Math.max(
+      offset,
+      Math.min(hoverPreview.x + offset, window.innerWidth - previewSize - offset)
+    );
+    const top = Math.max(
+      offset,
+      Math.min(hoverPreview.y + offset, window.innerHeight - combinedHeight - offset)
+    );
     const squares: ReactElement[] = [];
     for (let i = 0; i < 64; i++) {
       const rankFromTop = Math.floor(i / 8);
@@ -1341,7 +1384,19 @@ export const ChessBoard: React.FC = () => {
         </div>
       );
     }
-    return <div className="hover-board" style={{ left, top }}>{squares}</div>;
+    return (
+      <>
+        <div className="hover-board" style={{ left, top }}>{squares}</div>
+        {hoverAnnotationText && (
+          <div
+            className="hover-annotation-tooltip"
+            style={{ left, top: top + previewSize + tooltipGap }}
+          >
+            {hoverAnnotationText}
+          </div>
+        )}
+      </>
+    );
   };
 
   const renderAnalysisProfile = () => {
@@ -1627,7 +1682,14 @@ export const ChessBoard: React.FC = () => {
               error: loadError,
               annotations: analysisReplayActive ? moveAnnotations : {},
             }}
-            actions={{ showPreview: showMovePreview, movePreview: moveMovePreview, hidePreview, selectPosition: selectAnalysisPosition }}
+            actions={{
+              showPreview: showMovePreview,
+              movePreview: moveMovePreview,
+              hidePreview,
+              showAnnotationTooltip,
+              hideAnnotationTooltip,
+              selectPosition: selectAnalysisPosition,
+            }}
           />
 
           <section className="board-column">
@@ -1638,6 +1700,7 @@ export const ChessBoard: React.FC = () => {
                 lastMove={lastMove}
                 possibleTargets={possibleTargets}
                 dragState={dragState}
+                annotation={selectedBoardAnnotation}
                 boardContainerRef={boardContainerRef}
                 onSquareClick={handleSquareClick}
                 onPiecePointerDown={handlePiecePointerDown}
