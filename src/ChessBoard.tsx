@@ -269,11 +269,13 @@ export const ChessBoard: React.FC = () => {
     const point = analysisProfile.find(
       (candidate) => candidate.ply === analysisSelectedPosition.ply
     );
-    if (!point?.annotation || !point.to) return null;
+    const annotation =
+      moveAnnotations[analysisSelectedPosition.ply];
+    if (!point?.to || !annotation) return null;
     return {
       square: point.to,
-      symbol: point.annotation.symbol,
-      kind: point.annotation.kind,
+      symbol: annotation.symbol,
+      kind: annotation.kind,
     };
   }, [
     analysisReplayActive,
@@ -281,6 +283,7 @@ export const ChessBoard: React.FC = () => {
     analysisSelectedPosition,
     analysisProfile,
     analysisVariationMoves.length,
+    moveAnnotations,
   ]);
 
   const squareToPieceMap = useMemo(() => {
@@ -695,6 +698,62 @@ export const ChessBoard: React.FC = () => {
     const intervalId = window.setInterval(() => { void loadAnalysisEvaluation(ply, variationSnapshot); }, 2000);
     return () => window.clearInterval(intervalId);
   }, [analysisReplayActive, analysisReplayFinished, analysisEvaluationEnabled, analysisSelectedPosition?.ply, analysisVariationMoves]);
+
+
+  useEffect(() => {
+    if (
+      !analysisReplayActive
+      || !analysisReplayFinished
+      || !analysisEvaluationEnabled
+      || !analysisSelectedPosition
+      || analysisVariationMoves.length > 0
+      || !analysisEvaluation?.moveAnnotationReady
+    ) {
+      return;
+    }
+
+    const ply = analysisSelectedPosition.ply;
+    const liveAnnotation = analysisEvaluation.moveAnnotation ?? null;
+
+    setAnalysisProfile((previous) => {
+      let changed = false;
+      const next = previous.map((point) => {
+        if (point.ply !== ply) return point;
+
+        const current = point.annotation ?? null;
+        const sameAnnotation =
+          current === liveAnnotation
+          || (
+            current !== null
+            && liveAnnotation !== null
+            && current.symbol === liveAnnotation.symbol
+            && current.kind === liveAnnotation.kind
+            && current.winChanceLoss === liveAnnotation.winChanceLoss
+            && current.bestEvaluation === liveAnnotation.bestEvaluation
+            && current.secondBestEvaluation === liveAnnotation.secondBestEvaluation
+            && current.brilliantReason === liveAnnotation.brilliantReason
+            && current.materialInvestment === liveAnnotation.materialInvestment
+            && current.earlyDepth === liveAnnotation.earlyDepth
+            && current.earlyRank === liveAnnotation.earlyRank
+            && current.finalDepth === liveAnnotation.finalDepth
+            && current.finalRank === liveAnnotation.finalRank
+          );
+
+        if (sameAnnotation) return point;
+        changed = true;
+        return { ...point, annotation: liveAnnotation };
+      });
+
+      return changed ? next : previous;
+    });
+  }, [
+    analysisReplayActive,
+    analysisReplayFinished,
+    analysisEvaluationEnabled,
+    analysisSelectedPosition,
+    analysisVariationMoves.length,
+    analysisEvaluation,
+  ]);
 
   function openAnalysisSettingsDialog() {
     setAnalysisReplayError(null);
