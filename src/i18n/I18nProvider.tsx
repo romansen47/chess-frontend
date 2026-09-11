@@ -471,6 +471,13 @@ const translations = {
   "game.loadPgnFailed": { en: "Could not load the PGN file.", de: "PGN-Datei konnte nicht geladen werden.", fr: "Impossible de charger le fichier PGN." },
   "analysis.noDeepProfile": { en: "No deep analysis engine profile is available.", de: "Kein Engine-Profil für die Tiefenanalyse verfügbar.", fr: "Aucun profil de moteur d’analyse approfondie n’est disponible." },
   "analysis.variationMoveFailed": { en: "Failed to execute the analysis variation move.", de: "Zug der Analysevariante konnte nicht ausgeführt werden.", fr: "Impossible d’exécuter le coup de la variante d’analyse." },
+  "analysis.evaluationBoardUnavailable": { en: "The EvaluationEngine board position is not available.", de: "Die Brettstellung der EvaluationEngine ist nicht verfügbar.", fr: "La position d’échiquier de l’EvaluationEngine n’est pas disponible." },
+  "analysis.variationFromPly": { en: "EvaluationEngine variation from ply {ply}", de: "EvaluationEngine-Variante ab Halbzug {ply}", fr: "Variante EvaluationEngine à partir du demi-coup {ply}" },
+  "analysis.continuationFromPly": { en: "EvaluationEngine continuation from ply {ply}", de: "EvaluationEngine-Fortsetzung ab Halbzug {ply}", fr: "Suite EvaluationEngine à partir du demi-coup {ply}" },
+  "analysis.variationsInfinite": { en: "EvaluationEngine variations · infinite", de: "EvaluationEngine-Varianten · unbegrenzt", fr: "Variantes EvaluationEngine · infinies" },
+  "analysis.evaluationPlyCalculating": { en: "Evaluation for ply {ply} is being calculated…", de: "Bewertung für Halbzug {ply} wird berechnet…", fr: "Calcul de l’évaluation du demi-coup {ply}…" },
+  "analysis.terminalPosition": { en: "terminal position", de: "Endstellung", fr: "position terminale" },
+  "analysis.depthInfinite": { en: "depth {depth} · infinite", de: "Tiefe {depth} · unbegrenzt", fr: "profondeur {depth} · infinie" },
 } satisfies Record<string, Translation>;
 
 const additionalTranslations: Record<"it" | "es", Record<string, string>> = {
