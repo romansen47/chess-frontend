@@ -292,6 +292,8 @@ export const spanishTranslations: Record<string, string> = {
   "analysis.moveAnnotationLoss": "Pérdida {loss} · Mejor jugada {best}",
   "analysis.moveAnnotationOnlyMove": "Única buena jugada · Mejor jugada {best} · Segunda mejor {second}",
   "analysis.moveAnnotationBrilliant": "Jugada brillante · profundidad {earlyDepth} → {finalDepth} · puesto {earlyRank} → {finalRank} · mejoró claramente durante la búsqueda",
+  "analysis.moveAnnotationBrilliantMaterial": "Jugada brillante · inversión material {material} · puesto final {finalRank}",
+  "analysis.moveAnnotationBrilliantCombined": "Jugada brillante · profundidad {earlyDepth} → {finalDepth} · puesto {earlyRank} → {finalRank} · inversión material {material}",
   "analysis.mode": "Modo de análisis",
   "analysis.clickMoveContinuation": "Haz clic en un movimiento de la lista para reproducir una continuación del motor.",
   "analysis.selectMoveStoredVariations": "Selecciona un movimiento para mostrar aquí las variantes guardadas del motor.",
