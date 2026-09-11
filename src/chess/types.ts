@@ -139,6 +139,9 @@ export interface EngineEvaluation {
   bar: number;
   engineName?: string | null;
   lines: EngineLine[];
+  moveAnnotationReady?: boolean;
+  moveAnnotationDepth?: number;
+  moveAnnotation?: MoveAnnotation | null;
 }
 
 export interface ClockState {
