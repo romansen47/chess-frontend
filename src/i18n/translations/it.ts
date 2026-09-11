@@ -290,7 +290,7 @@ export const italianTranslations: Record<string, string> = {
   "analysis.evaluationEngine": "Motore di valutazione",
   "analysis.history": "Cronologia analisi",
   "analysis.moveAnnotationLoss": "Perdita {loss} · Mossa migliore {best}",
-  "analysis.moveAnnotationOnlyMove": "Unica buona mossa · PV1 {best} · PV2 {second}",
+  "analysis.moveAnnotationOnlyMove": "Unica buona mossa · Mossa migliore {best} · Seconda migliore {second}",
   "analysis.mode": "Modalità analisi",
   "analysis.clickMoveContinuation": "Fai clic su una mossa nell’elenco per riprodurre una continuazione del motore.",
   "analysis.selectMoveStoredVariations": "Seleziona una mossa per mostrare qui le varianti del motore salvate.",
