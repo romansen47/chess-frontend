@@ -289,7 +289,7 @@ export const italianTranslations: Record<string, string> = {
   "analysis.enableSelectedInfinite": "Abilita la barra di valutazione per analizzare senza limite la posizione selezionata.",
   "analysis.evaluationEngine": "Motore di valutazione",
   "analysis.history": "Cronologia analisi",
-  "analysis.moveAnnotationLoss": "Perdita {loss} · Mossa migliore {best}",
+  "analysis.moveAnnotationLoss": "Perdita di probabilità di vittoria {loss} punti · Mossa migliore {best}",
   "analysis.moveAnnotationOnlyMove": "Unica buona mossa · Mossa migliore {best} · Seconda migliore {second}",
   "analysis.moveAnnotationBrilliant": "Mossa brillante · profondità {earlyDepth} → {finalDepth} · posizione {earlyRank} → {finalRank} · rivalutata nettamente durante la ricerca",
   "analysis.moveAnnotationBrilliantMaterial": "Mossa brillante · investimento materiale {material} · posizione finale {finalRank}",
