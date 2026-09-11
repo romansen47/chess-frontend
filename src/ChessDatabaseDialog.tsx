@@ -407,7 +407,7 @@ export default function ChessDatabaseDialog({
               {!isStatusLoading && status && (
                 <>
                   <div className="chess-database-status-row">
-                    <span>Database</span>
+                    <span>{t("common.database")}</span>
                     <strong>{status.name || t("database.title")}</strong>
                   </div>
                   <div className="chess-database-status-row">
