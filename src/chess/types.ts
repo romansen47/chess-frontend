@@ -180,7 +180,7 @@ export type BrilliantReason =
 export interface MoveAnnotation {
   symbol: MoveAnnotationSymbol;
   kind: MoveAnnotationKind;
-  loss?: number | null;
+  winChanceLoss?: number | null;
   bestEvaluation: number;
   secondBestEvaluation?: number | null;
   brilliantReason?: BrilliantReason | null;
