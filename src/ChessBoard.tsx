@@ -254,8 +254,8 @@ export const ChessBoard: React.FC = () => {
     [engineConfigOverview, selectedAnalysisProfile?.engineId]
   );
   const moveAnnotations = useMemo(
-    () => buildMoveAnnotations(analysisProfile, moves),
-    [analysisProfile, moves]
+    () => buildMoveAnnotations(analysisProfile),
+    [analysisProfile]
   );
 
 
