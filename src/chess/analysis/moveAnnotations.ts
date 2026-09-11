@@ -49,6 +49,9 @@ export function buildMoveAnnotations(
     // in that case positive "only move" annotations are deliberately omitted.
     if (!previous || !actualPosition || lines.length === 0) continue;
 
+    // Do not trust the engine's MultiPV numbering as a quality ranking.
+    // Engines can emit the variants in different orders, so rank them here
+    // by the normalized score from the point of view of the player to move.
     const candidates = lines
       .filter((line) => (line.positions?.length ?? 0) > 1)
       .slice()
