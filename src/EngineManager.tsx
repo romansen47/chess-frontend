@@ -25,7 +25,7 @@ interface EngineLogEntry {
 }
 
 interface EngineManagerProps {
-  on{t("common.close")}: () => void;
+  onClose: () => void;
 }
 
 function formatTimestamp(value: string | null): string {
@@ -37,7 +37,7 @@ function formatTimestamp(value: string | null): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
-export default function EngineManager({ on{t("common.close")} }: EngineManagerProps) {
+export default function EngineManager({ onClose }: EngineManagerProps) {
   const { t } = useI18n();
   const [instances, setInstances] = useState<EngineProcessInfo[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -278,7 +278,7 @@ export default function EngineManager({ on{t("common.close")} }: EngineManagerPr
   }
 
   return (
-    <div className="engine-manager-backdrop" role="presentation" onMouseDown={on{t("common.close")}}>
+    <div className="engine-manager-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="engine-manager-dialog"
         role="dialog"
@@ -300,7 +300,7 @@ export default function EngineManager({ on{t("common.close")} }: EngineManagerPr
             <button type="button" onClick={() => void loadInstances()}>
               {t("common.refresh")}
             </button>
-            <button type="button" onClick={on{t("common.close")}}>
+            <button type="button" onClick={onClose}>
               {t("common.close")}
             </button>
           </div>
