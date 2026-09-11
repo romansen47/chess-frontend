@@ -1,6 +1,7 @@
 import type { MouseEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { MoveRow } from "../types";
+import type { MoveAnnotation } from "../analysis/moveAnnotations";
 import PgnImportProblemDialog, { isPgnImportProblem } from "./PgnImportProblemDialog";
 
 interface MovePanelState {
@@ -13,6 +14,7 @@ interface MovePanelState {
   loadingMoves: boolean;
   computerThinking: boolean;
   error: string | null;
+  annotations: Record<number, MoveAnnotation>;
 }
 
 interface MovePanelActions {
@@ -34,6 +36,17 @@ interface MovePanelProps {
 export default function MovePanel({ state, actions }: MovePanelProps) {
   const { t } = useI18n();
   const pgnImportProblem = isPgnImportProblem(state.error);
+
+  function renderAnnotation(ply: number) {
+    const annotation = state.annotations[ply];
+    if (!annotation) return null;
+    const tone = annotation.symbol === "!" ? "positive" : "negative";
+    return (
+      <span className={`move-annotation move-annotation-${tone}`} title={annotation.title}>
+        {annotation.symbol}
+      </span>
+    );
+  }
 
   return (
     <section className="moves-panel">
@@ -109,7 +122,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
                 )
               }
             >
-              {row.white ?? ""}
+              {row.white ?? ""}{renderAnnotation((row.moveNumber - 1) * 2 + 1)}
             </span>
             <span
               className={[
@@ -133,7 +146,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
                 )
               }
             >
-              {row.black ?? ""}
+              {row.black ?? ""}{renderAnnotation(row.moveNumber * 2)}
             </span>
           </div>
         ))}
