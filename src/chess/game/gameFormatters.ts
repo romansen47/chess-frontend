@@ -78,6 +78,7 @@ export function formatGameState(gameState: string | null | undefined, clock?: Cl
     case "LOST_ON_TIME": return formatLostOnTime(clock);
     case "DRAW_BY_50_MOVES_RULE": return "Draw by the fifty-move rule.";
     case "DRAW_BY_THREEFOLD_REPETITION": return "Draw by threefold repetition.";
+    case "DRAW_BY_INSUFFICIENT_MATERIAL": return "Draw by insufficient mating material.";
     default: return gameState ? `Game ended: ${gameState}` : "The game has ended.";
   }
 }
