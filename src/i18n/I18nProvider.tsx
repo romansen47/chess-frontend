@@ -490,6 +490,11 @@ const translations = {
   "engine.stateRunning": { en: "RUNNING", de: "LÄUFT", fr: "EN COURS" },
   "engine.stateStopped": { en: "STOPPED", de: "GESTOPPT", fr: "ARRÊTÉ" },
   "engine.stateClosed": { en: "CLOSED", de: "GESCHLOSSEN", fr: "FERMÉ" },
+  "common.error": { en: "Error", de: "Fehler", fr: "Erreur" },
+  "game.pieceQueen": { en: "Queen", de: "Dame", fr: "Dame" },
+  "game.pieceRook": { en: "Rook", de: "Turm", fr: "Tour" },
+  "game.pieceBishop": { en: "Bishop", de: "Läufer", fr: "Fou" },
+  "game.pieceKnight": { en: "Knight", de: "Springer", fr: "Cavalier" },
 } satisfies Record<string, Translation>;
 
 const additionalTranslations: Record<"it" | "es", Record<string, string>> = {
