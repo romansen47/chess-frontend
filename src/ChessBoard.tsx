@@ -259,34 +259,6 @@ export const ChessBoard: React.FC = () => {
     [analysisProfile]
   );
 
-  const effectiveMoveAnnotations = useMemo(() => {
-    const effective = { ...moveAnnotations };
-    if (
-      analysisReplayActive
-      && analysisReplayFinished
-      && analysisEvaluationEnabled
-      && analysisSelectedPosition
-      && analysisVariationMoves.length === 0
-      && analysisEvaluation?.moveAnnotationReady
-    ) {
-      const ply = analysisSelectedPosition.ply;
-      if (analysisEvaluation.moveAnnotation) {
-        effective[ply] = analysisEvaluation.moveAnnotation;
-      } else {
-        delete effective[ply];
-      }
-    }
-    return effective;
-  }, [
-    moveAnnotations,
-    analysisReplayActive,
-    analysisReplayFinished,
-    analysisEvaluationEnabled,
-    analysisSelectedPosition,
-    analysisVariationMoves.length,
-    analysisEvaluation,
-  ]);
-
   const selectedBoardAnnotation = useMemo<BoardAnnotation | null>(() => {
     if (
       !analysisReplayActive
@@ -298,7 +270,7 @@ export const ChessBoard: React.FC = () => {
       (candidate) => candidate.ply === analysisSelectedPosition.ply
     );
     const annotation =
-      effectiveMoveAnnotations[analysisSelectedPosition.ply];
+      moveAnnotations[analysisSelectedPosition.ply];
     if (!point?.to || !annotation) return null;
     return {
       square: point.to,
@@ -311,7 +283,7 @@ export const ChessBoard: React.FC = () => {
     analysisSelectedPosition,
     analysisProfile,
     analysisVariationMoves.length,
-    effectiveMoveAnnotations,
+    moveAnnotations,
   ]);
 
   const squareToPieceMap = useMemo(() => {
@@ -726,6 +698,62 @@ export const ChessBoard: React.FC = () => {
     const intervalId = window.setInterval(() => { void loadAnalysisEvaluation(ply, variationSnapshot); }, 2000);
     return () => window.clearInterval(intervalId);
   }, [analysisReplayActive, analysisReplayFinished, analysisEvaluationEnabled, analysisSelectedPosition?.ply, analysisVariationMoves]);
+
+
+  useEffect(() => {
+    if (
+      !analysisReplayActive
+      || !analysisReplayFinished
+      || !analysisEvaluationEnabled
+      || !analysisSelectedPosition
+      || analysisVariationMoves.length > 0
+      || !analysisEvaluation?.moveAnnotationReady
+    ) {
+      return;
+    }
+
+    const ply = analysisSelectedPosition.ply;
+    const liveAnnotation = analysisEvaluation.moveAnnotation ?? null;
+
+    setAnalysisProfile((previous) => {
+      let changed = false;
+      const next = previous.map((point) => {
+        if (point.ply !== ply) return point;
+
+        const current = point.annotation ?? null;
+        const sameAnnotation =
+          current === liveAnnotation
+          || (
+            current !== null
+            && liveAnnotation !== null
+            && current.symbol === liveAnnotation.symbol
+            && current.kind === liveAnnotation.kind
+            && current.winChanceLoss === liveAnnotation.winChanceLoss
+            && current.bestEvaluation === liveAnnotation.bestEvaluation
+            && current.secondBestEvaluation === liveAnnotation.secondBestEvaluation
+            && current.brilliantReason === liveAnnotation.brilliantReason
+            && current.materialInvestment === liveAnnotation.materialInvestment
+            && current.earlyDepth === liveAnnotation.earlyDepth
+            && current.earlyRank === liveAnnotation.earlyRank
+            && current.finalDepth === liveAnnotation.finalDepth
+            && current.finalRank === liveAnnotation.finalRank
+          );
+
+        if (sameAnnotation) return point;
+        changed = true;
+        return { ...point, annotation: liveAnnotation };
+      });
+
+      return changed ? next : previous;
+    });
+  }, [
+    analysisReplayActive,
+    analysisReplayFinished,
+    analysisEvaluationEnabled,
+    analysisSelectedPosition,
+    analysisVariationMoves.length,
+    analysisEvaluation,
+  ]);
 
   function openAnalysisSettingsDialog() {
     setAnalysisReplayError(null);
@@ -1711,7 +1739,7 @@ export const ChessBoard: React.FC = () => {
               loadingMoves: isLoadingMoves,
               computerThinking: isComputerThinking,
               error: loadError,
-              annotations: analysisReplayActive ? effectiveMoveAnnotations : {},
+              annotations: analysisReplayActive ? moveAnnotations : {},
             }}
             actions={{
               showPreview: showMovePreview,
