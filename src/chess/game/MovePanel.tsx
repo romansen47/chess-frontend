@@ -1,7 +1,6 @@
 import type { MouseEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { MoveRow } from "../types";
-import type { MoveAnnotation } from "../analysis/moveAnnotations";
+import type { MoveAnnotation, MoveRow } from "../types";
 import PgnImportProblemDialog, { isPgnImportProblem } from "./PgnImportProblemDialog";
 
 interface MovePanelState {
