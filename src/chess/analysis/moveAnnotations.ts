@@ -23,6 +23,11 @@ export interface MoveAnnotation {
 }
 
 const ONLY_MOVE_WIN_PERCENT_GAP = 15.0;
+const ONLY_MOVE_TRIVIAL_EARLY_START_RATIO = 0.30;
+const ONLY_MOVE_TRIVIAL_EARLY_END_RATIO = 0.50;
+const ONLY_MOVE_TRIVIAL_WIN_PERCENT_GAP = 10.0;
+const ONLY_MOVE_TRIVIAL_SNAPSHOT_RATIO = 0.70;
+const ONLY_MOVE_TRIVIAL_MIN_SNAPSHOTS = 2;
 const BRILLIANT_MAX_FINAL_RANK = 3;
 const BRILLIANT_EARLY_DEPTH_RATIO = 0.60;
 const BRILLIANT_LATE_DEPTH_RATIO = 0.75;
@@ -74,6 +79,67 @@ interface BrilliantEvidence {
   earlyRank?: number;
   finalDepth: number;
   finalRank: number;
+}
+
+function isTrivialOnlyMove(
+  previous: AnalysisProfilePoint,
+  actualPosition: string,
+  ply: number
+): boolean {
+  const snapshots = (previous.depthSnapshots ?? [])
+    .filter((snapshot) => snapshot.depth > 0 && snapshot.candidates.length >= 2)
+    .slice()
+    .sort((left, right) => left.depth - right.depth);
+
+  if (snapshots.length < ONLY_MOVE_TRIVIAL_MIN_SNAPSHOTS) {
+    return false;
+  }
+
+  const finalDepth = Math.max(
+    previous.depth,
+    snapshots[snapshots.length - 1]?.depth ?? 0
+  );
+  if (finalDepth <= 0) {
+    return false;
+  }
+
+  const earlyStartDepth = Math.max(
+    1,
+    Math.ceil(finalDepth * ONLY_MOVE_TRIVIAL_EARLY_START_RATIO)
+  );
+  const earlyEndDepth = Math.max(
+    earlyStartDepth,
+    Math.floor(finalDepth * ONLY_MOVE_TRIVIAL_EARLY_END_RATIO)
+  );
+
+  const earlySnapshots = snapshots.filter(
+    (snapshot) =>
+      snapshot.depth >= earlyStartDepth && snapshot.depth <= earlyEndDepth
+  );
+
+  if (earlySnapshots.length < ONLY_MOVE_TRIVIAL_MIN_SNAPSHOTS) {
+    return false;
+  }
+
+  const obviousSnapshots = earlySnapshots.filter((snapshot) => {
+    const ranked = rankDepthCandidates(snapshot, ply);
+    if (ranked.length < 2 || ranked[0].position !== actualPosition) {
+      return false;
+    }
+
+    const bestScore = moverScore(ranked[0].evaluation, ply);
+    const secondBestScore = moverScore(ranked[1].evaluation, ply);
+    const winPercentGap =
+      winPercentFromMoverScore(bestScore) -
+      winPercentFromMoverScore(secondBestScore);
+
+    return winPercentGap >= ONLY_MOVE_TRIVIAL_WIN_PERCENT_GAP;
+  }).length;
+
+  return (
+    obviousSnapshots / earlySnapshots.length >=
+    ONLY_MOVE_TRIVIAL_SNAPSHOT_RATIO
+  );
 }
 
 function findBrilliantEvidence(
@@ -273,7 +339,16 @@ export function buildMoveAnnotations(
         winPercentFromMoverScore(bestScore) -
         winPercentFromMoverScore(secondBestScore);
 
-      if (winPercentGap >= ONLY_MOVE_WIN_PERCENT_GAP) {
+      const trivialBestMove = isTrivialOnlyMove(
+        previous,
+        actualPosition,
+        ply
+      );
+
+      if (
+        winPercentGap >= ONLY_MOVE_WIN_PERCENT_GAP &&
+        !trivialBestMove
+      ) {
         result[ply] = {
           symbol: "!",
           kind: "onlyMove",
