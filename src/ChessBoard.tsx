@@ -1711,7 +1711,7 @@ export const ChessBoard: React.FC = () => {
               loadingMoves: isLoadingMoves,
               computerThinking: isComputerThinking,
               error: loadError,
-              annotations: analysisReplayActive ? moveAnnotations : {},
+              annotations: analysisReplayActive ? effectiveMoveAnnotations : {},
             }}
             actions={{
               showPreview: showMovePreview,
