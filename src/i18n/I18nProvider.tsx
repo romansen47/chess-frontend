@@ -426,6 +426,11 @@ const translations = {
     de: "Einziger guter Zug · Bester Zug {best} · Zweitbester Zug {second}",
     fr: "Seul bon coup · Meilleur coup {best} · Deuxième meilleur {second}",
   },
+  "analysis.moveAnnotationBrilliant": {
+    en: "Brilliant move · depth {earlyDepth} → {finalDepth} · rank {earlyRank} → {finalRank} · became much stronger during the search",
+    de: "Brillanter Zug · Tiefe {earlyDepth} → {finalDepth} · Rang {earlyRank} → {finalRank} · während der Suche deutlich aufgewertet",
+    fr: "Coup brillant · profondeur {earlyDepth} → {finalDepth} · rang {earlyRank} → {finalRank} · nettement revalorisé pendant la recherche",
+  },
   "analysis.mode": { en: "Analysis mode", de: "Analysemodus", fr: "Mode analyse" },
   "analysis.clickMoveContinuation": { en: "Click a move in the move list to play an engine continuation.", de: "Klicke auf einen Zug in der Zugliste, um eine Engine-Fortsetzung abzuspielen.", fr: "Cliquez sur un coup de la liste pour jouer une suite du moteur." },
   "analysis.selectMoveStoredVariations": { en: "Select a move to show the stored engine variations here.", de: "Wähle einen Zug aus, um hier die gespeicherten Engine-Varianten anzuzeigen.", fr: "Sélectionnez un coup pour afficher ici les variantes moteur enregistrées." },
