@@ -1,6 +1,18 @@
 import type { PointerEvent, RefObject } from "react";
-import type { DragState, LastMove, Piece } from "../types";
+import type {
+  DragState,
+  LastMove,
+  MoveAnnotationKind,
+  MoveAnnotationSymbol,
+  Piece,
+} from "../types";
 import { getPieceSymbol, squareName } from "./boardUtils";
+
+export interface BoardAnnotation {
+  square: string;
+  symbol: MoveAnnotationSymbol;
+  kind: MoveAnnotationKind;
+}
 
 interface BoardProps {
   pieces: Piece[];
@@ -8,6 +20,7 @@ interface BoardProps {
   lastMove: LastMove | null;
   possibleTargets: string[];
   dragState: DragState | null;
+  annotation: BoardAnnotation | null;
   boardContainerRef: RefObject<HTMLDivElement | null>;
   onSquareClick: (square: string) => void | Promise<void>;
   onPiecePointerDown: (event: PointerEvent<HTMLDivElement>, piece: Piece) => void | Promise<void>;
@@ -22,6 +35,7 @@ export default function Board({
   lastMove,
   possibleTargets,
   dragState,
+  annotation,
   boardContainerRef,
   onSquareClick,
   onPiecePointerDown,
@@ -75,10 +89,34 @@ export default function Board({
     );
   });
 
+  const annotationCoords = annotation
+    ? (() => {
+        const file = annotation.square.charCodeAt(0) - "a".charCodeAt(0) + 1;
+        const rank = Number(annotation.square.substring(1));
+        if (file < 1 || file > 8 || rank < 1 || rank > 8) return null;
+        return {
+          x: (file - 1) * 80,
+          y: (8 - rank) * 80,
+        };
+      })()
+    : null;
+
   return (
     <div className="board-container" ref={boardContainerRef}>
       <div className="board">{squares}</div>
       <div className="pieces-layer">{renderedPieces}</div>
+      {annotation && annotationCoords && (
+        <div
+          className={`board-move-annotation move-annotation-${annotation.kind}`}
+          style={{
+            left: annotationCoords.x + 56,
+            top: annotationCoords.y + 4,
+          }}
+          aria-hidden="true"
+        >
+          {annotation.symbol}
+        </div>
+      )}
     </div>
   );
 }
