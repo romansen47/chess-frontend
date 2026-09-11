@@ -170,6 +170,16 @@ export interface AnalysisReplaySettings {
   moveTimeSeconds: number;
 }
 
+export interface AnalysisDepthCandidate {
+  evaluation: number;
+  position: string;
+}
+
+export interface AnalysisDepthSnapshot {
+  depth: number;
+  candidates: AnalysisDepthCandidate[];
+}
+
 export interface AnalysisProfilePoint {
   ply: number;
   from: string | null;
@@ -179,6 +189,7 @@ export interface AnalysisProfilePoint {
   bar: number;
   depth: number;
   lines?: EngineLine[];
+  depthSnapshots?: AnalysisDepthSnapshot[];
 }
 
 export interface AnalysisPositionSelection {
