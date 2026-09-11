@@ -2,9 +2,14 @@ import type { AnalysisProfilePoint, MoveRow } from "../types";
 
 export type MoveAnnotationSymbol = "!" | "?" | "??";
 
+export type MoveAnnotationKind = "onlyMove" | "mistake" | "blunder";
+
 export interface MoveAnnotation {
   symbol: MoveAnnotationSymbol;
-  title: string;
+  kind: MoveAnnotationKind;
+  loss?: number;
+  bestEvaluation: number;
+  secondBestEvaluation?: number;
 }
 
 const ONLY_MOVE_GAP = 1.5;
@@ -22,10 +27,6 @@ function movePositionAtPly(moves: MoveRow[], ply: number): string | undefined {
   const row = moves.find((candidate) => candidate.moveNumber === moveNumber);
   if (!row) return undefined;
   return ply % 2 === 1 ? row.whitePosition : row.blackPosition;
-}
-
-function formatEvaluation(value: number): string {
-  return value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
 }
 
 export function buildMoveAnnotations(
@@ -64,7 +65,9 @@ export function buildMoveAnnotations(
     if (loss >= BLUNDER_LOSS) {
       result[ply] = {
         symbol: "??",
-        title: `?? · Δ ${loss.toFixed(2)} · best ${formatEvaluation(best.eval)}`,
+        kind: "blunder",
+        loss,
+        bestEvaluation: best.eval,
       };
       continue;
     }
@@ -72,7 +75,9 @@ export function buildMoveAnnotations(
     if (loss >= MISTAKE_LOSS) {
       result[ply] = {
         symbol: "?",
-        title: `? · Δ ${loss.toFixed(2)} · best ${formatEvaluation(best.eval)}`,
+        kind: "mistake",
+        loss,
+        bestEvaluation: best.eval,
       };
       continue;
     }
@@ -85,7 +90,9 @@ export function buildMoveAnnotations(
       if (gap >= ONLY_MOVE_GAP && secondBestScore <= ONLY_MOVE_SECOND_BEST_MAX) {
         result[ply] = {
           symbol: "!",
-          title: `! · PV1 ${formatEvaluation(best.eval)} · PV2 ${formatEvaluation(secondBest.eval)}`,
+          kind: "onlyMove",
+          bestEvaluation: best.eval,
+          secondBestEvaluation: secondBest.eval,
         };
       }
     }
