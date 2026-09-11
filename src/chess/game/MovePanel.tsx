@@ -100,7 +100,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
     }
 
     return `${annotation.symbol} · ${t("analysis.moveAnnotationLoss", {
-      loss: formatAnnotationNumber(annotation.loss ?? 0),
+      loss: formatAnnotationNumber(annotation.winChanceLoss ?? 0),
       best: formatAnnotationEvaluation(annotation.bestEvaluation),
     })}`;
   }
