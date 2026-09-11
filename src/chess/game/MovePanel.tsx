@@ -34,15 +34,44 @@ interface MovePanelProps {
 }
 
 export default function MovePanel({ state, actions }: MovePanelProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const pgnImportProblem = isPgnImportProblem(state.error);
+
+  function formatAnnotationNumber(value: number): string {
+    return new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
+  function formatAnnotationEvaluation(value: number): string {
+    const formatted = formatAnnotationNumber(Math.abs(value));
+    return value >= 0 ? `+${formatted}` : `-${formatted}`;
+  }
+
+  function getAnnotationTitle(annotation: MoveAnnotation): string {
+    if (annotation.kind === "onlyMove" && annotation.secondBestEvaluation != null) {
+      return `${annotation.symbol} · ${t("analysis.moveAnnotationOnlyMove", {
+        best: formatAnnotationEvaluation(annotation.bestEvaluation),
+        second: formatAnnotationEvaluation(annotation.secondBestEvaluation),
+      })}`;
+    }
+
+    return `${annotation.symbol} · ${t("analysis.moveAnnotationLoss", {
+      loss: formatAnnotationNumber(annotation.loss ?? 0),
+      best: formatAnnotationEvaluation(annotation.bestEvaluation),
+    })}`;
+  }
 
   function renderAnnotation(ply: number) {
     const annotation = state.annotations[ply];
     if (!annotation) return null;
-    const tone = annotation.symbol === "!" ? "positive" : "negative";
     return (
-      <span className={`move-annotation move-annotation-${tone}`} title={annotation.title}>
+      <span
+        className={`move-annotation move-annotation-${annotation.kind}`}
+        title={getAnnotationTitle(annotation)}
+        aria-label={getAnnotationTitle(annotation)}
+      >
         {annotation.symbol}
       </span>
     );
