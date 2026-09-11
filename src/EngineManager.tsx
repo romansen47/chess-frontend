@@ -69,6 +69,13 @@ export default function EngineManager({ on{t("common.close")} }: EngineManagerPr
 
   const displayedSelectedId = showHistory ? historySelectedId : selectedId;
 
+  function localizedState(state: string): string {
+    if (state === "RUNNING") return t("engine.stateRunning");
+    if (state === "STOPPED") return t("engine.stateStopped");
+    if (state === "CLOSED") return t("engine.stateClosed");
+    return state;
+  }
+
   async function loadInstances() {
     try {
       const response = await fetch("/api/engine-processes");
@@ -186,7 +193,7 @@ export default function EngineManager({ on{t("common.close")} }: EngineManagerPr
               {instance.label}
             </span>
             <span className="engine-manager-instance-meta">
-              {instance.engineType} · PID {instance.pid ?? "–"} · {instance.state}
+              {instance.engineType} · PID {instance.pid ?? "–"} · {localizedState(instance.state)}
             </span>
             <span className="engine-manager-instance-path">{instance.enginePath}</span>
           </button>
@@ -223,7 +230,7 @@ export default function EngineManager({ on{t("common.close")} }: EngineManagerPr
 
             <dl className="engine-manager-facts">
               <div><dt>PID</dt><dd>{instance.pid ?? "–"}</dd></div>
-              <div><dt>{t("common.status")}</dt><dd>{instance.state}</dd></div>
+              <div><dt>{t("common.status")}</dt><dd>{localizedState(instance.state)}</dd></div>
               <div><dt>{t("engine.type")}</dt><dd>{instance.engineType}</dd></div>
               <div><dt>{t("engine.exitCode")}</dt><dd>{instance.exitCode ?? "–"}</dd></div>
               <div><dt>{t("engine.instanceSince")}</dt><dd>{formatTimestamp(instance.createdAt)}</dd></div>
