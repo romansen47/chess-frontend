@@ -34,7 +34,7 @@ import MovePanel from "./chess/game/MovePanel";
 import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
 import AnalysisEngineTabs, { type AnalysisEngineView } from "./chess/analysis/AnalysisEngineTabs";
 import LiveEvaluationView from "./chess/analysis/LiveEvaluationView";
-import { buildMoveAnnotations, type MoveAnnotation } from "./chess/analysis/moveAnnotations";
+import { buildMoveAnnotations } from "./chess/analysis/moveAnnotations";
 import Board from "./chess/board/Board";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 import {
@@ -121,7 +121,7 @@ function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
 }
 
 export const ChessBoard: React.FC = () => {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
 
   function localizedGameState(gameState: string | null | undefined, currentClock?: ClockState | null): string {
     if (gameState === "LOST_ON_TIME") {
@@ -258,31 +258,6 @@ export const ChessBoard: React.FC = () => {
     [analysisProfile, moves]
   );
 
-  function formatAnnotationNumber(value: number): string {
-    return new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  }
-
-  function formatAnnotationEvaluation(value: number): string {
-    const formatted = formatAnnotationNumber(Math.abs(value));
-    return value >= 0 ? `+${formatted}` : `-${formatted}`;
-  }
-
-  function getMoveAnnotationTitle(annotation: MoveAnnotation): string {
-    if (annotation.kind === "onlyMove" && annotation.secondBestEvaluation != null) {
-      return `${annotation.symbol} · ${t("analysis.moveAnnotationOnlyMove", {
-        best: formatAnnotationEvaluation(annotation.bestEvaluation),
-        second: formatAnnotationEvaluation(annotation.secondBestEvaluation),
-      })}`;
-    }
-
-    return `${annotation.symbol} · ${t("analysis.moveAnnotationLoss", {
-      loss: formatAnnotationNumber(annotation.loss ?? 0),
-      best: formatAnnotationEvaluation(annotation.bestEvaluation),
-    })}`;
-  }
 
   const squareToPieceMap = useMemo(() => {
     const map = new Map<string, Piece>();
@@ -1414,40 +1389,18 @@ export const ChessBoard: React.FC = () => {
             const isLatest = point.ply === latest?.ply;
             const isSelected = point.ply === analysisSelectedPosition?.ply;
             const hasMoveSelection = !!getAnalysisMoveSelectionForPly(point.ply)?.position;
-            const annotation = moveAnnotations[point.ply];
-            const annotationY = isPositive
-              ? Math.max(14, top - 4)
-              : Math.min(height - 4, top + 16);
             return (
-              <g key={point.ply}>
-                <rect
-                  className={`analysis-profile-bar ${isPositive ? "analysis-profile-bar-positive" : "analysis-profile-bar-negative"}${isLatest ? " analysis-profile-bar-latest" : ""}${isSelected ? " analysis-profile-bar-selected" : ""}${hasMoveSelection ? " analysis-profile-bar-clickable" : ""}`}
-                  x={x} y={top} width={barWidth} height={barHeight} rx={0}
-                  role={hasMoveSelection ? "button" : undefined}
-                  tabIndex={hasMoveSelection ? 0 : undefined}
-                  onClick={hasMoveSelection ? () => selectAnalysisPositionByPly(point.ply) : undefined}
-                  onKeyDown={hasMoveSelection ? (event) => {
-                    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectAnalysisPositionByPly(point.ply); }
-                  } : undefined}
-                ><title>{annotation ? `${formatEvaluation(point)} · ${getMoveAnnotationTitle(annotation)}` : formatEvaluation(point)}</title></rect>
-                {annotation && (
-                  <g
-                    className={`analysis-profile-annotation analysis-profile-annotation-${annotation.kind}`}
-                    pointerEvents="none"
-                  >
-                    <circle cx={x + barWidth / 2} cy={annotationY} r={7} />
-                    <text
-                      x={x + barWidth / 2}
-                      y={annotationY}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                    >
-                      {annotation.symbol}
-                    </text>
-                    <title>{getMoveAnnotationTitle(annotation)}</title>
-                  </g>
-                )}
-              </g>
+              <rect
+                key={point.ply}
+                className={`analysis-profile-bar ${isPositive ? "analysis-profile-bar-positive" : "analysis-profile-bar-negative"}${isLatest ? " analysis-profile-bar-latest" : ""}${isSelected ? " analysis-profile-bar-selected" : ""}${hasMoveSelection ? " analysis-profile-bar-clickable" : ""}`}
+                x={x} y={top} width={barWidth} height={barHeight} rx={0}
+                role={hasMoveSelection ? "button" : undefined}
+                tabIndex={hasMoveSelection ? 0 : undefined}
+                onClick={hasMoveSelection ? () => selectAnalysisPositionByPly(point.ply) : undefined}
+                onKeyDown={hasMoveSelection ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectAnalysisPositionByPly(point.ply); }
+                } : undefined}
+              ><title>{formatEvaluation(point)}</title></rect>
             );
           })}
         </svg>
