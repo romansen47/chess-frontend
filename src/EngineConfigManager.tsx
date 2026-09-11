@@ -238,12 +238,12 @@ export default function EngineConfigManager({
   function chooseEngineForProfile() {
     const engine = engines.find((candidate) => candidate.id === newProfileEngineId);
     if (!engine?.id) {
-      setError("Please select a defined engine first.");
+      setError(t("settings.selectDefinedEngineFirst"));
       return;
     }
     setProfileDraft(defaultProfileForEngine(engine));
     setError(null);
-    setMessage(`${engine.name} selected. Its UCI defaults are now the starting values of this profile.`);
+    setMessage(t("settings.engineSelectedDefaults", { engine: engine.name }));
   }
 
   async function inspectEngine() {
@@ -252,7 +252,7 @@ export default function EngineConfigManager({
     try {
       setBusy(true);
       setError(null);
-      setMessage("Opening system file picker…");
+      setMessage(t("settings.openingFilePicker"));
       const response = await fetch("/api/engine-configs/engines/select", {
         method: "POST",
       });
@@ -270,13 +270,14 @@ export default function EngineConfigManager({
       setEngineDraft(copyEngine(inspected));
       setNewEngineName(inspected.name);
       setOptionFilter("");
-      setMessage(
-        `${inspected.engineName} detected · ${Object.keys(inspected.options).length} UCI options`
-      );
+      setMessage(t("settings.engineDetected", {
+        engine: inspected.engineName,
+        count: Object.keys(inspected.options).length,
+      }));
     } catch (e) {
       setEngineDraft(null);
       setMessage(null);
-      setError(e instanceof Error ? e.message : "Engine could not be selected or inspected.");
+      setError(e instanceof Error ? e.message : t("settings.engineSelectionFailed"));
     } finally {
       setBusy(false);
     }
@@ -285,14 +286,14 @@ export default function EngineConfigManager({
   async function inspectEngineByPath() {
     const engine = newEnginePath.trim();
     if (!engine) {
-      setError("Please enter an engine executable path first.");
+      setError(t("settings.enterEnginePathFirst"));
       return;
     }
 
     try {
       setBusy(true);
       setError(null);
-      setMessage("Starting engine and reading its UCI definition…");
+      setMessage(t("settings.readingUciDefinition"));
       const response = await fetch("/api/engine-configs/engines/inspect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -314,7 +315,7 @@ export default function EngineConfigManager({
     } catch (e) {
       setEngineDraft(null);
       setMessage(null);
-      setError(e instanceof Error ? e.message : "Engine could not be inspected.");
+      setError(e instanceof Error ? e.message : t("settings.engineInspectFailed"));
     } finally {
       setBusy(false);
     }
@@ -346,27 +347,23 @@ export default function EngineConfigManager({
       const addedEngines = Math.max(0, next.engines.length - previousEngineCount);
       const addedProfiles = Math.max(0, next.profiles.length - previousProfileCount);
       if (addedEngines === 0) {
-        setMessage("Scan complete. No new responsive UCI engines found in /usr/games.");
+        setMessage(t("settings.scanNoNew"));
       } else {
-        setMessage(
-          `Scan complete. Added ${addedEngines} UCI engine${addedEngines === 1 ? "" : "s"}` +
-          ` and ${addedProfiles} default profile${addedProfiles === 1 ? "" : "s"}.`
-        );
+        setMessage(t("settings.scanAdded", {
+          engines: addedEngines,
+          profiles: addedProfiles,
+        }));
       }
     } catch (e) {
       setMessage(null);
-      setError(e instanceof Error ? e.message : "System engines could not be scanned.");
+      setError(e instanceof Error ? e.message : t("settings.scanFailed"));
     } finally {
       setBusy(false);
     }
   }
 
   async function resetEngineSettings() {
-    const confirmed = window.confirm(
-      "Delete all saved engines and profiles? /usr/games will be scanned again. " +
-      "Only executables that complete a UCI handshake will be imported, each with a default profile. " +
-      "/usr/games/stockfish is preferred as fallback when available."
-    );
+    const confirmed = window.confirm(t("settings.resetConfirm"));
     if (!confirmed) {
       return;
     }
@@ -407,12 +404,12 @@ export default function EngineConfigManager({
       setSelectedProfileId(nextProfile?.id ?? null);
       setProfileDraft(nextProfile ? copyProfile(nextProfile) : null);
 
-      setMessage(
-        `Engine settings reset. ${next.engines.length} engine${next.engines.length === 1 ? "" : "s"} available; ` +
-        `fallback: ${nextEngine?.engine ?? "none"}.`
-      );
+      setMessage(t("settings.resetSummary", {
+        engines: next.engines.length,
+        fallback: nextEngine?.engine ?? "–",
+      }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Engine settings could not be reset.");
+      setError(e instanceof Error ? e.message : t("settings.resetFailed"));
     } finally {
       setBusy(false);
     }
@@ -434,9 +431,9 @@ export default function EngineConfigManager({
       const next = (await response.json()) as EngineConfigOverview;
       onOverviewChange(next);
       setDefaultsDraft(copyAssignments(next.defaults));
-      setMessage("Default profile assignments saved.");
+      setMessage(t("settings.defaultSaved"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Default profile assignments could not be saved.");
+      setError(e instanceof Error ? e.message : t("settings.defaultSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -470,9 +467,9 @@ export default function EngineConfigManager({
       setCreatingEngine(false);
       setSelectedEngineId(selected.id);
       setEngineDraft(copyEngine(selected));
-      setMessage(isNew ? "Engine created." : "Engine saved.");
+      setMessage(isNew ? t("settings.engineCreated") : t("settings.engineSaved"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Engine could not be saved.");
+      setError(e instanceof Error ? e.message : t("settings.engineSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -519,7 +516,7 @@ export default function EngineConfigManager({
     if (!selectedStoredEngine?.id) {
       return;
     }
-    if (!window.confirm(`Delete engine "${selectedStoredEngine.name}"?`)) {
+    if (!window.confirm(t("settings.engineDeleteConfirm", { name: selectedStoredEngine.name }))) {
       return;
     }
 
@@ -536,9 +533,9 @@ export default function EngineConfigManager({
       const nextEngine = next.engines[0] ?? null;
       setSelectedEngineId(nextEngine?.id ?? null);
       setEngineDraft(nextEngine ? copyEngine(nextEngine) : null);
-      setMessage("Engine deleted.");
+      setMessage(t("settings.engineDeleted"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Engine could not be deleted.");
+      setError(e instanceof Error ? e.message : t("settings.engineDeleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -903,10 +900,10 @@ export default function EngineConfigManager({
               <aside className="engine-config-sidebar">
                 <div className="engine-config-sidebar-header">
                   <div>
-                    <strong>{mode === "ENGINES" ? "Defined Engines" : t("settings.engineProfiles")}</strong>
+                    <strong>{mode === "ENGINES" ? t("settings.definedEngines") : t("settings.engineProfiles")}</strong>
                     <span>
                       {mode === "ENGINES"
-                        ? "Executable und UCI-Definition"
+                        ? t("settings.engineDefinitionSubtitle")
                         : t("settings.profileValuesSubtitle")}
                     </span>
                   </div>
@@ -915,13 +912,13 @@ export default function EngineConfigManager({
                     onClick={mode === "ENGINES" ? beginCreateEngine : beginCreateProfile}
                     disabled={busy}
                   >
-                    {mode === "ENGINES" ? "New Engine" : t("settings.newProfile")}
+                    {mode === "ENGINES" ? t("settings.newEngine") : t("settings.newProfile")}
                   </button>
                 </div>
 
                 <div className="engine-config-nav-list">
                   {mode === "ENGINES" && engines.length === 0 && (
-                    <div className="engine-config-empty">No engine has been defined yet.</div>
+                    <div className="engine-config-empty">{t("settings.noEngineDefined")}</div>
                   )}
                   {mode === "ENGINES" && engines.map((engine) => (
                     <button
@@ -937,7 +934,7 @@ export default function EngineConfigManager({
                     >
                       <span className="engine-config-nav-title">{engine.name}</span>
                       <span className="engine-config-nav-meta">
-                        {engine.engineName || "UCI Engine"}
+                        {engine.engineName || t("settings.uciEngine")}
                         {engine.engineAuthor ? ` · ${engine.engineAuthor}` : ""}
                       </span>
                       <span className="engine-config-nav-path">{engine.engine}</span>
@@ -945,7 +942,7 @@ export default function EngineConfigManager({
                   ))}
 
                   {mode === "PROFILES" && profiles.length === 0 && (
-                    <div className="engine-config-empty">No profile has been defined yet.</div>
+                    <div className="engine-config-empty">{t("settings.noProfileDefined")}</div>
                   )}
                   {mode === "PROFILES" && profiles.map((profile) => {
                     const engine = engines.find((candidate) => candidate.id === profile.engineId);
@@ -986,21 +983,21 @@ export default function EngineConfigManager({
                       <div className="engine-config-create-card">
                         <div className="engine-config-details-heading">
                           <div>
-                            <strong>Neue Engine definieren</strong>
-                            <span>Step 1 · Select the executable using the system file picker or enter its path</span>
+                            <strong>{t("settings.defineNewEngine")}</strong>
+                            <span>{t("settings.selectExecutableStep")}</span>
                           </div>
                         </div>
                         <div className="engine-config-form-grid">
                           <label>
-                            <span>Engine name (optional)</span>
+                            <span>{t("settings.engineNameOptional")}</span>
                             <input
                               value={newEngineName}
                               onChange={(event) => setNewEngineName(event.target.value)}
-                              placeholder="Otherwise taken from the UCI engine"
+                              placeholder={t("settings.engineNamePlaceholder")}
                             />
                           </label>
                           <label>
-                            <span>Engine path (fallback)</span>
+                            <span>{t("settings.enginePathFallback")}</span>
                             <input
                               value={newEnginePath}
                               onChange={(event) => setNewEnginePath(event.target.value)}
@@ -1009,7 +1006,7 @@ export default function EngineConfigManager({
                           </label>
                         </div>
                         <div className="engine-config-default-info">
-                          The file dialog opens on the computer running the backend. Enter an engine name first to enable it. If the native file picker cannot be used, enter the executable path directly instead.
+                          {t("settings.engineFileDialogInfo")}
                         </div>
                         <div className="engine-config-actions">
                           <button
@@ -1017,14 +1014,14 @@ export default function EngineConfigManager({
                             onClick={() => void inspectEngine()}
                             disabled={busy || !newEngineName.trim()}
                           >
-                            {busy ? "File picker is open…" : "Select engine file…"}
+                            {busy ? t("settings.filePickerOpen") : t("settings.selectEngineFile")}
                           </button>
                           <button
                             type="button"
                             onClick={() => void inspectEngineByPath()}
                             disabled={busy || !newEnginePath.trim()}
                           >
-                            {busy ? "Inspecting…" : "Use entered path…"}
+                            {busy ? t("settings.inspecting") : t("settings.useEnteredPath")}
                           </button>
                         </div>
                       </div>
@@ -1032,8 +1029,8 @@ export default function EngineConfigManager({
 
                     {!creatingEngine && !engineDraft && (
                       <div className="engine-config-details-empty">
-                        <strong>No engine selected</strong>
-                        <span>Select an engine on the left or create a new definition.</span>
+                        <strong>{t("settings.noEngineSelected")}</strong>
+                        <span>{t("settings.selectOrCreateEngine")}</span>
                       </div>
                     )}
 
@@ -1041,11 +1038,11 @@ export default function EngineConfigManager({
                       <div className="engine-config-editor">
                         <div className="engine-config-details-heading">
                           <div>
-                            <strong>{engineDraft.id ? engineDraft.name : "Review engine definition"}</strong>
+                            <strong>{engineDraft.id ? engineDraft.name : t("settings.reviewEngineDefinition")}</strong>
                             <span>
                               {engineDraft.id
-                                ? "UCI metadata and detected engine capabilities"
-                                : "Step 2 · Review and save the detected engine and UCI capabilities"}
+                                ? t("settings.uciMetadataDescription")
+                                : t("settings.reviewAndSaveStep")}
                             </span>
                           </div>
                           <span className="engine-config-chip">
@@ -1055,38 +1052,38 @@ export default function EngineConfigManager({
 
                         <div className="engine-config-form-grid">
                           <label>
-                            <span>Engine name</span>
+                            <span>{t("settings.engineName")}</span>
                             <input
                               value={engineDraft.name}
                               onChange={(event) => setEngineDraft({ ...engineDraft, name: event.target.value })}
                             />
                           </label>
                           <label>
-                            <span>Executable</span>
+                            <span>{t("engine.executable")}</span>
                             <input value={engineDraft.engine} readOnly />
                           </label>
                         </div>
 
                         <div className="engine-config-engine-summary">
                           <div>
-                            <span>UCI name</span>
+                            <span>{t("settings.uciName")}</span>
                             <strong>{engineDraft.engineName || "–"}</strong>
                           </div>
                           <div>
-                            <span>Author</span>
+                            <span>{t("common.author")}</span>
                             <strong>{engineDraft.engineAuthor || "–"}</strong>
                           </div>
                           <div>
-                            <span>Options</span>
+                            <span>{t("common.options")}</span>
                             <strong>{Object.keys(engineDraft.options).length}</strong>
                           </div>
                         </div>
 
                         <div className="engine-config-options-header">
                           <div>
-                            <strong>Available UCI Options</strong>
+                            <strong>{t("settings.availableUciOptions")}</strong>
                             <span>
-                              Capabilities and original defaults reported by the engine. Concrete values are configured exclusively in profiles.
+                              {t("settings.availableUciOptionsDescription")}
                             </span>
                           </div>
                           <div className="engine-config-option-tools">
@@ -1121,7 +1118,7 @@ export default function EngineConfigManager({
                               onClick={() => void deleteSelectedEngine()}
                               disabled={busy}
                             >
-                              Delete Engine
+                              {t("settings.deleteEngine")}
                             </button>
                           ) : (
                             <button
@@ -1129,7 +1126,7 @@ export default function EngineConfigManager({
                               onClick={() => void inspectEngine()}
                               disabled={busy || !engineDraft.name.trim()}
                             >
-                              {busy ? "File picker is open…" : "Select another engine…"}
+                              {busy ? t("settings.filePickerOpen") : t("settings.selectAnotherEngine")}
                             </button>
                           )}
                           <div className="engine-config-actions-spacer" />
@@ -1138,7 +1135,7 @@ export default function EngineConfigManager({
                             onClick={() => void saveEngine()}
                             disabled={busy || !engineDraft.name.trim()}
                           >
-                            {busy ? "Saving…" : engineDraft.id ? "Save Engine" : "Create Engine"}
+                            {busy ? t("settings.saving") : engineDraft.id ? t("settings.saveEngine") : t("settings.createEngine")}
                           </button>
                         </div>
                       </div>
@@ -1165,7 +1162,7 @@ export default function EngineConfigManager({
                           <>
                             <div className="engine-config-form-grid">
                               <label>
-                                <span>Engine</span>
+                                <span>{t("settings.engineLabel")}</span>
                                 <select
                                   value={newProfileEngineId}
                                   onChange={(event) => setNewProfileEngineId(event.target.value)}
@@ -1235,7 +1232,7 @@ export default function EngineConfigManager({
                             />
                           </label>
                           <label>
-                            <span>Engine</span>
+                            <span>{t("settings.engineLabel")}</span>
                             <input value={profileEngine.name} readOnly />
                           </label>
                         </div>
