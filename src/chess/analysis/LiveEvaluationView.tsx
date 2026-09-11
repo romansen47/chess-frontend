@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "../../i18n/I18nProvider";
 import type { EngineEvaluation, EngineLine } from "../types";
 import {
   getPieceSymbolFromPositionChar,
@@ -52,6 +53,7 @@ export default function LiveEvaluationView({
   activePly,
   variationMode,
 }: LiveEvaluationViewProps) {
+  const { t } = useI18n();
   const [selectedLineIndex, setSelectedLineIndex] = useState(0);
   const [animationIndex, setAnimationIndex] = useState(0);
 
@@ -97,8 +99,8 @@ export default function LiveEvaluationView({
       return (
         <div className="analysis-detail-placeholder">
           {evaluation
-            ? "No board positions have been provided for this variation yet."
-            : "Enable the evaluation bar to analyze the position."}
+            ? t("analysis.noBoardPositionsVariation")
+            : t("analysis.enableEvaluationBar")}
         </div>
       );
     }
@@ -110,7 +112,7 @@ export default function LiveEvaluationView({
     if (!position || position.length !== 64) {
       return (
         <div className="analysis-detail-placeholder">
-          The EvaluationEngine board position is not available.
+          {t("analysis.evaluationBoardUnavailable")}
         </div>
       );
     }
@@ -186,41 +188,41 @@ export default function LiveEvaluationView({
         <div className="analysis-detail-title">
           {variationMode
             ? activePly
-              ? `EvaluationEngine variation from ply ${activePly}`
-              : "EvaluationEngine variation"
+              ? t("analysis.variationFromPly", { ply: activePly })
+              : t("analysis.evaluationVariation")
             : activePly
-              ? `EvaluationEngine continuation from ply ${activePly}`
-              : "EvaluationEngine continuation"}
+              ? t("analysis.continuationFromPly", { ply: activePly })
+              : t("analysis.evaluationContinuation")}
         </div>
         {renderEvaluationBoard()}
       </div>
 
       <div className="analysis-lines-panel analysis-evaluation-lines-panel">
         <div className="analysis-detail-title">
-          EvaluationEngine variations · infinite
+          {t("analysis.variationsInfinite")}
         </div>
 
         {!evaluation && (
           <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
             {variationMode
-              ? "Evaluation for the analysis variation is being calculated…"
+              ? t("analysis.evaluationCalculating")
               : activePly
-                ? `Evaluation for ply ${activePly} is being calculated…`
-                : "Enable the evaluation bar to analyze the selected position infinitely."}
+                ? t("analysis.evaluationPlyCalculating", { ply: activePly })
+                : t("analysis.enableSelectedInfinite")}
           </div>
         )}
 
         {evaluation && evaluation.lines.length === 0 && (
           <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
-            {formatEngineScore(evaluation.eval)} · terminal position
+            {formatEngineScore(evaluation.eval)} · {t("analysis.terminalPosition")}
           </div>
         )}
 
         {evaluation && evaluation.lines.length > 0 && (
           <>
             <div className="engine-lines-summary analysis-evaluation-summary">
-              <span>{evaluation.engineName || "Evaluation engine"}</span>
-              <span>depth {evaluation.lines[0].depth} · infinite</span>
+              <span>{evaluation.engineName || t("analysis.evaluationEngine")}</span>
+              <span>{t("analysis.depthInfinite", { depth: evaluation.lines[0].depth })}</span>
             </div>
 
             <div className="analysis-lines-list analysis-evaluation-lines-list">
