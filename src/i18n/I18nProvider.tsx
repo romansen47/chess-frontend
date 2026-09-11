@@ -422,9 +422,9 @@ const translations = {
     fr: "Perte {loss} · Meilleur coup {best}",
   },
   "analysis.moveAnnotationOnlyMove": {
-    en: "Only good move · PV1 {best} · PV2 {second}",
-    de: "Einziger guter Zug · PV1 {best} · PV2 {second}",
-    fr: "Seul bon coup · PV1 {best} · PV2 {second}",
+    en: "Only good move · Best move {best} · Second best {second}",
+    de: "Einziger guter Zug · Bester Zug {best} · Zweitbester Zug {second}",
+    fr: "Seul bon coup · Meilleur coup {best} · Deuxième meilleur {second}",
   },
   "analysis.mode": { en: "Analysis mode", de: "Analysemodus", fr: "Mode analyse" },
   "analysis.clickMoveContinuation": { en: "Click a move in the move list to play an engine continuation.", de: "Klicke auf einen Zug in der Zugliste, um eine Engine-Fortsetzung abzuspielen.", fr: "Cliquez sur un coup de la liste pour jouer une suite du moteur." },
