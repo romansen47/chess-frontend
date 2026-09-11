@@ -50,6 +50,20 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
   }
 
   function getAnnotationTitle(annotation: MoveAnnotation): string {
+    if (
+      annotation.kind === "brilliant" &&
+      annotation.earlyDepth != null &&
+      annotation.finalDepth != null &&
+      annotation.finalRank != null
+    ) {
+      return `${annotation.symbol} · ${t("analysis.moveAnnotationBrilliant", {
+        earlyDepth: annotation.earlyDepth,
+        finalDepth: annotation.finalDepth,
+        earlyRank: annotation.earlyRank ?? ">3",
+        finalRank: annotation.finalRank,
+      })}`;
+    }
+
     if (annotation.kind === "onlyMove" && annotation.secondBestEvaluation != null) {
       return `${annotation.symbol} · ${t("analysis.moveAnnotationOnlyMove", {
         best: formatAnnotationEvaluation(annotation.bestEvaluation),
