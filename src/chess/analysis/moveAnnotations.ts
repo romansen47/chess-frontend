@@ -12,13 +12,19 @@ export interface MoveAnnotation {
   secondBestEvaluation?: number;
 }
 
-const ONLY_MOVE_GAP = 1.5;
-const ONLY_MOVE_SECOND_BEST_MAX = 0.75;
+const ONLY_MOVE_WIN_PERCENT_GAP = 15.0;
 const MISTAKE_LOSS = 1.0;
 const BLUNDER_LOSS = 3.0;
 
 function moverScore(evaluation: number, ply: number): number {
   return ply % 2 === 1 ? evaluation : -evaluation;
+}
+
+// Lichess-style mapping from centipawn evaluation to practical winning chances.
+// Engine evaluations in CAT are stored in pawns, so convert to centipawns first.
+function winPercentFromMoverScore(score: number): number {
+  const centipawns = score * 100;
+  return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * centipawns)) - 1);
 }
 
 function movePositionAtPly(moves: MoveRow[], ply: number): string | undefined {
@@ -88,9 +94,10 @@ export function buildMoveAnnotations(
     if (played && played.positions?.[1] === best.positions?.[1] && candidates.length > 1) {
       const secondBest = candidates[1];
       const secondBestScore = moverScore(secondBest.eval, ply);
-      const gap = bestScore - secondBestScore;
+      const winPercentGap =
+        winPercentFromMoverScore(bestScore) - winPercentFromMoverScore(secondBestScore);
 
-      if (gap >= ONLY_MOVE_GAP && secondBestScore <= ONLY_MOVE_SECOND_BEST_MAX) {
+      if (winPercentGap >= ONLY_MOVE_WIN_PERCENT_GAP) {
         result[ply] = {
           symbol: "!",
           kind: "onlyMove",
