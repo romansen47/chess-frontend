@@ -259,6 +259,34 @@ export const ChessBoard: React.FC = () => {
     [analysisProfile]
   );
 
+  const effectiveMoveAnnotations = useMemo(() => {
+    const effective = { ...moveAnnotations };
+    if (
+      analysisReplayActive
+      && analysisReplayFinished
+      && analysisEvaluationEnabled
+      && analysisSelectedPosition
+      && analysisVariationMoves.length === 0
+      && analysisEvaluation?.moveAnnotationReady
+    ) {
+      const ply = analysisSelectedPosition.ply;
+      if (analysisEvaluation.moveAnnotation) {
+        effective[ply] = analysisEvaluation.moveAnnotation;
+      } else {
+        delete effective[ply];
+      }
+    }
+    return effective;
+  }, [
+    moveAnnotations,
+    analysisReplayActive,
+    analysisReplayFinished,
+    analysisEvaluationEnabled,
+    analysisSelectedPosition,
+    analysisVariationMoves.length,
+    analysisEvaluation,
+  ]);
+
   const selectedBoardAnnotation = useMemo<BoardAnnotation | null>(() => {
     if (
       !analysisReplayActive
@@ -269,11 +297,13 @@ export const ChessBoard: React.FC = () => {
     const point = analysisProfile.find(
       (candidate) => candidate.ply === analysisSelectedPosition.ply
     );
-    if (!point?.annotation || !point.to) return null;
+    const annotation =
+      effectiveMoveAnnotations[analysisSelectedPosition.ply];
+    if (!point?.to || !annotation) return null;
     return {
       square: point.to,
-      symbol: point.annotation.symbol,
-      kind: point.annotation.kind,
+      symbol: annotation.symbol,
+      kind: annotation.kind,
     };
   }, [
     analysisReplayActive,
@@ -281,6 +311,7 @@ export const ChessBoard: React.FC = () => {
     analysisSelectedPosition,
     analysisProfile,
     analysisVariationMoves.length,
+    effectiveMoveAnnotations,
   ]);
 
   const squareToPieceMap = useMemo(() => {
