@@ -160,15 +160,12 @@ export function useComputerMoves({
   ): Promise<ComputerMoveSequenceResult> {
     let nextSide = normalizeSide(initialSideToMove);
     let moved = false;
-    let guard = 0;
     while (
       nextSide
       && isSideComputerControlled(nextSide)
       && !isComputerThinkingRef.current
       && isComputerMoveSequenceCurrent(sequenceId)
-      && guard < 200
     ) {
-      guard += 1;
       const result = await requestComputerMove(sequenceId, nextSide);
       if (!result.success || result.gameEnded) {
         return {
