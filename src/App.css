@@ -1374,3 +1374,34 @@
   font-size: 0.76rem;
   line-height: 1.35;
 }
+
+
+/* Compact move-quality annotations derived from the existing deep analysis. */
+.move-annotation {
+  display: inline-block;
+  margin-left: 2px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.move-annotation-positive {
+  color: #d6c26a;
+}
+
+.move-annotation-negative {
+  color: #ff9e80;
+}
+
+.analysis-profile-annotation {
+  font-size: 15px;
+  font-weight: 800;
+  dominant-baseline: middle;
+}
+
+.analysis-profile-annotation-positive {
+  fill: #d6c26a;
+}
+
+.analysis-profile-annotation-negative {
+  fill: #ff9e80;
+}
