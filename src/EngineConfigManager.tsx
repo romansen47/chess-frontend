@@ -56,31 +56,39 @@ function copyAssignments(assignments: EngineProfileAssignments | null | undefine
   return assignments ? { ...assignments } : { ...EMPTY_ASSIGNMENTS };
 }
 
-function optionHint(option: UciOptionConfig): string {
+function optionHint(
+  option: UciOptionConfig,
+  labels: { defaultLabel: string; minLabel: string; maxLabel: string; emptyLabel: string },
+): string {
   const parts: string[] = [];
   if (option.defaultValue !== null) {
-    parts.push(`default ${option.defaultValue === "" ? "<empty>" : option.defaultValue}`);
+    parts.push(`${labels.defaultLabel} ${option.defaultValue === "" ? labels.emptyLabel : option.defaultValue}`);
   }
   if (option.min !== null) {
-    parts.push(`min ${option.min}`);
+    parts.push(`${labels.minLabel} ${option.min}`);
   }
   if (option.max !== null) {
-    parts.push(`max ${option.max}`);
+    parts.push(`${labels.maxLabel} ${option.max}`);
   }
   return parts.join(" · ");
 }
 
-function displayOptionValue(option: UciOptionConfig, value: string): string {
+function displayOptionValue(
+  option: UciOptionConfig,
+  value: string,
+  actionLabel: string,
+  emptyLabel: string,
+): string {
   if (option.type === "button") {
-    return "action";
+    return actionLabel;
   }
-  return value === "" ? "<empty>" : value;
+  return value === "" ? emptyLabel : value;
 }
 
-function defaultProfileForEngine(engine: EngineDefinition): EngineProfile {
+function defaultProfileForEngine(engine: EngineDefinition, profileName: string): EngineProfile {
   return {
     id: null,
-    name: `${engine.name} Profile`,
+    name: profileName,
     engineId: engine.id ?? "",
     optionValues: Object.fromEntries(
       Object.entries(engine.options)
@@ -241,7 +249,10 @@ export default function EngineConfigManager({
       setError(t("settings.selectDefinedEngineFirst"));
       return;
     }
-    setProfileDraft(defaultProfileForEngine(engine));
+    setProfileDraft(defaultProfileForEngine(
+      engine,
+      t("settings.defaultProfileName", { engine: engine.name }),
+    ));
     setError(null);
     setMessage(t("settings.engineSelectedDefaults", { engine: engine.name }));
   }
@@ -309,9 +320,10 @@ export default function EngineConfigManager({
       setEngineDraft(copyEngine(inspected));
       setNewEngineName(inspected.name);
       setOptionFilter("");
-      setMessage(
-        `${inspected.engineName} detected · ${Object.keys(inspected.options).length} UCI options`
-      );
+      setMessage(t("settings.engineDetected", {
+        engine: inspected.engineName,
+        count: Object.keys(inspected.options).length,
+      }));
     } catch (e) {
       setEngineDraft(null);
       setMessage(null);
@@ -331,7 +343,7 @@ export default function EngineConfigManager({
     try {
       setBusy(true);
       setError(null);
-      setMessage("Scanning /usr/games and validating UCI handshakes…");
+      setMessage(t("settings.scanningSystem"));
 
       const previousEngineCount = overview?.engines.length ?? 0;
       const previousProfileCount = overview?.profiles.length ?? 0;
@@ -637,8 +649,18 @@ export default function EngineConfigManager({
     value: string,
     disabled = false
   ) {
-    const hint = optionHint(option);
-    const displayValue = displayOptionValue(option, value);
+    const hint = optionHint(option, {
+      defaultLabel: t("settings.optionDefault"),
+      minLabel: t("settings.optionMin"),
+      maxLabel: t("settings.optionMax"),
+      emptyLabel: t("settings.optionEmpty"),
+    });
+    const displayValue = displayOptionValue(
+      option,
+      value,
+      t("settings.optionAction"),
+      t("settings.optionEmpty"),
+    );
     const common = (
       <div className="engine-config-option-meta">
         <span className="engine-config-option-type">{option.type}</span>
@@ -1046,7 +1068,7 @@ export default function EngineConfigManager({
                             </span>
                           </div>
                           <span className="engine-config-chip">
-                            {Object.keys(engineDraft.options).length} UCI options
+                            {t("settings.uciOptionsCount", { count: Object.keys(engineDraft.options).length })}
                           </span>
                         </div>
 
@@ -1338,8 +1360,18 @@ export default function EngineConfigManager({
                   <strong>{profileOptionEditor.name}</strong>
                   <div className="engine-config-option-popup-meta">
                     <span className="engine-config-option-type">{profileOptionEditor.option.type}</span>
-                    {optionHint(profileOptionEditor.option) && (
-                      <span>{optionHint(profileOptionEditor.option)}</span>
+                    {optionHint(profileOptionEditor.option, {
+                      defaultLabel: t("settings.optionDefault"),
+                      minLabel: t("settings.optionMin"),
+                      maxLabel: t("settings.optionMax"),
+                      emptyLabel: t("settings.optionEmpty"),
+                    }) && (
+                      <span>{optionHint(profileOptionEditor.option, {
+                        defaultLabel: t("settings.optionDefault"),
+                        minLabel: t("settings.optionMin"),
+                        maxLabel: t("settings.optionMax"),
+                        emptyLabel: t("settings.optionEmpty"),
+                      })}</span>
                     )}
                   </div>
                 </div>
