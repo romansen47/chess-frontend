@@ -289,7 +289,7 @@ export const spanishTranslations: Record<string, string> = {
   "analysis.enableSelectedInfinite": "Activa la barra de evaluación para analizar indefinidamente la posición seleccionada.",
   "analysis.evaluationEngine": "Motor de evaluación",
   "analysis.history": "Historial del análisis",
-  "analysis.moveAnnotationLoss": "Pérdida {loss} · Mejor jugada {best}",
+  "analysis.moveAnnotationLoss": "Pérdida de probabilidad de victoria {loss} puntos · Mejor jugada {best}",
   "analysis.moveAnnotationOnlyMove": "Única buena jugada · Mejor jugada {best} · Segunda mejor {second}",
   "analysis.moveAnnotationBrilliant": "Jugada brillante · profundidad {earlyDepth} → {finalDepth} · puesto {earlyRank} → {finalRank} · mejoró claramente durante la búsqueda",
   "analysis.moveAnnotationBrilliantMaterial": "Jugada brillante · inversión material {material} · puesto final {finalRank}",
