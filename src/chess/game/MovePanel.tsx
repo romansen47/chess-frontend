@@ -50,18 +50,47 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
   }
 
   function getAnnotationTitle(annotation: MoveAnnotation): string {
-    if (
-      annotation.kind === "brilliant" &&
-      annotation.earlyDepth != null &&
-      annotation.finalDepth != null &&
-      annotation.finalRank != null
-    ) {
-      return `${annotation.symbol} · ${t("analysis.moveAnnotationBrilliant", {
-        earlyDepth: annotation.earlyDepth,
-        finalDepth: annotation.finalDepth,
+    if (annotation.kind === "brilliant") {
+      const values = {
+        earlyDepth: annotation.earlyDepth ?? 0,
+        finalDepth: annotation.finalDepth ?? 0,
         earlyRank: annotation.earlyRank ?? ">3",
-        finalRank: annotation.finalRank,
-      })}`;
+        finalRank: annotation.finalRank ?? 0,
+        material: formatAnnotationNumber(annotation.materialInvestment ?? 0),
+      };
+
+      if (
+        annotation.brilliantReason ===
+          "deepDiscoveryAndMaterialInvestment" &&
+        annotation.earlyDepth != null &&
+        annotation.materialInvestment != null
+      ) {
+        return `${annotation.symbol} · ${t(
+          "analysis.moveAnnotationBrilliantCombined",
+          values
+        )}`;
+      }
+
+      if (
+        annotation.brilliantReason === "materialInvestment" &&
+        annotation.materialInvestment != null
+      ) {
+        return `${annotation.symbol} · ${t(
+          "analysis.moveAnnotationBrilliantMaterial",
+          values
+        )}`;
+      }
+
+      if (
+        annotation.earlyDepth != null &&
+        annotation.finalDepth != null &&
+        annotation.finalRank != null
+      ) {
+        return `${annotation.symbol} · ${t(
+          "analysis.moveAnnotationBrilliant",
+          values
+        )}`;
+      }
     }
 
     if (annotation.kind === "onlyMove" && annotation.secondBestEvaluation != null) {
