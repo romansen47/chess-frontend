@@ -363,4 +363,9 @@ export const spanishTranslations: Record<string, string> = {
   "engine.stateRunning": "EN EJECUCIÓN",
   "engine.stateStopped": "DETENIDO",
   "engine.stateClosed": "CERRADO",
+  "common.error": "Error",
+  "game.pieceQueen": "Dama",
+  "game.pieceRook": "Torre",
+  "game.pieceBishop": "Alfil",
+  "game.pieceKnight": "Caballo",
 };
