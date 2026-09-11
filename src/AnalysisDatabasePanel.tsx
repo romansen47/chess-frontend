@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "./i18n/I18nProvider";
 import "./AnalysisDatabasePanel.css";
 
 interface DatabasePositionMove {
@@ -28,6 +29,7 @@ function percentage(value: number, total: number): string {
 }
 
 export default function AnalysisDatabasePanel({ ply }: AnalysisDatabasePanelProps) {
+  const { t } = useI18n();
   const [result, setResult] = useState<DatabasePositionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export default function AnalysisDatabasePanel({ ply }: AnalysisDatabasePanelProp
           return;
         }
         setResult(null);
-        setError(reason instanceof Error ? reason.message : "Could not query the chess database.");
+        setError(reason instanceof Error ? reason.message : t("analysis.databaseQueryFailed"));
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -76,13 +78,13 @@ export default function AnalysisDatabasePanel({ ply }: AnalysisDatabasePanelProp
   if (ply == null) {
     return (
       <div className="analysis-database-placeholder">
-        Select a move to query the local chess database.
+        {t("database.selectMove")}
       </div>
     );
   }
 
   if (isLoading) {
-    return <div className="analysis-database-placeholder">Querying chess database…</div>;
+    return <div className="analysis-database-placeholder">{t("database.querying")}</div>;
   }
 
   if (error) {
@@ -96,7 +98,7 @@ export default function AnalysisDatabasePanel({ ply }: AnalysisDatabasePanelProp
   if (!result || result.moves.length === 0) {
     return (
       <div className="analysis-database-placeholder">
-        No imported database game contains this position.
+        {t("database.noPosition")}
       </div>
     );
   }
@@ -104,7 +106,7 @@ export default function AnalysisDatabasePanel({ ply }: AnalysisDatabasePanelProp
   return (
     <div className="analysis-database-content">
       <div className="analysis-database-summary">
-        <span>Local chess database</span>
+        <span>{t("database.local")}</span>
         <strong>{result.games.toLocaleString()} continuations</strong>
       </div>
 
@@ -112,11 +114,11 @@ export default function AnalysisDatabasePanel({ ply }: AnalysisDatabasePanelProp
         <table className="analysis-database-table">
           <thead>
             <tr>
-              <th>Move</th>
-              <th>Games</th>
-              <th>White</th>
-              <th>Draw</th>
-              <th>Black</th>
+              <th>{t("common.move")}</th>
+              <th>{t("common.games")}</th>
+              <th>{t("common.white")}</th>
+              <th>{t("common.draw")}</th>
+              <th>{t("common.black")}</th>
             </tr>
           </thead>
           <tbody>
