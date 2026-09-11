@@ -363,4 +363,9 @@ export const italianTranslations: Record<string, string> = {
   "engine.stateRunning": "IN ESECUZIONE",
   "engine.stateStopped": "ARRESTATO",
   "engine.stateClosed": "CHIUSO",
+  "common.error": "Errore",
+  "game.pieceQueen": "Donna",
+  "game.pieceRook": "Torre",
+  "game.pieceBishop": "Alfiere",
+  "game.pieceKnight": "Cavallo",
 };
