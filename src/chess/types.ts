@@ -174,11 +174,16 @@ export interface AnalysisReplaySettings {
 }
 
 export type MoveAnnotationSymbol = "!" | "!!" | "?" | "??";
-export type MoveAnnotationKind = "onlyMove" | "brilliant" | "mistake" | "blunder";
-export type BrilliantReason =
+export type MoveAnnotationKind =
+  | "onlyMove"
+  | "extraordinary"
+  | "mistake"
+  | "blunder";
+
+export type ExtraordinaryReason =
   | "deepDiscovery"
-  | "materialInvestment"
-  | "deepDiscoveryAndMaterialInvestment";
+  | "materialSacrifice"
+  | "deepDiscoveryAndMaterialSacrifice";
 
 export type MaterialSacrificeType =
   | "activeInvestment"
@@ -191,7 +196,7 @@ export interface MoveAnnotation {
   winChanceLoss?: number | null;
   bestEvaluation: number;
   secondBestEvaluation?: number | null;
-  brilliantReason?: BrilliantReason | null;
+  extraordinaryReason?: ExtraordinaryReason | null;
   materialInvestment?: number | null;
   sacrificeType?: MaterialSacrificeType | null;
   earlyDepth?: number | null;
@@ -200,11 +205,8 @@ export interface MoveAnnotation {
   finalRank?: number | null;
   givesCheck?: boolean | null;
   earlyRegret?: number | null;
-  middleRegret?: number | null;
-  lateRegret?: number | null;
   earlyStrength?: number | null;
-  middleStrength?: number | null;
-  lateStrength?: number | null;
+  finalStrength?: number | null;
 }
 
 export interface AnalysisProfilePoint {
