@@ -787,7 +787,7 @@ export const ChessBoard: React.FC = () => {
             && current.winChanceLoss === liveAnnotation.winChanceLoss
             && current.bestEvaluation === liveAnnotation.bestEvaluation
             && current.secondBestEvaluation === liveAnnotation.secondBestEvaluation
-            && current.brilliantReason === liveAnnotation.brilliantReason
+            && current.extraordinaryReason === liveAnnotation.extraordinaryReason
             && current.materialInvestment === liveAnnotation.materialInvestment
             && current.sacrificeType === liveAnnotation.sacrificeType
             && current.earlyDepth === liveAnnotation.earlyDepth
@@ -796,11 +796,8 @@ export const ChessBoard: React.FC = () => {
             && current.finalRank === liveAnnotation.finalRank
             && current.givesCheck === liveAnnotation.givesCheck
             && current.earlyRegret === liveAnnotation.earlyRegret
-            && current.middleRegret === liveAnnotation.middleRegret
-            && current.lateRegret === liveAnnotation.lateRegret
             && current.earlyStrength === liveAnnotation.earlyStrength
-            && current.middleStrength === liveAnnotation.middleStrength
-            && current.lateStrength === liveAnnotation.lateStrength
+            && current.finalStrength === liveAnnotation.finalStrength
           );
 
         if (sameAnnotation) return point;
