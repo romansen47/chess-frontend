@@ -172,6 +172,21 @@ const translations = {
     de: "Partie erneut analysieren",
     fr: "Analyser à nouveau la partie",
   },
+  "analysis.exportPgn": {
+    en: "Export analysis PGN",
+    de: "Analyse-PGN exportieren",
+    fr: "Exporter le PGN d’analyse",
+  },
+  "analysis.exportPgnTitle": {
+    en: "Export the completed analysis with engine diagnostics as PGN",
+    de: "Abgeschlossene Analyse mit Engine-Diagnosedaten als PGN exportieren",
+    fr: "Exporter l’analyse terminée avec les diagnostics moteur au format PGN",
+  },
+  "analysis.exportPgnFailed": {
+    en: "Could not export the analysis PGN.",
+    de: "Analyse-PGN konnte nicht exportiert werden.",
+    fr: "Impossible d’exporter le PGN d’analyse.",
+  },
   "analysis.analyze": { en: "Analyze", de: "Analysieren", fr: "Analyser" },
   "analysis.analyzeTitle": {
     en: "Analyze the loaded PGN game",
