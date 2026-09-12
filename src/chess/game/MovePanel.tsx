@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { MoveAnnotation, MoveRow } from "../types";
+import type { GameAnnotation, MoveAnnotation, MoveRow } from "../types";
 import PgnImportProblemDialog, { isPgnImportProblem } from "./PgnImportProblemDialog";
 
 interface MovePanelState {
@@ -14,6 +14,7 @@ interface MovePanelState {
   computerThinking: boolean;
   error: string | null;
   annotations: Record<number, MoveAnnotation>;
+  storedAnnotations: Record<number, GameAnnotation>;
 }
 
 interface MovePanelActions {
@@ -103,16 +104,49 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
   }
 
   function renderAnnotation(ply: number) {
-    const annotation = state.annotations[ply];
-    if (!annotation) return null;
+    const stored = state.storedAnnotations[ply];
+    const automatic = state.annotations[ply];
+
+    if (stored?.nag) {
+      const title = `${stored.nag} · ${t("annotations.savedAnnotation")}`;
+      return (
+        <span
+          className="move-annotation move-annotation-saved"
+          aria-label={title}
+          onMouseEnter={() => actions.showAnnotationTooltip(title)}
+          onMouseLeave={actions.hideAnnotationTooltip}
+        >
+          {stored.nag}
+        </span>
+      );
+    }
+
+    if (!automatic) return null;
     return (
       <span
-        className={`move-annotation move-annotation-${annotation.kind}`}
-        aria-label={getAnnotationTitle(annotation)}
-        onMouseEnter={() => actions.showAnnotationTooltip(getAnnotationTitle(annotation))}
+        className={`move-annotation move-annotation-${automatic.kind}`}
+        aria-label={getAnnotationTitle(automatic)}
+        onMouseEnter={() => actions.showAnnotationTooltip(getAnnotationTitle(automatic))}
         onMouseLeave={actions.hideAnnotationTooltip}
       >
-        {annotation.symbol}
+        {automatic.symbol}
+      </span>
+    );
+  }
+
+  function renderStoredIndicators(ply: number) {
+    const stored = state.storedAnnotations[ply];
+    if (!stored) return null;
+    const hasComment = Boolean(stored.comment?.trim());
+    const variationCount = stored.variations?.length ?? 0;
+    if (!hasComment && variationCount === 0) return null;
+
+    return (
+      <span className="move-stored-indicators" aria-hidden="true">
+        {hasComment && <span title={t("annotations.comment")}>C</span>}
+        {variationCount > 0 && (
+          <span title={t("annotations.savedVariations")}>V{variationCount}</span>
+        )}
       </span>
     );
   }
@@ -192,6 +226,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
               }
             >
               {row.white ?? ""}{renderAnnotation((row.moveNumber - 1) * 2 + 1)}
+              {renderStoredIndicators((row.moveNumber - 1) * 2 + 1)}
             </span>
             <span
               className={[
@@ -216,6 +251,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
               }
             >
               {row.black ?? ""}{renderAnnotation(row.moveNumber * 2)}
+              {renderStoredIndicators(row.moveNumber * 2)}
             </span>
           </div>
         ))}
