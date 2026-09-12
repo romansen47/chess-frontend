@@ -37,6 +37,7 @@ export interface MoveResult {
   sideToMove: string | null;
   position?: string | null;
   gameState?: string | null;
+  ply?: number | null;
 }
 
 export interface AnalysisVariationRequest {

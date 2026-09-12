@@ -194,6 +194,8 @@ export const ChessBoard: React.FC = () => {
   const [pieces, setPieces] = useState<Piece[]>(() => createInitialPieces());
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [moves, setMoves] = useState<MoveRow[]>([]);
+  const latestMovePlyRef = useRef(0);
+  const moveListReconcilePromiseRef = useRef<Promise<void> | null>(null);
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
   const [hoverPreview, setHoverPreview] = useState<HoverPreview | null>(null);
   const [hoverAnnotationText, setHoverAnnotationText] = useState<string | null>(null);
@@ -549,6 +551,10 @@ export const ChessBoard: React.FC = () => {
       setGameAnnotations(gameAnnotationRecord(game.annotations));
       setAnnotationsDirty(false);
       setAnnotationSaveError(null);
+      latestMovePlyRef.current = restoredMoves.reduce(
+        (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0),
+        0
+      );
       setMoves(mapImportedUciMovesToRows(restoredMoves));
       if (game.position && game.position.length === 64) {
         setPieces(mapPositionStringToLocalPieces(game.position));
@@ -1184,6 +1190,10 @@ export const ChessBoard: React.FC = () => {
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
       const importedMoves = imported.moves ?? [];
       const moveRows = mapImportedUciMovesToRows(importedMoves);
+      latestMovePlyRef.current = importedMoves.reduce(
+        (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0),
+        0
+      );
       setGameAnnotations(gameAnnotationRecord(imported.annotations));
       setAnnotationsDirty(false);
       setAnnotationSaveError(null);
@@ -1261,6 +1271,7 @@ export const ChessBoard: React.FC = () => {
       setGameSettings(appliedSettings);
       setUciAnalysisLoaded(false);
       setPieces(createInitialPieces());
+      latestMovePlyRef.current = 0;
       setMoves([]);
       setLastMove(null);
       setSelectedSquare(null);
@@ -1321,17 +1332,112 @@ export const ChessBoard: React.FC = () => {
     });
   }
 
-  function addMoveToMoveList(result: MoveResult) {
+  function mergeAuthoritativeMoveRows(current: MoveRow[], authoritative: MoveRow[]): MoveRow[] {
+    const merged = new Map<number, MoveRow>();
+    for (const row of current) merged.set(row.moveNumber, { ...row });
+    for (const row of authoritative) {
+      const existing = merged.get(row.moveNumber);
+      merged.set(row.moveNumber, existing ? { ...existing, ...row } : { ...row });
+    }
+    return Array.from(merged.values()).sort((a, b) => a.moveNumber - b.moveNumber);
+  }
+
+  function reconcileMoveListFromBackend(): Promise<void> {
+    if (uciAnalysisLoadedRef.current) return Promise.resolve();
+    if (moveListReconcilePromiseRef.current) return moveListReconcilePromiseRef.current;
+
+    const reconciliation = (async () => {
+      try {
+        const snapshot = await fetchGameSnapshot();
+        if (snapshot.importedAnalysisGame) return;
+        const authoritativeMoves = snapshot.game.moves ?? [];
+        const authoritativeRows = mapImportedUciMovesToRows(authoritativeMoves);
+        const authoritativePly = authoritativeMoves.reduce(
+          (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0),
+          0
+        );
+        latestMovePlyRef.current = Math.max(latestMovePlyRef.current, authoritativePly);
+        setMoves((current) => mergeAuthoritativeMoveRows(current, authoritativeRows));
+      } catch (error) {
+        console.warn("[reconcileMoveListFromBackend] could not refresh move list", error);
+      }
+    })().finally(() => {
+      if (moveListReconcilePromiseRef.current === reconciliation) {
+        moveListReconcilePromiseRef.current = null;
+      }
+    });
+
+    moveListReconcilePromiseRef.current = reconciliation;
+    return reconciliation;
+  }
+
+  function addMoveToMoveList(result: MoveResult): boolean {
     const sanText = result.san && result.san.trim().length > 0 ? result.san : `${result.from}-${result.to}`;
     const position = result.position ?? undefined;
-    setMoves((prev) => {
-      if (prev.length === 0 || prev[prev.length - 1].black) {
-        return [...prev, { moveNumber: prev.length + 1, white: sanText, whitePosition: position }];
+    const resultPly = typeof result.ply === "number" && Number.isInteger(result.ply) && result.ply > 0
+      ? result.ply
+      : null;
+
+    if (resultPly != null) {
+      const previousPly = latestMovePlyRef.current;
+      const gapDetected = resultPly > previousPly + 1;
+      latestMovePlyRef.current = Math.max(previousPly, resultPly);
+      const moveNumber = Math.ceil(resultPly / 2);
+
+      setMoves((current) => {
+        const copy = current.map((row) => ({ ...row }));
+        let row = copy.find((candidate) => candidate.moveNumber === moveNumber);
+        if (!row) {
+          row = { moveNumber };
+          copy.push(row);
+        }
+        if (resultPly % 2 === 1) {
+          row.white = sanText;
+          row.whitePosition = position;
+        } else {
+          row.black = sanText;
+          row.blackPosition = position;
+        }
+        return copy.sort((a, b) => a.moveNumber - b.moveNumber);
+      });
+      return gapDetected;
+    }
+
+    const moverSide = result.sideToMove === "white"
+      ? "black"
+      : result.sideToMove === "black"
+        ? "white"
+        : null;
+    setMoves((current) => {
+      const copy = current.map((row) => ({ ...row }));
+      const last = copy[copy.length - 1];
+
+      if (moverSide === "white") {
+        const moveNumber = last ? last.moveNumber + 1 : 1;
+        copy.push({ moveNumber, white: sanText, whitePosition: position });
+        return copy;
       }
-      const copy = [...prev];
-      copy[copy.length - 1] = { ...copy[copy.length - 1], black: sanText, blackPosition: position };
+
+      if (moverSide === "black") {
+        if (last && last.white && !last.black) {
+          last.black = sanText;
+          last.blackPosition = position;
+          return copy;
+        }
+        const moveNumber = last ? last.moveNumber + 1 : 1;
+        copy.push({ moveNumber, black: sanText, blackPosition: position });
+        return copy;
+      }
+
+      if (!last || last.black) {
+        copy.push({ moveNumber: last ? last.moveNumber + 1 : 1, white: sanText, whitePosition: position });
+      } else {
+        last.black = sanText;
+        last.blackPosition = position;
+      }
       return copy;
     });
+    return false;
   }
 
   function showMovePreview(event: React.MouseEvent<HTMLElement>, position: string | undefined) {
@@ -1399,11 +1505,13 @@ export const ChessBoard: React.FC = () => {
     if (!data.from || !data.to) return;
     animateMoveLocally(data.from, data.to, null, data.position);
     setLastMove({ from: data.from, to: data.to });
-    addMoveToMoveList(data);
+    const moveListGapDetected = addMoveToMoveList(data);
+    if (moveListGapDetected) void reconcileMoveListFromBackend();
     playMoveResultSound(data);
   }
 
   async function synchronizeAfterMoveSequence() {
+    await reconcileMoveListFromBackend();
     await loadBoardFromBackend();
     await loadClock();
     if (engineAutoUpdateRef.current && !gameEndStateRef.current) {
@@ -1428,7 +1536,8 @@ export const ChessBoard: React.FC = () => {
       setLastMove({ from, to });
       setSelectedSquare(null);
       updatePossibleTargets([]);
-      addMoveToMoveList(data);
+      const moveListGapDetected = addMoveToMoveList(data);
+      if (moveListGapDetected) await reconcileMoveListFromBackend();
       playMoveResultSound(data);
       if (handleGameEndState(data.gameState)) { await synchronizeAfterMoveSequence(); return; }
       await requestComputerMoveIfEnabled(data.sideToMove);

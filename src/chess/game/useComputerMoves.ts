@@ -79,8 +79,10 @@ export function useComputerMoves({
   }
 
   async function cancelPlayerEngine(side: PieceColor) {
-    invalidateComputerMoveSequences();
-    if (activeComputerMoveSideRef.current === side) setComputerThinkingForSide(null, false);
+    if (activeComputerMoveSideRef.current === side) {
+      invalidateComputerMoveSequences();
+      setComputerThinkingForSide(null, false);
+    }
     try {
       const result = await cancelComputerMove(side);
       if (!result.ok) {
@@ -128,10 +130,12 @@ export function useComputerMoves({
       onError(null);
       const result = await requestComputerMoveApi();
       const data = result.data;
-      if (!isComputerMoveSequenceCurrent(sequenceId)) {
-        return { gameEnded: false, sideToMove: data.sideToMove ?? null, success: false };
-      }
+      const sequenceCurrent = isComputerMoveSequenceCurrent(sequenceId);
+
       if (!result.ok || !data.success) {
+        if (!sequenceCurrent) {
+          return { gameEnded: false, sideToMove: data.sideToMove ?? null, success: false };
+        }
         if (onGameEnd(data.gameState)) {
           await onRefreshClock();
           return { gameEnded: true, sideToMove: data.sideToMove ?? null, success: false };
@@ -140,8 +144,22 @@ export function useComputerMoves({
         if (message !== "Computer move was cancelled") onError(message);
         return { gameEnded: false, sideToMove: data.sideToMove ?? null, success: false };
       }
+
+      // A successful stale response may already have changed the backend game.
+      // Do not replay it blindly into the UI because a new game may have started
+      // meanwhile. Reconcile from the authoritative snapshot instead.
+      if (!sequenceCurrent) {
+        await onSynchronize();
+        return {
+          gameEnded: Boolean(data.gameState),
+          sideToMove: data.sideToMove ?? null,
+          success: false,
+        };
+      }
+
       if (data.from && data.to) onMove(data);
-      if (onGameEnd(data.gameState)) {
+      const gameEnded = onGameEnd(data.gameState);
+      if (gameEnded) {
         return { gameEnded: true, sideToMove: data.sideToMove ?? null, success: true };
       }
       return { gameEnded: false, sideToMove: data.sideToMove ?? null, success: true };
@@ -181,6 +199,11 @@ export function useComputerMoves({
   }
 
   function runComputerMoveSequence(initialSideToMove: string | null | undefined) {
+    // Enabling the other engine while one side is already thinking must not
+    // invalidate the active sequence. The running loop will observe the updated
+    // enabled-side refs before requesting the next move.
+    if (isComputerThinkingRef.current) return;
+
     const sequenceId = computerMoveSequenceIdRef.current + 1;
     computerMoveSequenceIdRef.current = sequenceId;
     requestComputerMoveIfEnabled(initialSideToMove, sequenceId)
