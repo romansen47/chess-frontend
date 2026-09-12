@@ -12,7 +12,7 @@
 .annotation-panel-placeholder,
 .annotation-muted {
   color: #8b93a7;
-  font-size: 12px;
+  font-size: 10px;
   padding: 5px 0;
 }
 
@@ -33,13 +33,13 @@
 
 .annotation-panel-heading span {
   color: #9aa3b8;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .annotation-dirty {
   color: #e7b85c !important;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .annotation-section {
@@ -49,7 +49,7 @@
 }
 
 .annotation-section-title {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   color: #c9d0df;
 }
@@ -62,12 +62,12 @@
 
 .annotation-cat-badge {
   color: #9aa3b8;
-  font-size: 11px;
+  font-size: 9px;
 }
 
 .annotation-cat-badge strong {
   color: #f1f3f8;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .annotation-nag-grid {
@@ -169,11 +169,11 @@
 
 .annotation-variation-row code {
   color: #d8ddea;
-  font-size: 11px;
+  font-size: 9px;
 }
 
 .annotation-engine-row {
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .annotation-engine-row strong {
@@ -186,7 +186,7 @@
 
 .annotation-variation-index {
   color: #9aa3b8;
-  font-size: 11px;
+  font-size: 9px;
 }
 
 .annotation-icon-button {
@@ -195,7 +195,7 @@
   height: 26px;
   min-height: 26px !important;
   padding: 0;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1;
 }
 
@@ -219,5 +219,5 @@
 
 .annotation-error {
   color: #ff9090;
-  font-size: 12px;
+  font-size: 10px;
 }

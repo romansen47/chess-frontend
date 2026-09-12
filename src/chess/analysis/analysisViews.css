@@ -1,14 +1,14 @@
 .analysis-replay-content {
-  height: calc(8 * 80px + 24px) !important;
+  height: 730px !important;
   min-height: 0 !important;
-  max-height: calc(8 * 80px + 24px);
+  max-height: 730px;
   gap: 8px;
   overflow: hidden;
 }
 
 .analysis-replay-content > .analysis-profile-panel {
-  flex: 0 0 260px !important;
-  height: 260px !important;
+  flex: 0 0 286px !important;
+  height: 286px !important;
   min-height: 0 !important;
 }
 
@@ -19,9 +19,9 @@
 }
 
 .analysis-engine-view-tabs {
-  flex: 0 0 34px;
-  height: 34px;
-  min-height: 34px;
+  flex: 0 0 37px;
+  height: 37px;
+  min-height: 37px;
   display: flex;
   align-items: flex-end;
   gap: 2px;
@@ -29,16 +29,16 @@
 }
 
 .analysis-engine-view-tab {
-  height: 33px;
-  min-width: 132px;
-  padding: 0 14px;
+  height: 36px;
+  min-width: 145px;
+  padding: 0 15px;
   border: 1px solid #3f3f3f;
   border-bottom: 0;
   border-radius: 6px 6px 0 0;
   background: #202020;
   color: #aaa;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
   cursor: pointer;
 }
 
@@ -62,9 +62,9 @@
 }
 
 .analysis-replay-content .analysis-position-panel {
-  flex: 0 0 336px;
-  width: 336px;
-  min-width: 336px;
+  flex: 0 0 370px;
+  width: 370px;
+  min-width: 370px;
   overflow: hidden;
 }
 
@@ -93,7 +93,7 @@
 }
 
 .analysis-replay-content .analysis-position-piece {
-  font-size: 2.1rem;
+  font-size: 2.3rem;
 }
 
 .analysis-replay-content .analysis-lines-panel {

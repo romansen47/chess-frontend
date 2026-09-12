@@ -30,15 +30,15 @@
 .app-title {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   white-space: nowrap;
   line-height: 1;
 }
 
 .app-title-logo {
-  width: 1.4rem;
-  height: 1.4rem;
-  flex: 0 0 1.4rem;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 1.55rem;
   display: block;
   object-fit: cover;
   border-radius: 4px;
@@ -51,13 +51,13 @@
 }
 
 .app-title-initial {
-  font-size: 1em;
+  font-size: calc(1em - 2px);
   font-weight: 700;
   line-height: 1;
 }
 
 .app-title-rest {
-  font-size: 0.7em;
+  font-size: calc(0.7em - 2px);
   font-weight: 600;
   line-height: 1;
 }
@@ -69,7 +69,7 @@
   padding: 7px 8px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 5px;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem - 2px);
   line-height: 1.35;
 }
 
@@ -88,5 +88,5 @@
 
 .moves-import-warning strong {
   color: #fff1bd;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
 }

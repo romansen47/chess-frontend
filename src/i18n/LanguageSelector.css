@@ -1,17 +1,17 @@
 .language-selector {
   display: inline-flex;
   align-items: center;
-  height: 26px;
+  height: 29px;
   margin: 0;
   padding: 0 4px;
   color: #dddddd;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
   white-space: nowrap;
 }
 
 .language-selector select {
-  min-width: 112px;
-  height: 26px;
+  min-width: 123px;
+  height: 29px;
   padding: 0 24px 0 7px;
   border: 1px solid #555;
   border-radius: 4px;
@@ -30,6 +30,6 @@
 
 @media (max-width: 980px) {
   .language-selector select {
-    min-width: 104px;
+    min-width: 114px;
   }
 }

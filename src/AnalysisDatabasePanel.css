@@ -34,7 +34,7 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
-  font-size: 0.88rem;
+  font-size: calc(0.88rem - 2px);
 }
 
 .analysis-database-summary > span {
@@ -48,7 +48,7 @@
 .analysis-database-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.84rem;
+  font-size: calc(0.84rem - 2px);
 }
 
 .analysis-database-table th,
@@ -66,7 +66,7 @@
 
 .analysis-database-uci {
   margin-left: 7px;
-  font-size: 0.76rem;
+  font-size: calc(0.76rem - 2px);
   opacity: 0.48;
 }
 

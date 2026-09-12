@@ -16,7 +16,7 @@
 .engine-profile-context-menu-title {
   padding: 7px 9px 8px;
   color: #f0f0f0;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
   font-weight: 700;
 }
 
@@ -74,7 +74,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.79rem;
+  font-size: calc(0.79rem - 2px);
 }
 
 .engine-profile-context-menu-engine {
@@ -82,7 +82,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #a9a9a9;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
 }
 
 .engine-profile-context-menu-literal {
@@ -92,11 +92,11 @@
 .engine-profile-context-menu-status {
   padding: 8px 9px;
   color: #bdbdbd;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
 }
 
 .engine-profile-context-menu-error {
   padding: 8px 9px;
   color: #ffb0b0;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
 }

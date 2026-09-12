@@ -34,13 +34,13 @@
 
 .engine-config-dialog-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: calc(1.1rem - 2px);
 }
 
 .engine-config-dialog-subtitle {
   margin-top: 3px;
   color: #a9a9a9;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem - 2px);
 }
 
 .engine-config-header-actions,
@@ -89,7 +89,7 @@
 .engine-config-message-banner {
   padding: 8px 16px;
   border-bottom: 1px solid;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem - 2px);
 }
 
 .engine-config-error-banner {
@@ -146,7 +146,7 @@
   border-radius: 999px;
   background: #383838;
   color: #bcbcbc;
-  font-size: 0.66rem;
+  font-size: calc(0.66rem - 2px);
   line-height: 1.35;
 }
 
@@ -183,18 +183,18 @@
 }
 
 .engine-config-sidebar-header strong {
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
 }
 
 .engine-config-sidebar-header span {
   color: #8f8f8f;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
 }
 
 .engine-config-sidebar-header button {
   flex: 0 0 auto;
   padding: 5px 8px;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem - 2px);
 }
 
 .engine-config-nav-list {
@@ -243,7 +243,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
 }
 
 .engine-config-nav-meta,
@@ -253,7 +253,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #b7b7b7;
-  font-size: 0.7rem;
+  font-size: calc(0.7rem - 2px);
 }
 
 .engine-config-nav-path {
@@ -304,14 +304,14 @@
 }
 
 .engine-config-details-heading strong {
-  font-size: 0.9rem;
+  font-size: calc(0.9rem - 2px);
 }
 
 .engine-config-details-heading span,
 .engine-config-card-title span,
 .engine-config-options-header > div:first-child > span {
   color: #999;
-  font-size: 0.7rem;
+  font-size: calc(0.7rem - 2px);
 }
 
 .engine-config-chip {
@@ -323,7 +323,7 @@
   border-radius: 999px;
   background: #292929;
   color: #bdbdbd !important;
-  font-size: 0.68rem !important;
+  font-size: calc(0.68rem - 2px) !important;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -364,7 +364,7 @@
 .engine-config-form-grid label > span,
 .engine-config-search-card label > span {
   color: #999;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
 }
 
 .engine-config-dialog input,
@@ -379,7 +379,7 @@
   outline: none;
   background: #171717;
   color: #e5e5e5;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
 }
 
 .engine-config-dialog input:focus,
@@ -411,7 +411,7 @@
   display: block;
   margin-bottom: 3px;
   color: #999;
-  font-size: 0.66rem;
+  font-size: calc(0.66rem - 2px);
 }
 
 .engine-config-engine-summary strong {
@@ -419,7 +419,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
 }
 
 .engine-config-search-card {
@@ -438,7 +438,7 @@
 }
 
 .engine-config-card-title strong {
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
 }
 
 .engine-config-options-header {
@@ -457,7 +457,7 @@
 }
 
 .engine-config-options-header strong {
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
 }
 
 .engine-config-option-tools {
@@ -510,7 +510,7 @@
 
 .engine-config-option-label strong {
   overflow-wrap: anywhere;
-  font-size: 0.76rem;
+  font-size: calc(0.76rem - 2px);
 }
 
 .engine-config-option-meta {
@@ -518,7 +518,7 @@
   gap: 6px;
   flex-wrap: wrap;
   color: #8f8f8f;
-  font-size: 0.64rem;
+  font-size: calc(0.64rem - 2px);
 }
 
 .engine-config-option-type {
@@ -554,7 +554,7 @@
   white-space: nowrap;
   color: #bdbdbd;
   font-family: Consolas, "Courier New", monospace;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
 }
 
 .engine-config-no-options {
@@ -564,7 +564,7 @@
   border-radius: 6px;
   color: #888;
   text-align: center;
-  font-size: 0.76rem;
+  font-size: calc(0.76rem - 2px);
 }
 
 .engine-config-actions {
@@ -593,7 +593,7 @@
 .engine-config-details-empty,
 .engine-config-empty {
   color: #888;
-  font-size: 0.76rem;
+  font-size: calc(0.76rem - 2px);
 }
 
 .engine-config-details-empty {
@@ -608,7 +608,7 @@
 
 .engine-config-details-empty strong {
   color: #aaa;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
 }
 
 .engine-config-empty {
@@ -713,7 +713,7 @@
   border-radius: 6px;
   background: #29271f;
   color: #cfc7a8;
-  font-size: 0.74rem;
+  font-size: calc(0.74rem - 2px);
   line-height: 1.45;
 }
 
@@ -759,12 +759,12 @@
 }
 
 .engine-config-default-card-heading strong {
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
 }
 
 .engine-config-default-card-heading span:not(.engine-config-chip) {
   color: #999;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
 }
 
 .engine-config-default-card-meta {
@@ -773,7 +773,7 @@
   flex-direction: column;
   gap: 2px;
   color: #aaa;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
 }
 
 .engine-config-default-card-path {

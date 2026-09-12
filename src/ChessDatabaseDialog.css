@@ -27,7 +27,7 @@
 
 .chess-database-dialog h2 {
   margin: 0 0 18px;
-  font-size: 1.35rem;
+  font-size: calc(1.35rem - 2px);
 }
 
 .chess-database-status-card {
@@ -137,13 +137,13 @@
 }
 
 .chess-database-import-phase-header > span {
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
   opacity: 0.68;
 }
 
 .chess-database-import-phase-detail {
   margin-top: 8px;
-  font-size: 0.86rem;
+  font-size: calc(0.86rem - 2px);
   opacity: 0.7;
 }
 
@@ -172,7 +172,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.86rem;
+  font-size: calc(0.86rem - 2px);
 }
 
 .chess-database-progress-label span {
@@ -261,7 +261,7 @@
 }
 
 .chess-database-search-grid label > span {
-  font-size: 0.86rem;
+  font-size: calc(0.86rem - 2px);
   opacity: 0.74;
 }
 
@@ -288,7 +288,7 @@
 .chess-database-results {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.86rem;
+  font-size: calc(0.86rem - 2px);
 }
 
 .chess-database-results th,

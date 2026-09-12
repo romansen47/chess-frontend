@@ -9,7 +9,7 @@
   background: #1b1b1b !important;
   color: #e2e2e2 !important;
   font-family: Consolas, "Courier New", monospace !important;
-  font-size: 0.7rem !important;
+  font-size: calc(0.7rem - 2px) !important;
   line-height: 1.2;
   text-align: right;
   text-overflow: ellipsis;
@@ -63,7 +63,7 @@
 
 .engine-config-option-popup-title strong {
   overflow-wrap: anywhere;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem - 2px);
 }
 
 .engine-config-option-popup-meta {
@@ -71,7 +71,7 @@
   gap: 7px;
   flex-wrap: wrap;
   color: #9b9b9b;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
 }
 
 .engine-config-option-popup-editor {
@@ -82,13 +82,13 @@
 
 .engine-config-option-popup-editor > span {
   color: #aaa;
-  font-size: 0.7rem;
+  font-size: calc(0.7rem - 2px);
 }
 
 .engine-config-option-popup-editor input,
 .engine-config-option-popup-editor select {
   height: 36px;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
 }
 
 .engine-config-option-popup-check {
@@ -111,7 +111,7 @@
 }
 
 .engine-config-option-popup-check span {
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
 }
 
 .engine-config-option-popup-actions {

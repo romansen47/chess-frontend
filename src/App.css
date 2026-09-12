@@ -10,8 +10,8 @@
 }
 
 .app-header {
-  height: 56px;
-  padding: 0 24px;
+  height: 62px;
+  padding: 0 26px;
   border-bottom: 1px solid #222;
   background: #333;
   color: #f5f5f5;
@@ -26,7 +26,7 @@
 
 .app-header h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: calc(1.4rem - 2px);
   font-weight: 600;
 }
 
@@ -39,8 +39,8 @@
 }
 
 .top-engine-button {
-  padding: 4px 8px;
-  font-size: 0.75rem;
+  padding: 4px 9px;
+  font-size: calc(0.75rem - 2px);
   line-height: 1.2;
   border-radius: 4px;
   border: 1px solid #555;
@@ -48,27 +48,27 @@
   color: #dddddd;
   cursor: pointer;
 
-  height: 26px;
+  height: 29px;
   white-space: nowrap;
 }
 
 .top-engine-button.engine-settings {
-  min-width: 116px;
+  min-width: 128px;
 }
 
 .top-engine-button.analysis-repeat {
-  min-width: 136px;
+  min-width: 150px;
 }
 
 .top-engine-button.analysis-export {
-  min-width: 154px;
+  min-width: 169px;
 }
 
 .top-engine-button.board-flip-button {
-  width: 30px;
-  min-width: 30px;
+  width: 33px;
+  min-width: 33px;
   padding: 0;
-  font-size: 1rem;
+  font-size: calc(1rem - 2px);
   font-weight: 700;
 }
 
@@ -87,13 +87,13 @@
 }
 
 .top-engine-button.data-menu-trigger {
-  min-width: 88px;
+  min-width: 97px;
 }
 
 .top-engine-button.data-menu-trigger::after {
   content: "▾";
   margin-left: 6px;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
 }
 
 .top-engine-button.data-menu-trigger-open::after {
@@ -130,7 +130,7 @@
   color: #dddddd;
 
   font: inherit;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem - 2px);
   line-height: 1.2;
   text-align: left;
   white-space: nowrap;
@@ -170,7 +170,7 @@
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
-  padding: 1.5rem;
+  padding: 26px;
   background: #4a4a4a;
   overflow-x: auto;
 }
@@ -190,7 +190,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 13px;
 }
 
 /* Brett-Kachel: darf nicht mit dem rechten Engine-Bereich mitwachsen */
@@ -200,15 +200,15 @@
 
   background: #2b2b2b;
   border-radius: 8px;
-  padding: 12px;
+  padding: 13px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
 }
 
 /* Uhrbereich unter dem Brett */
 .clock-area {
-  width: calc(8 * 80px + 24px);
+  width: 730px;
   display: flex;
-  gap: 12px;
+  gap: 13px;
   align-items: stretch;
   justify-content: center;
   box-sizing: border-box;
@@ -269,20 +269,20 @@
   position: absolute;
   top: 5px;
   right: 7px;
-  font-size: 0.55rem;
+  font-size: calc(0.55rem - 2px);
   font-weight: 700;
   letter-spacing: 0.04em;
   opacity: 0.72;
 }
 
 .clock-box:first-child .clock-label {
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
   color: #333333;
   margin-bottom: 2px;
 }
 
 .clock-box:nth-child(2) .clock-label {
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
   color: #bbbbbb;
   margin-bottom: 2px;
 }
@@ -290,7 +290,7 @@
 .clock-time {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  font-size: 1.6rem;
+  font-size: calc(1.6rem - 2px);
   font-weight: 700;
   line-height: 1.1;
   color: inherit;
@@ -299,14 +299,14 @@
 .clock-error {
   flex: 0 0 100%;
   color: #ff8080;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
 }
 
 /* Container für Brett + Figuren */
 .board-container {
   position: relative;
-  width: calc(8 * 80px);
-  height: calc(8 * 80px);
+  width: calc(8 * 88px);
+  height: calc(8 * 88px);
 }
 
 /* Schachbrett-Raster */
@@ -314,8 +314,8 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: repeat(8, 80px);
-  grid-template-rows: repeat(8, 80px);
+  grid-template-columns: repeat(8, 88px);
+  grid-template-rows: repeat(8, 88px);
   border: 2px solid #333;
   background: #000;
 }
@@ -372,7 +372,7 @@
   position: absolute;
   bottom: 4px;
   right: 4px;
-  font-size: 0.7rem;
+  font-size: calc(0.7rem - 2px);
   color: rgba(0, 0, 0, 0.7);
 }
 
@@ -384,8 +384,8 @@
 .board-move-annotation {
   position: absolute;
   z-index: 45;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -393,7 +393,7 @@
   pointer-events: auto;
   cursor: help;
   box-sizing: border-box;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 800;
   line-height: 1;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
@@ -412,7 +412,7 @@
   border-radius: 5px;
   background: rgba(24, 24, 24, 0.97);
   color: #f5f5f5;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 500;
   line-height: 1.35;
   white-space: normal;
@@ -432,8 +432,8 @@
 
 .pieces-layer .piece {
   position: absolute;
-  font-size: 64px;
-  line-height: 80px;
+  font-size: 70px;
+  line-height: 88px;
   text-align: center;
   transition: transform 120ms ease-out;
 }
@@ -441,12 +441,12 @@
 /* Figurendarstellung mit Animation */
 .piece {
   position: absolute;
-  width: 80px;
-  height: 80px;
+  width: 88px;
+  height: 88px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3.2rem;
+  font-size: calc(3.2rem - 2px);
   line-height: 1;
   pointer-events: auto;
   cursor: grab;
@@ -473,15 +473,15 @@
 
 /* Linkes Panel: Züge */
 .moves-panel {
-  flex: 0 0 242px;
-  height: calc(8 * 80px + 24px);
+  flex: 0 0 266px;
+  height: 730px;
   min-width: 0;
   background: #2b2b2b;
   border-radius: 8px;
   padding: 8px 10px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
   color: #f5f5f5;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem - 2px);
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -501,7 +501,7 @@
 /* Panel-Titel */
 .panel-title {
   margin: 0 0 6px 0;
-  font-size: 0.9rem;
+  font-size: calc(0.9rem - 2px);
   font-weight: 600;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 4px;
@@ -533,7 +533,7 @@
 
 .player-name-color {
   flex: 0 0 38px;
-  font-size: 0.68rem;
+  font-size: calc(0.68rem - 2px);
   color: #bbbbbb;
 }
 
@@ -543,7 +543,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.74rem;
+  font-size: calc(0.74rem - 2px);
   color: #f5f5f5;
 }
 
@@ -553,9 +553,9 @@
 
 /* Zugliste */
 .moves-list {
-  max-height: calc(8 * 80px + 24px - 112px);
+  max-height: calc(8 * 88px + 24px - 112px);
   overflow-y: auto;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem - 2px);
 }
 
 .moves-empty {
@@ -603,7 +603,7 @@
 .engine-toggle-button {
   flex: 0 0 auto;
   padding: 4px 8px;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
   border-radius: 4px;
   border: 1px solid #555;
   background: #3a3a3a;
@@ -623,15 +623,15 @@
   min-width: 0;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 9px;
   box-sizing: border-box;
 }
 
 /* Schmale, senkrechte Bewertungsleiste direkt rechts vom Brett */
 .engine-bar-wrapper {
-  flex: 0 0 24px;
-  width: 24px;
-  height: calc(8 * 80px + 24px);
+  flex: 0 0 26px;
+  width: 26px;
+  height: 730px;
 
   border: 1px solid #666;
   border-radius: 4px;
@@ -684,13 +684,13 @@
 
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 /* Rechts von der Leiste: Fenster mit Engine-Lines */
 .engine-lines {
   flex: 0 0 auto;
-  height: calc(8 * 80px + 24px);
+  height: 730px;
   overflow: auto;
 
   background: #2b2b2b;
@@ -710,7 +710,7 @@
   margin-bottom: 2px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   color: #bdbdbd;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
   font-weight: 600;
 }
 
@@ -726,12 +726,12 @@
 
 .engine-line-header {
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
   white-space: nowrap;
 }
 
 .engine-line-moves {
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
   color: #dddddd;
   margin-top: 2px;
 
@@ -743,7 +743,7 @@
 /* Engine-Fehler / leerer Zustand */
 .engine-error {
   color: #ff8080;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
   margin-bottom: 4px;
 }
 
@@ -757,12 +757,12 @@
 .engine-placeholder {
   width: 100%;
   min-width: 0;
-  height: calc(8 * 80px + 24px);
+  height: 730px;
   display: flex;
   justify-content: center;
   align-items: center;
   color: #888888;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
   text-align: center;
   padding: 8px 4px;
   box-sizing: border-box;
@@ -805,7 +805,7 @@
 .promotion-button,
 .promotion-cancel-button {
   padding: 4px 8px;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
   border-radius: 4px;
   border: 1px solid #555;
   background: #f5f5f5;
@@ -867,7 +867,7 @@
 }
 
 .hover-board-piece {
-  font-size: 23px;
+  font-size: 21px;
   line-height: 1;
   pointer-events: none;
 }
@@ -893,7 +893,7 @@
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
   box-sizing: border-box;
   pointer-events: none;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
@@ -922,14 +922,14 @@
 
 .game-end-dialog-content h2 {
   margin: 0 0 10px 0;
-  font-size: 1.15rem;
+  font-size: calc(1.15rem - 2px);
   font-weight: 700;
 }
 
 .game-end-dialog-content p {
   margin: 0 0 16px 0;
   color: #dddddd;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem - 2px);
 }
 
 .game-end-dialog-actions {
@@ -941,7 +941,7 @@
 .game-end-dialog-button {
   min-width: 104px;
   padding: 6px 12px;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem - 2px);
   border-radius: 5px;
   border: 1px solid #555;
   background: #f5f5f5;
@@ -975,7 +975,7 @@
 
 .game-settings-dialog-content h2 {
   margin: 0 0 14px 0;
-  font-size: 1.15rem;
+  font-size: calc(1.15rem - 2px);
   font-weight: 700;
   text-align: center;
 }
@@ -990,7 +990,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
   color: #dddddd;
 }
 
@@ -1003,13 +1003,13 @@
   border: 1px solid #555;
   background: #1f1f1f;
   color: #f5f5f5;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem - 2px);
 }
 
 .game-settings-error {
   margin-top: 10px;
   color: #ff8080;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
 }
 
 .game-settings-dialog-actions {
@@ -1022,7 +1022,7 @@
 .game-settings-dialog-button {
   min-width: 120px;
   padding: 6px 12px;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem - 2px);
   border-radius: 5px;
   border: 1px solid #555;
   background: #f5f5f5;
@@ -1042,7 +1042,7 @@
 /* Analyse-Replay: nutzt im Analysemodus die rechte Content-Spalte */
 .analysis-replay-content {
   width: 100%;
-  height: calc(8 * 80px + 24px);
+  height: 730px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1071,7 +1071,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem - 2px);
 }
 
 .analysis-profile-header span,
@@ -1126,7 +1126,7 @@
 
 .analysis-cancel-button {
   padding: 3px 8px;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem - 2px);
   border-radius: 4px;
   border: 1px solid #555;
   background: #3a3a3a;
@@ -1141,7 +1141,7 @@
 .analysis-profile-error {
   margin-top: 4px;
   color: #ff8080;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem - 2px);
 }
 
 .analysis-detail-row {
@@ -1179,7 +1179,7 @@
 
 .analysis-detail-title {
   flex: 0 0 auto;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem - 2px);
   font-weight: 600;
   color: #f5f5f5;
 }
@@ -1194,7 +1194,7 @@
   border-radius: 5px;
   background: #303030;
   color: #cfcfcf;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem - 2px);
   font-style: italic;
   text-align: center;
   box-sizing: border-box;
@@ -1230,7 +1230,7 @@
 }
 
 .analysis-position-piece {
-  font-size: 1.75rem;
+  font-size: calc(1.75rem - 2px);
   line-height: 1;
 }
 
@@ -1276,7 +1276,7 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 4px;
-  font-size: 0.78rem;
+  font-size: calc(0.78rem - 2px);
   color: #f5f5f5;
 }
 
@@ -1287,7 +1287,7 @@
 .analysis-line-moves {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  font-size: 0.76rem;
+  font-size: calc(0.76rem - 2px);
   line-height: 1.35;
   color: #ededed;
   overflow-wrap: anywhere;
@@ -1327,7 +1327,7 @@
 
 .analysis-settings-dialog-content h2 {
   margin: 0 0 10px 0;
-  font-size: 1.15rem;
+  font-size: calc(1.15rem - 2px);
   font-weight: 700;
   text-align: center;
 }
@@ -1335,7 +1335,7 @@
 .analysis-settings-description {
   margin: 0 0 14px 0;
   color: #dddddd;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
   line-height: 1.35;
 }
 
@@ -1349,7 +1349,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
   color: #dddddd;
 }
 
@@ -1365,13 +1365,13 @@
   border: 1px solid #555;
   background: #1f1f1f;
   color: #f5f5f5;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem - 2px);
 }
 
 .analysis-settings-error {
   margin-top: 10px;
   color: #ff8080;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
 }
 
 .analysis-settings-dialog-actions {
@@ -1384,7 +1384,7 @@
 .analysis-settings-dialog-button {
   min-width: 96px;
   padding: 6px 12px;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem - 2px);
   border-radius: 5px;
   border: 1px solid #555;
   background: #f5f5f5;
@@ -1409,7 +1409,7 @@
   border: 1px solid #555;
   background: #1f1f1f;
   color: #f5f5f5;
-  font-size: 0.85rem;
+  font-size: calc(0.85rem - 2px);
 }
 
 .analysis-settings-config-summary {
@@ -1432,12 +1432,12 @@
 
 .analysis-settings-config-summary span {
   color: #bdbdbd;
-  font-size: 0.72rem;
+  font-size: calc(0.72rem - 2px);
 }
 
 .analysis-settings-config-summary strong {
   color: #f5f5f5;
-  font-size: 0.82rem;
+  font-size: calc(0.82rem - 2px);
   overflow-wrap: anywhere;
 }
 
@@ -1452,7 +1452,7 @@
   border-radius: 5px;
   color: #f2c4c4;
   background: #342727;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem - 2px);
 }
 
 .game-settings-engine-note {
@@ -1461,7 +1461,7 @@
   border-radius: 5px;
   background: #242424;
   color: #b9b9b9;
-  font-size: 0.76rem;
+  font-size: calc(0.76rem - 2px);
   line-height: 1.35;
 }
 
@@ -1488,7 +1488,7 @@
   align-items: center;
   justify-content: center;
   vertical-align: middle;
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 800;
   line-height: 1;
   box-sizing: border-box;
@@ -1534,7 +1534,7 @@
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.09);
   color: #aeb8cf;
-  font-size: 8px;
+  font-size: 6px;
   font-weight: 700;
   line-height: 1;
   box-sizing: border-box;

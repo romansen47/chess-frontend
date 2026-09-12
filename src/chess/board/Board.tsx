@@ -77,7 +77,7 @@ export default function Board({
     const pieceOffset = squareToBoardOffset(
       squareName(piece.file, piece.rank),
       orientation,
-      80
+      88
     );
     const x = pieceOffset?.x ?? 0;
     const y = pieceOffset?.y ?? 0;
@@ -106,7 +106,7 @@ export default function Board({
   });
 
   const annotationCoords = annotation
-    ? squareToBoardOffset(annotation.square, orientation, 80)
+    ? squareToBoardOffset(annotation.square, orientation, 88)
     : null;
 
   return (
@@ -119,7 +119,7 @@ export default function Board({
           data-tooltip={annotation.tooltip ?? undefined}
           aria-label={annotation.tooltip ?? undefined}
           style={{
-            left: annotationCoords.x + 56,
+            left: annotationCoords.x + 62,
             top: annotationCoords.y + 4,
           }}
         >
