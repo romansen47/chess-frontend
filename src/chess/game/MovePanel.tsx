@@ -51,44 +51,39 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
   }
 
   function getAnnotationTitle(annotation: MoveAnnotation): string {
-    if (annotation.kind === "brilliant") {
+    if (annotation.kind === "extraordinary") {
       const values = {
         earlyDepth: annotation.earlyDepth ?? 0,
         finalDepth: annotation.finalDepth ?? 0,
-        earlyRank: annotation.earlyRank ?? ">3",
-        finalRank: annotation.finalRank ?? 0,
         material: formatAnnotationNumber(annotation.materialInvestment ?? 0),
+        earlyStrength: formatAnnotationNumber(annotation.earlyStrength ?? 0),
+        finalStrength: formatAnnotationNumber(annotation.finalStrength ?? 0),
       };
 
       if (
-        annotation.brilliantReason ===
-          "deepDiscoveryAndMaterialInvestment" &&
-        annotation.earlyDepth != null &&
-        annotation.materialInvestment != null
+        annotation.extraordinaryReason ===
+          "deepDiscoveryAndMaterialSacrifice"
       ) {
         return `${annotation.symbol} · ${t(
-          "analysis.moveAnnotationBrilliantCombined",
+          "analysis.moveAnnotationExtraordinaryCombined",
           values
         )}`;
       }
 
-      if (
-        annotation.brilliantReason === "materialInvestment" &&
-        annotation.materialInvestment != null
-      ) {
-        return `${annotation.symbol} · ${t(
-          "analysis.moveAnnotationBrilliantMaterial",
-          values
-        )}`;
+      if (annotation.extraordinaryReason === "materialSacrifice") {
+        const key =
+          annotation.sacrificeType === "activeInvestment"
+            ? "analysis.moveAnnotationExtraordinaryActiveSacrifice"
+            : annotation.sacrificeType === "newMaterialOffer"
+              ? "analysis.moveAnnotationExtraordinaryMaterialOffer"
+              : "analysis.moveAnnotationExtraordinaryDeclinedSave";
+
+        return `${annotation.symbol} · ${t(key, values)}`;
       }
 
-      if (
-        annotation.earlyDepth != null &&
-        annotation.finalDepth != null &&
-        annotation.finalRank != null
-      ) {
+      if (annotation.extraordinaryReason === "deepDiscovery") {
         return `${annotation.symbol} · ${t(
-          "analysis.moveAnnotationBrilliant",
+          "analysis.moveAnnotationExtraordinaryDiscovery",
           values
         )}`;
       }
