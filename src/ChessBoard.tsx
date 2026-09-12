@@ -35,6 +35,7 @@ import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
 import AnalysisEngineTabs, { type AnalysisEngineView } from "./chess/analysis/AnalysisEngineTabs";
 import LiveEvaluationView from "./chess/analysis/LiveEvaluationView";
 import { buildMoveAnnotations } from "./chess/analysis/moveAnnotations";
+import { buildDiagnosticAnalysisPgn } from "./chess/analysis/analysisPgnExport";
 import Board, { type BoardAnnotation } from "./chess/board/Board";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 import {
@@ -792,6 +793,13 @@ export const ChessBoard: React.FC = () => {
             && current.earlyRank === liveAnnotation.earlyRank
             && current.finalDepth === liveAnnotation.finalDepth
             && current.finalRank === liveAnnotation.finalRank
+            && current.givesCheck === liveAnnotation.givesCheck
+            && current.earlyRegret === liveAnnotation.earlyRegret
+            && current.middleRegret === liveAnnotation.middleRegret
+            && current.lateRegret === liveAnnotation.lateRegret
+            && current.earlyStrength === liveAnnotation.earlyStrength
+            && current.middleStrength === liveAnnotation.middleStrength
+            && current.lateStrength === liveAnnotation.lateStrength
           );
 
         if (sameAnnotation) return point;
@@ -973,6 +981,32 @@ export const ChessBoard: React.FC = () => {
     } catch (error) {
       console.error("[saveUciGame] error", error);
       setLoadError(t("game.savePgnFailed"));
+    }
+  }
+
+  function saveAnalysisPgn() {
+    try {
+      setLoadError(null);
+      const diagnosticPgn = buildDiagnosticAnalysisPgn({
+        profile: analysisProfile,
+        whitePlayerName: getAnalysisWhitePlayerName(clock, analysisWhitePlayerName),
+        blackPlayerName: getAnalysisBlackPlayerName(clock, analysisBlackPlayerName),
+        engineName: engineEval?.engineName ?? null,
+      });
+      const blob = new Blob([diagnosticPgn], {
+        type: "application/x-chess-pgn;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "analysis-diagnostic.pgn";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("[saveAnalysisPgn] error", error);
+      setLoadError(t("analysis.exportPgnFailed"));
     }
   }
 
@@ -1772,6 +1806,7 @@ export const ChessBoard: React.FC = () => {
         terminatingProgram={isTerminatingProgram}
         onCancelAnalysis={() => void cancelAnalysisReplay()}
         onOpenAnalysis={openAnalysisSettingsDialog}
+        onExportAnalysisPgn={saveAnalysisPgn}
         onNewGame={openGameSettingsDialog}
         onExportCurrentGame={() => void saveUciGame()}
         onImportNewGame={openUciFilePicker}
