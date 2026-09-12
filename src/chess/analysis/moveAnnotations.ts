@@ -1,7 +1,7 @@
 import type { AnalysisProfilePoint, MoveAnnotation } from "../types";
 
 export type {
-  BrilliantReason,
+  ExtraordinaryReason,
   MoveAnnotation,
   MaterialSacrificeType,
   MoveAnnotationKind,
