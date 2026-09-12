@@ -1489,12 +1489,14 @@
 }
 
 .analysis-annotation-container {
-  min-height: 330px;
-  max-height: 520px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
   padding: 10px;
   border-radius: 8px;
   background: #2b2b2b;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
