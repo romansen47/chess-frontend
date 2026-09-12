@@ -16,6 +16,7 @@ import type {
   DragState,
   EngineEvaluation,
   EngineLine,
+  GameAnnotation,
   GameSettings,
   GameSound,
   HoverPreview,
@@ -34,6 +35,7 @@ import MovePanel from "./chess/game/MovePanel";
 import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
 import AnalysisEngineTabs, { type AnalysisEngineView } from "./chess/analysis/AnalysisEngineTabs";
 import LiveEvaluationView from "./chess/analysis/LiveEvaluationView";
+import AnnotationPanel from "./chess/analysis/AnnotationPanel";
 import { buildMoveAnnotations } from "./chess/analysis/moveAnnotations";
 import { buildDiagnosticAnalysisPgn } from "./chess/analysis/analysisPgnExport";
 import Board, { type BoardAnnotation } from "./chess/board/Board";
@@ -77,6 +79,7 @@ import {
   fetchGameSettings,
   fetchGameSnapshot,
   importPgn,
+  saveGameAnnotations,
 } from "./chess/api/gameApi";
 import { useComputerMoves } from "./chess/game/useComputerMoves";
 import { fetchEvaluation, openEvaluationStream, stopEvaluation } from "./chess/api/evaluationApi";
@@ -130,6 +133,29 @@ function createDefaultGameSettings(): GameSettings {
 
 function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
   return { engineProfileId: null, depth: 0, moveTimeSeconds: 5 };
+}
+
+function gameAnnotationRecord(
+  annotations: GameAnnotation[] | null | undefined
+): Record<number, GameAnnotation> {
+  const result: Record<number, GameAnnotation> = {};
+  for (const annotation of annotations ?? []) {
+    if (!annotation || !Number.isFinite(annotation.ply) || annotation.ply <= 0) {
+      continue;
+    }
+    result[annotation.ply] = {
+      ...annotation,
+      variations: [...(annotation.variations ?? [])],
+    };
+  }
+  return result;
+}
+
+function isEmptyGameAnnotation(annotation: GameAnnotation): boolean {
+  return !annotation.nag
+    && !annotation.comment?.trim()
+    && !annotation.evaluation?.trim()
+    && (annotation.variations?.length ?? 0) === 0;
 }
 
 export const ChessBoard: React.FC = () => {
@@ -262,7 +288,11 @@ export const ChessBoard: React.FC = () => {
   ]);
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const [analysisSelectedPosition, setAnalysisSelectedPosition] = useState<AnalysisPositionSelection | null>(null);
-  const [analysisDetailsTab, setAnalysisDetailsTab] = useState<"engine" | "database">("engine");
+  const [analysisDetailsTab, setAnalysisDetailsTab] = useState<"engine" | "database" | "annotations">("engine");
+  const [gameAnnotations, setGameAnnotations] = useState<Record<number, GameAnnotation>>({});
+  const [annotationsDirty, setAnnotationsDirty] = useState<boolean>(false);
+  const [annotationsSaving, setAnnotationsSaving] = useState<boolean>(false);
+  const [annotationSaveError, setAnnotationSaveError] = useState<string | null>(null);
   const [analysisEngineView, setAnalysisEngineView] = useState<AnalysisEngineView>("deep");
   const [analysisSelectedLineIndex, setAnalysisSelectedLineIndex] = useState<number | null>(null);
   const [analysisLineAnimationIndex, setAnalysisLineAnimationIndex] = useState<number>(0);
@@ -479,6 +509,9 @@ export const ChessBoard: React.FC = () => {
       const game = snapshot.game;
       const restoredMoves = game.moves ?? [];
 
+      setGameAnnotations(gameAnnotationRecord(game.annotations));
+      setAnnotationsDirty(false);
+      setAnnotationSaveError(null);
       setMoves(mapImportedUciMovesToRows(restoredMoves));
       if (game.position && game.position.length === 64) {
         setPieces(mapPositionStringToLocalPieces(game.position));
@@ -989,6 +1022,49 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
+  function updateGameAnnotation(annotation: GameAnnotation) {
+    setGameAnnotations((previous) => {
+      const next = { ...previous };
+      if (isEmptyGameAnnotation(annotation)) {
+        delete next[annotation.ply];
+      } else {
+        next[annotation.ply] = {
+          ...annotation,
+          variations: [...(annotation.variations ?? [])],
+        };
+      }
+      return next;
+    });
+    setAnnotationsDirty(true);
+    setAnnotationSaveError(null);
+  }
+
+  async function persistGameAnnotations() {
+    if (!annotationsDirty || annotationsSaving) return;
+
+    setAnnotationsSaving(true);
+    setAnnotationSaveError(null);
+    try {
+      const annotations = Object.values(gameAnnotations)
+        .filter((annotation) => !isEmptyGameAnnotation(annotation))
+        .sort((left, right) => left.ply - right.ply);
+      const saved = await saveGameAnnotations(
+        annotations,
+        whiteComputerEnabled,
+        blackComputerEnabled
+      );
+      setGameAnnotations(gameAnnotationRecord(saved));
+      setAnnotationsDirty(false);
+    } catch (error) {
+      console.error("[persistGameAnnotations] error", error);
+      setAnnotationSaveError(
+        error instanceof Error ? error.message : t("annotations.saveFailed")
+      );
+    } finally {
+      setAnnotationsSaving(false);
+    }
+  }
+
   async function saveUciGame() {
     try {
       setLoadError(null);
@@ -1071,6 +1147,9 @@ export const ChessBoard: React.FC = () => {
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
       const importedMoves = imported.moves ?? [];
       const moveRows = mapImportedUciMovesToRows(importedMoves);
+      setGameAnnotations(gameAnnotationRecord(imported.annotations));
+      setAnnotationsDirty(false);
+      setAnnotationSaveError(null);
       setUciAnalysisLoaded(true);
       setMoves(moveRows);
       setAnalysisWhitePlayerName(formatPlayerDisplayName(imported.whitePlayerName, "White"));
@@ -1137,6 +1216,9 @@ export const ChessBoard: React.FC = () => {
       setAnalysisLineAnimationIndex(0);
       setAnalysisWhitePlayerName(null);
       setAnalysisBlackPlayerName(null);
+      setGameAnnotations({});
+      setAnnotationsDirty(false);
+      setAnnotationSaveError(null);
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
       const appliedSettings = await createNewGame(settings);
       setGameSettings(appliedSettings);
@@ -1754,11 +1836,14 @@ export const ChessBoard: React.FC = () => {
   };
 
   const renderAnalysisSourceTabs = () => {
+    const engineTabActive = analysisDetailsTab === "engine";
     const databaseTabActive = analysisDetailsTab === "database";
+    const annotationsTabActive = analysisDetailsTab === "annotations";
     return (
       <div className="analysis-detail-tabs" role="tablist" aria-label={t("analysis.source")}>
-        <button type="button" role="tab" aria-selected={!databaseTabActive} className={["analysis-detail-tab", !databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("engine")}>{t("analysis.engineSource")}</button>
+        <button type="button" role="tab" aria-selected={engineTabActive} className={["analysis-detail-tab", engineTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("engine")}>{t("analysis.engineSource")}</button>
         <button type="button" role="tab" aria-selected={databaseTabActive} className={["analysis-detail-tab", databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("database")}>{t("analysis.databaseSource")}</button>
+        <button type="button" role="tab" aria-selected={annotationsTabActive} className={["analysis-detail-tab", annotationsTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("annotations")}>{t("annotations.title")}</button>
       </div>
     );
   };
@@ -1777,6 +1862,40 @@ export const ChessBoard: React.FC = () => {
           <div className="analysis-detail-title">{databaseTabActive ? t("analysis.databaseContinuations") : t("analysis.engineVariations")}</div>
           {databaseTabActive ? <AnalysisDatabasePanel ply={analysisSelectedPosition?.ply ?? null} /> : renderAnalysisLinesForSelection()}
         </div>
+      </div>
+    );
+  };
+
+  const renderAnnotationDetails = () => {
+    const ply = analysisSelectedPosition?.ply ?? null;
+    const selectedPoint = ply == null
+      ? null
+      : analysisProfile.find((point) => point.ply === ply) ?? null;
+    const previousPoint = ply == null
+      ? null
+      : analysisProfile.find((point) => point.ply === Math.max(0, ply - 1)) ?? null;
+    const selection = ply == null ? null : getAnalysisMoveSelectionForPly(ply);
+    const currentEvaluation = analysisEvaluationEnabled
+      && analysisVariationMoves.length === 0
+      && analysisEvaluation
+        ? analysisEvaluation.eval
+        : selectedPoint?.evaluation ?? null;
+
+    return (
+      <div className="analysis-annotation-container">
+        <AnnotationPanel
+          selectedPly={ply}
+          selectedSan={selection?.san ?? selectedPoint?.san ?? null}
+          annotation={ply == null ? null : gameAnnotations[ply] ?? null}
+          catAnnotation={ply == null ? null : moveAnnotations[ply] ?? null}
+          currentEvaluation={currentEvaluation}
+          alternatives={previousPoint?.lines ?? []}
+          dirty={annotationsDirty}
+          saving={annotationsSaving}
+          error={annotationSaveError}
+          onChange={updateGameAnnotation}
+          onSave={() => void persistGameAnnotations()}
+        />
       </div>
     );
   };
@@ -1800,6 +1919,8 @@ export const ChessBoard: React.FC = () => {
               variationMode
             />
           </>
+        ) : analysisDetailsTab === "annotations" ? (
+          renderAnnotationDetails()
         ) : analysisDetailsTab === "database" ? (
           renderAnalysisDetails()
         ) : (
@@ -1865,6 +1986,7 @@ export const ChessBoard: React.FC = () => {
               computerThinking: isComputerThinking,
               error: loadError,
               annotations: analysisReplayActive ? moveAnnotations : {},
+              storedAnnotations: gameAnnotations,
             }}
             actions={{
               showPreview: showMovePreview,
