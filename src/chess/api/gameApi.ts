@@ -1,4 +1,10 @@
-import type { ClockState, GameSettings, GameSnapshotResponse, UciGameResponse } from "../types";
+import type {
+  ClockState,
+  GameAnnotation,
+  GameSettings,
+  GameSnapshotResponse,
+  UciGameResponse,
+} from "../types";
 
 export async function fetchGameSettings(): Promise<GameSettings> {
   const response = await fetch("/api/game-settings");
@@ -52,4 +58,22 @@ export async function exportPgn(whiteComputer: boolean, blackComputer: boolean):
     throw new Error(message || `HTTP ${response.status}`);
   }
   return await response.blob();
+}
+
+
+export async function saveGameAnnotations(
+  annotations: GameAnnotation[],
+  whiteComputer: boolean,
+  blackComputer: boolean
+): Promise<GameAnnotation[]> {
+  const response = await fetch("/api/game/annotations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ annotations, whiteComputer, blackComputer }),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `HTTP ${response.status}`);
+  }
+  return (await response.json()) as GameAnnotation[];
 }

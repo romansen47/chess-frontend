@@ -65,6 +65,16 @@ export interface UciGameMove {
   position: string;
 }
 
+export type PgnNagSymbol = "!" | "!!" | "!?" | "?!" | "?" | "??";
+
+export interface GameAnnotation {
+  ply: number;
+  nag: PgnNagSymbol | null;
+  comment: string | null;
+  evaluation: string | null;
+  variations: string[];
+}
+
 export interface UciGameResponse {
   totalPlies: number;
   sideToMove: string | null;
@@ -72,6 +82,8 @@ export interface UciGameResponse {
   moves: UciGameMove[];
   whitePlayerName: string | null;
   blackPlayerName: string | null;
+  databaseGameId?: number | null;
+  annotations?: GameAnnotation[];
 }
 
 export interface GameSnapshotResponse {
