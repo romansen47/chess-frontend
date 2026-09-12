@@ -1050,13 +1050,25 @@ export const ChessBoard: React.FC = () => {
     setAnnotationSaveError(null);
   }
 
-  async function persistGameAnnotations() {
-    if (!annotationsDirty || annotationsSaving) return;
+  async function persistGameAnnotations(annotationOverride: GameAnnotation | null = null) {
+    if ((!annotationsDirty && !annotationOverride) || annotationsSaving) return;
 
     setAnnotationsSaving(true);
     setAnnotationSaveError(null);
     try {
-      const annotations = Object.values(gameAnnotations)
+      const nextAnnotations = { ...gameAnnotations };
+      if (annotationOverride) {
+        if (isEmptyGameAnnotation(annotationOverride)) {
+          delete nextAnnotations[annotationOverride.ply];
+        } else {
+          nextAnnotations[annotationOverride.ply] = {
+            ...annotationOverride,
+            variations: [...(annotationOverride.variations ?? [])],
+          };
+        }
+      }
+
+      const annotations = Object.values(nextAnnotations)
         .filter((annotation) => !isEmptyGameAnnotation(annotation))
         .sort((left, right) => left.ply - right.ply);
       const saved = await saveGameAnnotations(
@@ -1905,7 +1917,7 @@ export const ChessBoard: React.FC = () => {
           saving={annotationsSaving}
           error={annotationSaveError}
           onChange={updateGameAnnotation}
-          onSave={() => void persistGameAnnotations()}
+          onSave={(annotationOverride) => void persistGameAnnotations(annotationOverride)}
         />
       </div>
     );
