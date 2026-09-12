@@ -443,20 +443,30 @@ const translations = {
     de: "Einziger guter Zug · Bester Zug {best} · Zweitbester Zug {second}",
     fr: "Seul bon coup · Meilleur coup {best} · Deuxième meilleur {second}",
   },
-  "analysis.moveAnnotationBrilliant": {
-    en: "Brilliant move · depth {earlyDepth} → {finalDepth} · became much stronger during the search",
-    de: "Brillanter Zug · Tiefe {earlyDepth} → {finalDepth} · während der Suche deutlich aufgewertet",
-    fr: "Coup brillant · profondeur {earlyDepth} → {finalDepth} · nettement revalorisé pendant la recherche",
+  "analysis.moveAnnotationExtraordinaryDiscovery": {
+    en: "Extraordinary move · its practical strength rose from {earlyStrength}% to {finalStrength}% during deeper search",
+    de: "Außergewöhnlicher Zug · seine praktische Stärke stieg in tieferer Suche von {earlyStrength}% auf {finalStrength}%",
+    fr: "Coup exceptionnel · sa force pratique est passée de {earlyStrength}% à {finalStrength}% avec l’approfondissement",
   },
-  "analysis.moveAnnotationBrilliantMaterial": {
-    en: "Brilliant move · material investment {material}",
-    de: "Brillanter Zug · Materialinvestition {material}",
-    fr: "Coup brillant · investissement matériel {material}",
+  "analysis.moveAnnotationExtraordinaryActiveSacrifice": {
+    en: "Extraordinary move · active material sacrifice worth {material}",
+    de: "Außergewöhnlicher Zug · aktives Materialopfer im Wert von {material}",
+    fr: "Coup exceptionnel · sacrifice matériel actif d’une valeur de {material}",
   },
-  "analysis.moveAnnotationBrilliantCombined": {
-    en: "Brilliant move · depth {earlyDepth} → {finalDepth} · material investment {material}",
-    de: "Brillanter Zug · Tiefe {earlyDepth} → {finalDepth} · Materialinvestition {material}",
-    fr: "Coup brillant · profondeur {earlyDepth} → {finalDepth} · investissement matériel {material}",
+  "analysis.moveAnnotationExtraordinaryMaterialOffer": {
+    en: "Extraordinary move · deliberately creates a material offer worth {material}",
+    de: "Außergewöhnlicher Zug · erzeugt bewusst ein Materialangebot im Wert von {material}",
+    fr: "Coup exceptionnel · crée volontairement une offre de matériel d’une valeur de {material}",
+  },
+  "analysis.moveAnnotationExtraordinaryDeclinedSave": {
+    en: "Extraordinary move · deliberately declines to save material worth {material}",
+    de: "Außergewöhnlicher Zug · verzichtet bewusst auf die Rettung von Material im Wert von {material}",
+    fr: "Coup exceptionnel · renonce volontairement à sauver du matériel d’une valeur de {material}",
+  },
+  "analysis.moveAnnotationExtraordinaryCombined": {
+    en: "Extraordinary move · deep discovery plus material sacrifice worth {material}",
+    de: "Außergewöhnlicher Zug · tiefe Entdeckung plus Materialopfer im Wert von {material}",
+    fr: "Coup exceptionnel · découverte profonde plus sacrifice matériel d’une valeur de {material}",
   },
   "analysis.mode": { en: "Analysis mode", de: "Analysemodus", fr: "Mode analyse" },
   "analysis.clickMoveContinuation": { en: "Click a move in the move list to play an engine continuation.", de: "Klicke auf einen Zug in der Zugliste, um eine Engine-Fortsetzung abzuspielen.", fr: "Cliquez sur un coup de la liste pour jouer une suite du moteur." },
