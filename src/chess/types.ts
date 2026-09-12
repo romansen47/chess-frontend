@@ -180,6 +180,11 @@ export type BrilliantReason =
   | "materialInvestment"
   | "deepDiscoveryAndMaterialInvestment";
 
+export type MaterialSacrificeType =
+  | "activeInvestment"
+  | "newMaterialOffer"
+  | "declinedMaterialSave";
+
 export interface MoveAnnotation {
   symbol: MoveAnnotationSymbol;
   kind: MoveAnnotationKind;
@@ -188,6 +193,7 @@ export interface MoveAnnotation {
   secondBestEvaluation?: number | null;
   brilliantReason?: BrilliantReason | null;
   materialInvestment?: number | null;
+  sacrificeType?: MaterialSacrificeType | null;
   earlyDepth?: number | null;
   earlyRank?: number | null;
   finalDepth?: number | null;
