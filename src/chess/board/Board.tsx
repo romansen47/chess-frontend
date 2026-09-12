@@ -117,7 +117,6 @@ export default function Board({
         <div
           className={`board-move-annotation move-annotation-${annotation.kind}`}
           data-tooltip={annotation.tooltip ?? undefined}
-          title={annotation.tooltip ?? undefined}
           aria-label={annotation.tooltip ?? undefined}
           style={{
             left: annotationCoords.x + 56,
