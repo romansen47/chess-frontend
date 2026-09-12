@@ -19,7 +19,7 @@ interface AnnotationPanelProps {
   saving: boolean;
   error: string | null;
   onChange: (annotation: GameAnnotation) => void;
-  onSave: (annotation: GameAnnotation | null) => void;
+  onSave: () => void;
 }
 
 const NAGS: Array<PgnNagSymbol | null> = ["!!", "!", "!?", "?!", "?", "??", null];
@@ -80,16 +80,10 @@ export default function AnnotationPanel({
 
   const value = useMemo(() => {
     if (selectedPly == null) return null;
-    if (annotation) return annotation;
-    return emptyAnnotation(selectedPly, catAnnotation?.symbol ?? null);
-  }, [annotation, catAnnotation, selectedPly]);
+    return annotation ?? emptyAnnotation(selectedPly);
+  }, [annotation, selectedPly]);
 
-  const catSuggestionActive = Boolean(
-    selectedPly != null
-    && annotation == null
-    && catAnnotation
-  );
-  const saveEnabled = dirty || catSuggestionActive;
+  const saveEnabled = dirty;
 
   if (selectedPly == null || value == null) {
     return (
@@ -244,7 +238,7 @@ export default function AnnotationPanel({
         </span>
         <button
           type="button"
-          onClick={() => onSave(catSuggestionActive ? value : null)}
+          onClick={onSave}
           disabled={!saveEnabled || saving}
         >
           {saving ? t("annotations.saving") : t("annotations.saveChanges")}

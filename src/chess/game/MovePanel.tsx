@@ -103,33 +103,36 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
     })}`;
   }
 
-  function renderAnnotation(ply: number) {
+  function renderAnnotations(ply: number) {
     const stored = state.storedAnnotations[ply];
     const automatic = state.annotations[ply];
 
-    if (stored?.nag) {
-      const title = `${stored.nag} · ${t("annotations.savedAnnotation")}`;
-      return (
-        <span
-          className="move-annotation move-annotation-saved"
-          aria-label={title}
-          onMouseEnter={() => actions.showAnnotationTooltip(title)}
-          onMouseLeave={actions.hideAnnotationTooltip}
-        >
-          {stored.nag}
-        </span>
-      );
-    }
+    if (!automatic && !stored?.nag) return null;
 
-    if (!automatic) return null;
     return (
-      <span
-        className={`move-annotation move-annotation-${automatic.kind}`}
-        aria-label={getAnnotationTitle(automatic)}
-        onMouseEnter={() => actions.showAnnotationTooltip(getAnnotationTitle(automatic))}
-        onMouseLeave={actions.hideAnnotationTooltip}
-      >
-        {automatic.symbol}
+      <span className="move-annotation-group">
+        {automatic && (
+          <span
+            className={`move-annotation move-annotation-${automatic.kind}`}
+            aria-label={getAnnotationTitle(automatic)}
+            onMouseEnter={() => actions.showAnnotationTooltip(getAnnotationTitle(automatic))}
+            onMouseLeave={actions.hideAnnotationTooltip}
+          >
+            {automatic.symbol}
+          </span>
+        )}
+        {stored?.nag && (
+          <span
+            className="move-annotation move-annotation-saved"
+            aria-label={`${stored.nag} · ${t("annotations.savedAnnotation")}`}
+            onMouseEnter={() => actions.showAnnotationTooltip(
+              `${stored.nag} · ${t("annotations.savedAnnotation")}`
+            )}
+            onMouseLeave={actions.hideAnnotationTooltip}
+          >
+            {stored.nag}
+          </span>
+        )}
       </span>
     );
   }
@@ -225,7 +228,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
                 )
               }
             >
-              {row.white ?? ""}{renderAnnotation((row.moveNumber - 1) * 2 + 1)}
+              {row.white ?? ""}{renderAnnotations((row.moveNumber - 1) * 2 + 1)}
               {renderStoredIndicators((row.moveNumber - 1) * 2 + 1)}
             </span>
             <span
@@ -250,7 +253,7 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
                 )
               }
             >
-              {row.black ?? ""}{renderAnnotation(row.moveNumber * 2)}
+              {row.black ?? ""}{renderAnnotations(row.moveNumber * 2)}
               {renderStoredIndicators(row.moveNumber * 2)}
             </span>
           </div>

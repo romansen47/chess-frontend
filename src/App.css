@@ -1427,6 +1427,18 @@
 
 
 /* Compact move-quality annotations derived from the existing deep analysis. */
+.move-annotation-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+
+.move-annotation-group .move-annotation {
+  margin-left: 0;
+}
+
 .move-annotation {
   display: inline-flex;
   width: 16px;
