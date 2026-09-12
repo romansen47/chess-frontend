@@ -490,6 +490,11 @@ const translations = {
     de: "Außergewöhnlicher Zug · lässt kurzfristig Material im nominellen Wert von {material} zu; die Einbuße wird innerhalb von {compensationPlies} Halbzügen taktisch kompensiert",
     fr: "Coup exceptionnel · accepte une exposition matérielle temporaire d’une valeur nominale de {material} ; la perte est compensée tactiquement en {compensationPlies} demi-coups",
   },
+  "analysis.moveAnnotationForcedMateSuffix": {
+    en: "forces mate in {mate}",
+    de: "erzwingt Matt in {mate}",
+    fr: "force le mat en {mate}",
+  },
   "analysis.moveAnnotationExtraordinaryCombined": {
     en: "Extraordinary move · deep discovery plus material sacrifice worth {material}",
     de: "Außergewöhnlicher Zug · tiefe Entdeckung plus Materialopfer im Wert von {material}",

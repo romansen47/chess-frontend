@@ -301,6 +301,7 @@ export const spanishTranslations: Record<string, string> = {
   "analysis.moveAnnotationExtraordinaryMaterialOffer": "Jugada extraordinaria · crea deliberadamente una oferta de material por valor de {material}",
   "analysis.moveAnnotationExtraordinaryDeclinedSave": "Jugada extraordinaria · renuncia deliberadamente a salvar material por valor de {material}",
   "analysis.moveAnnotationExtraordinaryShortTermCompensation": "Jugada extraordinaria · acepta una exposición material temporal por valor nominal de {material}; la pérdida se compensa tácticamente en {compensationPlies} medias jugadas",
+  "analysis.moveAnnotationForcedMateSuffix": "fuerza mate en {mate}",
   "analysis.moveAnnotationExtraordinaryCombined": "Jugada extraordinaria · descubrimiento profundo más sacrificio material por valor de {material}",
   "analysis.mode": "Modo de análisis",
   "analysis.clickMoveContinuation": "Haz clic en un movimiento de la lista para reproducir una continuación del motor.",

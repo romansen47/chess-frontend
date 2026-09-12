@@ -22,6 +22,15 @@ export function useMoveAnnotationTooltip() {
     return value >= 0 ? `+${formatted}` : `-${formatted}`;
   }
 
+  function withForcedMateSuffix(text: string, annotation: MoveAnnotation): string {
+    if (annotation.forcedMateDistance == null) {
+      return text;
+    }
+    return `${text} · ${t("analysis.moveAnnotationForcedMateSuffix", {
+      mate: annotation.forcedMateDistance,
+    })}`;
+  }
+
   return (annotation: MoveAnnotation): string => {
     if (annotation.kind === "extraordinary") {
       const values = {
@@ -37,10 +46,13 @@ export function useMoveAnnotationTooltip() {
         annotation.extraordinaryReason ===
           "deepDiscoveryAndMaterialSacrifice"
       ) {
-        return `${annotation.symbol} · ${t(
-          "analysis.moveAnnotationExtraordinaryCombined",
-          values
-        )}`;
+        return withForcedMateSuffix(
+          `${annotation.symbol} · ${t(
+            "analysis.moveAnnotationExtraordinaryCombined",
+            values
+          )}`,
+          annotation
+        );
       }
 
       if (annotation.extraordinaryReason === "materialSacrifice") {
@@ -48,10 +60,13 @@ export function useMoveAnnotationTooltip() {
           annotation.shortTermMaterialCompensated === true &&
           annotation.sacrificeType !== "activeInvestment"
         ) {
-          return `${annotation.symbol} · ${t(
-            "analysis.moveAnnotationExtraordinaryShortTermCompensation",
-            values
-          )}`;
+          return withForcedMateSuffix(
+            `${annotation.symbol} · ${t(
+              "analysis.moveAnnotationExtraordinaryShortTermCompensation",
+              values
+            )}`,
+            annotation
+          );
         }
 
         const key =
@@ -61,7 +76,10 @@ export function useMoveAnnotationTooltip() {
               ? "analysis.moveAnnotationExtraordinaryMaterialOffer"
               : "analysis.moveAnnotationExtraordinaryDeclinedSave";
 
-        return `${annotation.symbol} · ${t(key, values)}`;
+        return withForcedMateSuffix(
+          `${annotation.symbol} · ${t(key, values)}`,
+          annotation
+        );
       }
 
       if (annotation.extraordinaryReason === "deepDiscovery") {

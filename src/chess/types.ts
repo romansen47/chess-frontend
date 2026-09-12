@@ -214,6 +214,7 @@ export interface MoveAnnotation {
   sacrificeType?: MaterialSacrificeType | null;
   shortTermMaterialCompensated?: boolean | null;
   materialCompensationPlies?: number | null;
+  forcedMateDistance?: number | null;
   earlyDepth?: number | null;
   earlyRank?: number | null;
   finalDepth?: number | null;

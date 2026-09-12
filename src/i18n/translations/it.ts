@@ -301,6 +301,7 @@ export const italianTranslations: Record<string, string> = {
   "analysis.moveAnnotationExtraordinaryMaterialOffer": "Mossa straordinaria · crea consapevolmente un'offerta di materiale del valore di {material}",
   "analysis.moveAnnotationExtraordinaryDeclinedSave": "Mossa straordinaria · rinuncia consapevolmente a salvare materiale del valore di {material}",
   "analysis.moveAnnotationExtraordinaryShortTermCompensation": "Mossa straordinaria · accetta un'esposizione materiale temporanea del valore nominale di {material}; la perdita viene compensata tatticamente entro {compensationPlies} semimosse",
+  "analysis.moveAnnotationForcedMateSuffix": "forza il matto in {mate}",
   "analysis.moveAnnotationExtraordinaryCombined": "Mossa straordinaria · scoperta profonda più sacrificio materiale del valore di {material}",
   "analysis.mode": "Modalità analisi",
   "analysis.clickMoveContinuation": "Fai clic su una mossa nell’elenco per riprodurre una continuazione del motore.",
