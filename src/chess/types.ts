@@ -192,6 +192,13 @@ export interface MoveAnnotation {
   earlyRank?: number | null;
   finalDepth?: number | null;
   finalRank?: number | null;
+  givesCheck?: boolean | null;
+  earlyRegret?: number | null;
+  middleRegret?: number | null;
+  lateRegret?: number | null;
+  earlyStrength?: number | null;
+  middleStrength?: number | null;
+  lateStrength?: number | null;
 }
 
 export interface AnalysisProfilePoint {
