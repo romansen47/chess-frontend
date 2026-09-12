@@ -1,0 +1,146 @@
+.annotation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 4px 8px;
+}
+
+.annotation-panel-placeholder,
+.annotation-muted {
+  color: #8b93a7;
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.annotation-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.annotation-panel-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.annotation-panel-heading span {
+  color: #9aa3b8;
+  font-size: 12px;
+}
+
+.annotation-dirty {
+  color: #e7b85c !important;
+  white-space: nowrap;
+}
+
+.annotation-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.annotation-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c9d0df;
+}
+
+.annotation-cat-row,
+.annotation-evaluation-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.annotation-cat-value {
+  min-width: 38px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.annotation-nag-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(38px, 1fr));
+  gap: 5px;
+}
+
+.annotation-nag-grid button,
+.annotation-panel button {
+  min-height: 30px;
+}
+
+.annotation-nag-active {
+  outline: 2px solid rgba(112, 164, 255, 0.8);
+  background: rgba(74, 112, 181, 0.35);
+}
+
+.annotation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.annotation-field textarea,
+.annotation-evaluation-row input {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.16);
+  color: inherit;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.annotation-field textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 74px;
+}
+
+.annotation-evaluation-row input {
+  width: 90px;
+}
+
+.annotation-variation,
+.annotation-engine-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 5px;
+  padding: 7px;
+}
+
+.annotation-variation code,
+.annotation-engine-line > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.annotation-engine-line > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.annotation-engine-line span {
+  color: #c7cede;
+}
+
+.annotation-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.annotation-error {
+  color: #ff9090;
+  font-size: 12px;
+}
