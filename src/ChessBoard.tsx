@@ -789,6 +789,7 @@ export const ChessBoard: React.FC = () => {
             && current.secondBestEvaluation === liveAnnotation.secondBestEvaluation
             && current.brilliantReason === liveAnnotation.brilliantReason
             && current.materialInvestment === liveAnnotation.materialInvestment
+            && current.sacrificeType === liveAnnotation.sacrificeType
             && current.earlyDepth === liveAnnotation.earlyDepth
             && current.earlyRank === liveAnnotation.earlyRank
             && current.finalDepth === liveAnnotation.finalDepth
