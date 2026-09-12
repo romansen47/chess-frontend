@@ -60,6 +60,10 @@
   min-width: 136px;
 }
 
+.top-engine-button.analysis-export {
+  min-width: 154px;
+}
+
 .top-engine-button.board-flip-button {
   width: 30px;
   min-width: 30px;
