@@ -25,6 +25,7 @@ import type {
   MoveRow,
   PerformMoveOptions,
   Piece,
+  PieceColor,
   PieceType,
   PromotionContext,
   UciGameResponse,
@@ -439,6 +440,24 @@ export const ChessBoard: React.FC = () => {
       && !isAnalysisReplayRunning
       && !analysisVariationGameState
     );
+  }
+
+  function analysisSideToMove(): PieceColor | null {
+    if (!analysisSelectedPosition) return null;
+    const playedPlies =
+      analysisSelectedPosition.ply + analysisVariationMovesRef.current.length;
+    return playedPlies % 2 === 0 ? "white" : "black";
+  }
+
+  function selectablePiece(piece: Piece, analysisInteractive: boolean): boolean {
+    const sideToMove = analysisInteractive
+      ? analysisSideToMove()
+      : clock?.sideToMove === "white" || clock?.sideToMove === "black"
+        ? clock.sideToMove
+        : null;
+
+    if (sideToMove && piece.color !== sideToMove) return false;
+    return analysisInteractive || !isPieceComputerControlled(piece);
   }
 
   function resetAnalysisVariation() {
@@ -1483,7 +1502,6 @@ export const ChessBoard: React.FC = () => {
       || isLoadingMoves || isComputerThinking || promotionContext
       || (!analysisInteractive && clock?.gameState)) return;
     const from = squareName(piece.file, piece.rank);
-    if (!analysisInteractive && isPieceComputerControlled(piece)) return;
 
     if (selectedSquare && selectedSquare !== from && possibleTargets.includes(from)) {
       event.preventDefault();
@@ -1503,6 +1521,8 @@ export const ChessBoard: React.FC = () => {
       await performBoardMove(sourceSquare, from);
       return;
     }
+
+    if (!selectablePiece(piece, analysisInteractive)) return;
 
     const boardRect = boardContainerRef.current?.getBoundingClientRect();
     const pieceRect = event.currentTarget.getBoundingClientRect();
@@ -1588,7 +1608,7 @@ export const ChessBoard: React.FC = () => {
     if (promotionContext || (!analysisInteractive && clock?.gameState)) return;
     const clickedPiece = squareToPieceMap.get(square);
     if (!selectedSquare) {
-      if (clickedPiece && (analysisInteractive || !isPieceComputerControlled(clickedPiece))) {
+      if (clickedPiece && selectablePiece(clickedPiece, analysisInteractive)) {
         setSelectedSquare(square);
         await loadPossibleMoves(square);
       }
@@ -1611,7 +1631,7 @@ export const ChessBoard: React.FC = () => {
       await performBoardMove(from, square);
       return;
     }
-    if (clickedPiece && (analysisInteractive || !isPieceComputerControlled(clickedPiece))) {
+    if (clickedPiece && selectablePiece(clickedPiece, analysisInteractive)) {
       setSelectedSquare(square);
       await loadPossibleMoves(square);
       return;

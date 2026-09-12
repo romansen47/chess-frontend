@@ -523,6 +523,7 @@
 .moves-list {
   max-height: calc(8 * 80px + 24px - 112px);
   overflow-y: auto;
+  font-size: 0.78rem;
 }
 
 .moves-empty {
@@ -547,6 +548,8 @@
 
 .move-entry {
   flex: 1;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .move-entry-white {
