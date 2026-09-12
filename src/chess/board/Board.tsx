@@ -18,6 +18,7 @@ export interface BoardAnnotation {
   square: string;
   symbol: MoveAnnotationSymbol | PgnNagSymbol;
   kind: MoveAnnotationKind | "saved";
+  tooltip: string | null;
 }
 
 interface BoardProps {
@@ -115,11 +116,13 @@ export default function Board({
       {annotation && annotationCoords && (
         <div
           className={`board-move-annotation move-annotation-${annotation.kind}`}
+          data-tooltip={annotation.tooltip ?? undefined}
+          title={annotation.tooltip ?? undefined}
+          aria-label={annotation.tooltip ?? undefined}
           style={{
             left: annotationCoords.x + 56,
             top: annotationCoords.y + 4,
           }}
-          aria-hidden="true"
         >
           {annotation.symbol}
         </div>

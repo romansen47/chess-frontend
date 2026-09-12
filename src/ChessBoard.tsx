@@ -38,6 +38,7 @@ import AnalysisEngineTabs, { type AnalysisEngineView } from "./chess/analysis/An
 import LiveEvaluationView from "./chess/analysis/LiveEvaluationView";
 import AnnotationPanel from "./chess/analysis/AnnotationPanel";
 import { buildMoveAnnotations } from "./chess/analysis/moveAnnotations";
+import { useMoveAnnotationTooltip } from "./chess/analysis/useMoveAnnotationTooltip";
 import { buildDiagnosticAnalysisPgn } from "./chess/analysis/analysisPgnExport";
 import Board, { type BoardAnnotation } from "./chess/board/Board";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
@@ -161,6 +162,7 @@ function isEmptyGameAnnotation(annotation: GameAnnotation): boolean {
 
 export const ChessBoard: React.FC = () => {
   const { t } = useI18n();
+  const getMoveAnnotationTooltip = useMoveAnnotationTooltip();
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>(() => {
     if (typeof window === "undefined") return "white";
     return normalizeBoardOrientation(
@@ -373,6 +375,7 @@ export const ChessBoard: React.FC = () => {
         square: destination,
         symbol: analysisEvaluation.moveAnnotation.symbol,
         kind: analysisEvaluation.moveAnnotation.kind,
+        tooltip: getMoveAnnotationTooltip(analysisEvaluation.moveAnnotation),
       };
     }
 
@@ -387,6 +390,7 @@ export const ChessBoard: React.FC = () => {
         square: point.to,
         symbol: savedNag,
         kind: "saved",
+        tooltip: `${savedNag} · ${t("annotations.savedAnnotation")}`,
       };
     }
 
@@ -396,6 +400,7 @@ export const ChessBoard: React.FC = () => {
       square: point.to,
       symbol: annotation.symbol,
       kind: annotation.kind,
+      tooltip: getMoveAnnotationTooltip(annotation),
     };
   }, [
     analysisReplayActive,
@@ -407,6 +412,8 @@ export const ChessBoard: React.FC = () => {
     analysisEvaluation,
     moveAnnotations,
     gameAnnotations,
+    getMoveAnnotationTooltip,
+    t,
   ]);
 
   const squareToPieceMap = useMemo(() => {

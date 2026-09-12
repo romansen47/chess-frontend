@@ -1,5 +1,6 @@
 import type { MouseEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
+import { useMoveAnnotationTooltip } from "../analysis/useMoveAnnotationTooltip";
 import type { GameAnnotation, MoveAnnotation, MoveRow } from "../types";
 import PgnImportProblemDialog, { isPgnImportProblem } from "./PgnImportProblemDialog";
 
@@ -36,72 +37,9 @@ interface MovePanelProps {
 }
 
 export default function MovePanel({ state, actions }: MovePanelProps) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
+  const getAnnotationTitle = useMoveAnnotationTooltip();
   const pgnImportProblem = isPgnImportProblem(state.error);
-
-  function formatAnnotationNumber(value: number): string {
-    return new Intl.NumberFormat(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  }
-
-  function formatAnnotationEvaluation(value: number): string {
-    const formatted = formatAnnotationNumber(Math.abs(value));
-    return value >= 0 ? `+${formatted}` : `-${formatted}`;
-  }
-
-  function getAnnotationTitle(annotation: MoveAnnotation): string {
-    if (annotation.kind === "extraordinary") {
-      const values = {
-        earlyDepth: annotation.earlyDepth ?? 0,
-        finalDepth: annotation.finalDepth ?? 0,
-        material: formatAnnotationNumber(annotation.materialInvestment ?? 0),
-        earlyStrength: formatAnnotationNumber(annotation.earlyStrength ?? 0),
-        finalStrength: formatAnnotationNumber(annotation.finalStrength ?? 0),
-      };
-
-      if (
-        annotation.extraordinaryReason ===
-          "deepDiscoveryAndMaterialSacrifice"
-      ) {
-        return `${annotation.symbol} · ${t(
-          "analysis.moveAnnotationExtraordinaryCombined",
-          values
-        )}`;
-      }
-
-      if (annotation.extraordinaryReason === "materialSacrifice") {
-        const key =
-          annotation.sacrificeType === "activeInvestment"
-            ? "analysis.moveAnnotationExtraordinaryActiveSacrifice"
-            : annotation.sacrificeType === "newMaterialOffer"
-              ? "analysis.moveAnnotationExtraordinaryMaterialOffer"
-              : "analysis.moveAnnotationExtraordinaryDeclinedSave";
-
-        return `${annotation.symbol} · ${t(key, values)}`;
-      }
-
-      if (annotation.extraordinaryReason === "deepDiscovery") {
-        return `${annotation.symbol} · ${t(
-          "analysis.moveAnnotationExtraordinaryDiscovery",
-          values
-        )}`;
-      }
-    }
-
-    if (annotation.kind === "onlyMove" && annotation.secondBestEvaluation != null) {
-      return `${annotation.symbol} · ${t("analysis.moveAnnotationOnlyMove", {
-        best: formatAnnotationEvaluation(annotation.bestEvaluation),
-        second: formatAnnotationEvaluation(annotation.secondBestEvaluation),
-      })}`;
-    }
-
-    return `${annotation.symbol} · ${t("analysis.moveAnnotationLoss", {
-      loss: formatAnnotationNumber(annotation.winChanceLoss ?? 0),
-      best: formatAnnotationEvaluation(annotation.bestEvaluation),
-    })}`;
-  }
 
   function renderAnnotations(ply: number) {
     const stored = state.storedAnnotations[ply];
