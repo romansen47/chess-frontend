@@ -19,15 +19,18 @@ interface AnnotationPanelProps {
   saving: boolean;
   error: string | null;
   onChange: (annotation: GameAnnotation) => void;
-  onSave: () => void;
+  onSave: (annotation: GameAnnotation | null) => void;
 }
 
 const NAGS: Array<PgnNagSymbol | null> = ["!!", "!", "!?", "?!", "?", "??", null];
 
-function emptyAnnotation(ply: number): GameAnnotation {
+function emptyAnnotation(
+  ply: number,
+  nag: PgnNagSymbol | null = null
+): GameAnnotation {
   return {
     ply,
-    nag: null,
+    nag,
     comment: null,
     evaluation: null,
     variations: [],
@@ -75,10 +78,18 @@ export default function AnnotationPanel({
 }: AnnotationPanelProps) {
   const { t } = useI18n();
 
-  const value = useMemo(
-    () => selectedPly == null ? null : annotation ?? emptyAnnotation(selectedPly),
-    [annotation, selectedPly]
+  const value = useMemo(() => {
+    if (selectedPly == null) return null;
+    if (annotation) return annotation;
+    return emptyAnnotation(selectedPly, catAnnotation?.symbol ?? null);
+  }, [annotation, catAnnotation, selectedPly]);
+
+  const catSuggestionActive = Boolean(
+    selectedPly != null
+    && annotation == null
+    && catAnnotation
   );
+  const saveEnabled = dirty || catSuggestionActive;
 
   if (selectedPly == null || value == null) {
     return (
@@ -108,33 +119,33 @@ export default function AnnotationPanel({
         {dirty && <span className="annotation-dirty">{t("annotations.unsaved")}</span>}
       </div>
 
-      <section className="annotation-section">
-        <div className="annotation-section-title">{t("annotations.catAssessment")}</div>
-        <div className="annotation-cat-row">
-          <span className="annotation-cat-value">
-            {catAnnotation?.symbol ?? t("annotations.none")}
+      <section className="annotation-section annotation-rating-section">
+        <div className="annotation-rating-header">
+          <span className="annotation-section-title">{t("annotations.moveAnnotation")}</span>
+          <span className="annotation-cat-badge">
+            {t("annotations.catAssessment")}: <strong>{catAnnotation?.symbol ?? "–"}</strong>
           </span>
-          {catAnnotation && value.nag !== catAnnotation.symbol && (
-            <button type="button" onClick={() => update({ nag: catAnnotation.symbol })}>
-              {t("annotations.addToGame")}
-            </button>
-          )}
         </div>
-      </section>
-
-      <section className="annotation-section">
-        <div className="annotation-section-title">{t("annotations.moveAnnotation")}</div>
         <div className="annotation-nag-grid">
-          {NAGS.map((nag) => (
-            <button
-              type="button"
-              key={nag ?? "none"}
-              className={value.nag === nag ? "annotation-nag-active" : ""}
-              onClick={() => update({ nag })}
-            >
-              {nag ?? "–"}
-            </button>
-          ))}
+          {NAGS.map((nag) => {
+            const active = value.nag === nag;
+            const suggested = catAnnotation?.symbol === nag;
+            return (
+              <button
+                type="button"
+                key={nag ?? "none"}
+                className={[
+                  "annotation-nag-button",
+                  active ? "annotation-nag-active" : "",
+                  suggested ? "annotation-nag-suggested" : "",
+                ].filter(Boolean).join(" ")}
+                onClick={() => update({ nag })}
+                title={suggested ? `${t("annotations.catAssessment")}: ${nag}` : undefined}
+              >
+                {nag ?? "–"}
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -143,7 +154,7 @@ export default function AnnotationPanel({
           <span className="annotation-section-title">{t("annotations.comment")}</span>
           <textarea
             value={value.comment ?? ""}
-            rows={4}
+            rows={3}
             placeholder={t("annotations.commentPlaceholder")}
             onChange={(event) => update({ comment: event.target.value || null })}
           />
@@ -175,19 +186,25 @@ export default function AnnotationPanel({
         {value.variations.length === 0 && (
           <div className="annotation-muted">{t("annotations.noVariations")}</div>
         )}
-        {value.variations.map((variation, index) => (
-          <div className="annotation-variation" key={`${index}-${variation}`}>
-            <code>{variation}</code>
-            <button
-              type="button"
-              onClick={() => update({
-                variations: value.variations.filter((_, candidate) => candidate !== index),
-              })}
-            >
-              {t("common.delete")}
-            </button>
-          </div>
-        ))}
+        <div className="annotation-variation-list">
+          {value.variations.map((variation, index) => (
+            <div className="annotation-variation-row" key={`${index}-${variation}`}>
+              <span className="annotation-variation-index">{index + 1}.</span>
+              <code>{variation}</code>
+              <button
+                type="button"
+                className="annotation-icon-button"
+                aria-label={t("common.delete")}
+                title={t("common.delete")}
+                onClick={() => update({
+                  variations: value.variations.filter((_, candidate) => candidate !== index),
+                })}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="annotation-section">
@@ -195,31 +212,41 @@ export default function AnnotationPanel({
         {alternatives.length === 0 && (
           <div className="annotation-muted">{t("annotations.noEngineAlternatives")}</div>
         )}
-        {alternatives.map((line, index) => {
-          const variation = variationFromLine(line, selectedPly);
-          const alreadyStored = variation !== "" && value.variations.includes(variation);
-          return (
-            <div className="annotation-engine-line" key={`${index}-${line.depth}-${line.moves}`}>
-              <div>
+        <div className="annotation-engine-list">
+          {alternatives.map((line, index) => {
+            const variation = variationFromLine(line, selectedPly);
+            const alreadyStored = variation !== "" && value.variations.includes(variation);
+            return (
+              <div className="annotation-engine-row" key={`${index}-${line.depth}-${line.moves}`}>
                 <strong>#{index + 1}</strong>
                 <span>{line.moves || "—"}</span>
+                <button
+                  type="button"
+                  className="annotation-icon-button"
+                  disabled={!variation || alreadyStored}
+                  aria-label={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
+                  title={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
+                  onClick={() => addVariation(line)}
+                >
+                  {alreadyStored ? "✓" : "+"}
+                </button>
               </div>
-              <button
-                type="button"
-                disabled={!variation || alreadyStored}
-                onClick={() => addVariation(line)}
-              >
-                {alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
-              </button>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </section>
 
       {error && <div className="annotation-error">{error}</div>}
 
       <div className="annotation-actions">
-        <button type="button" onClick={onSave} disabled={!dirty || saving}>
+        <span className={dirty ? "annotation-dirty" : "annotation-actions-status"}>
+          {dirty ? t("annotations.unsaved") : ""}
+        </span>
+        <button
+          type="button"
+          onClick={() => onSave(catSuggestionActive ? value : null)}
+          disabled={!saveEnabled || saving}
+        >
           {saving ? t("annotations.saving") : t("annotations.saveChanges")}
         </button>
       </div>
