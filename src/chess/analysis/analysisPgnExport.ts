@@ -61,8 +61,8 @@ function addAnnotationDiagnostics(
   parts.push(`class=${annotation.kind}`);
   parts.push(`symbol=${annotation.symbol}`);
 
-  if (annotation.brilliantReason) {
-    parts.push(`reason=${annotation.brilliantReason}`);
+  if (annotation.extraordinaryReason) {
+    parts.push(`reason=${annotation.extraordinaryReason}`);
   }
   if (annotation.sacrificeType) {
     parts.push(`sacrificeType=${annotation.sacrificeType}`);
@@ -78,11 +78,8 @@ function addAnnotationDiagnostics(
     ["finalDepth", annotation.finalDepth],
     ["finalRank", annotation.finalRank],
     ["earlyRegret", annotation.earlyRegret],
-    ["middleRegret", annotation.middleRegret],
-    ["lateRegret", annotation.lateRegret],
     ["earlyStrength", annotation.earlyStrength],
-    ["middleStrength", annotation.middleStrength],
-    ["lateStrength", annotation.lateStrength],
+    ["finalStrength", annotation.finalStrength],
   ];
 
   for (const [key, value] of optionalNumbers) {
