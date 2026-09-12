@@ -64,14 +64,6 @@
   min-width: 169px;
 }
 
-.top-engine-button.board-flip-button {
-  width: 33px;
-  min-width: 33px;
-  padding: 0;
-  font-size: calc(1rem - 2px);
-  font-weight: 700;
-}
-
 .top-engine-button:hover {
   background: #444;
   color: #ffffff;
@@ -498,13 +490,47 @@
   box-sizing: border-box;
 }
 
-/* Panel-Titel */
-.panel-title {
+/* Kopfzeile der Zugliste */
+.moves-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 0 0 6px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-title {
+  margin: 0;
   font-size: calc(0.9rem - 2px);
   font-weight: 600;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 4px;
+}
+
+.moves-board-flip-button {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #3a3a3a;
+  color: #dddddd;
+  font: inherit;
+  font-size: calc(1rem - 2px);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.moves-board-flip-button:hover {
+  background: #444;
+  color: #ffffff;
+}
+
+.moves-board-flip-button:focus-visible {
+  outline: 2px solid #d6c26a;
+  outline-offset: 1px;
 }
 
 /* Spieleranzeige im linken Panel */

@@ -2106,7 +2106,6 @@ export const ChessBoard: React.FC = () => {
         onTerminateProgram={() => void terminateProgram()}
         onToggleEngineSettings={() => setShowEngineConfig((prev) => !prev)}
         onOpenEngineManager={() => setShowEngineManager(true)}
-        onFlipBoard={flipBoardOrientation}
       />
 
       {showEngineManager && <EngineManager onClose={() => setShowEngineManager(false)} />}
@@ -2141,6 +2140,7 @@ export const ChessBoard: React.FC = () => {
               hidePreview,
               showAnnotationTooltip,
               hideAnnotationTooltip,
+              flipBoard: flipBoardOrientation,
               selectPosition: selectAnalysisPosition,
             }}
           />

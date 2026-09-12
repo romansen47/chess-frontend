@@ -24,6 +24,7 @@ interface MovePanelActions {
   hidePreview: () => void;
   showAnnotationTooltip: (text: string) => void;
   hideAnnotationTooltip: () => void;
+  flipBoard: () => void;
   selectPosition: (
     position: string | undefined,
     san: string | undefined,
@@ -94,7 +95,18 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
 
   return (
     <section className="moves-panel">
-      <h2 className="panel-title">{t("moves.title")}</h2>
+      <div className="moves-panel-header">
+        <h2 className="panel-title">{t("moves.title")}</h2>
+        <button
+          type="button"
+          className="moves-board-flip-button"
+          onClick={actions.flipBoard}
+          title={t("board.flip")}
+          aria-label={t("board.flip")}
+        >
+          ↻
+        </button>
+      </div>
 
       <div className="player-names-panel">
         <div
