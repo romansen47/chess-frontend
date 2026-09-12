@@ -90,7 +90,11 @@ import {
   stopAnalysisEvaluationRequest,
   submitAnalysisVariationMove,
 } from "./chess/api/analysisApi";
-import { terminateBackend, terminateDevelopmentFrontend } from "./chess/api/programApi";
+import {
+  fetchProgramFeatures,
+  terminateBackend,
+  terminateDevelopmentFrontend,
+} from "./chess/api/programApi";
 
 const LIVE_EVALUATION_FAST_POLL_MS = 250;
 const LIVE_EVALUATION_NORMAL_POLL_MS = 2000;
@@ -210,9 +214,30 @@ export const ChessBoard: React.FC = () => {
   const [showEngineManager, setShowEngineManager] = useState<boolean>(false);
   const [showChessDatabaseDialog, setShowChessDatabaseDialog] = useState<boolean>(false);
   const [isTerminatingProgram, setIsTerminatingProgram] = useState<boolean>(false);
+  const [debugMode, setDebugMode] = useState<boolean>(false);
   const [uciAnalysisLoaded, setUciAnalysisLoadedState] = useState<boolean>(false);
   const uciAnalysisLoadedRef = useRef<boolean>(false);
   const uciFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchProgramFeatures()
+      .then((features) => {
+        if (!cancelled) {
+          setDebugMode(features.debugMode);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDebugMode(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [clock, setClock] = useState<ClockState | null>(null);
   const [clockError, setClockError] = useState<string | null>(null);
@@ -1800,6 +1825,7 @@ export const ChessBoard: React.FC = () => {
         analysisReplayActive={analysisReplayActive}
         analysisReplayRunning={isAnalysisReplayRunning}
         analysisReplayFinished={analysisReplayFinished}
+        debugMode={debugMode}
         uciAnalysisLoaded={uciAnalysisLoaded}
         terminatingProgram={isTerminatingProgram}
         onCancelAnalysis={() => void cancelAnalysisReplay()}
