@@ -1999,12 +1999,16 @@ export const ChessBoard: React.FC = () => {
     const databaseTabActive = analysisDetailsTab === "database";
     return (
       <div className="analysis-detail-row">
-        <div className="analysis-position-panel">
-          <div className="analysis-detail-title">{databaseTabActive
-            ? analysisSelectedPosition ? t("analysis.databasePositionAfter", { label: analysisSelectedPosition.label }) : t("analysis.databasePosition")
-            : analysisSelectedPosition ? t("analysis.engineContinuationFrom", { label: analysisSelectedPosition.label }) : t("analysis.engineContinuation")}</div>
-          {renderAnalysisPositionBoard()}
-        </div>
+        {!databaseTabActive && (
+          <div className="analysis-position-panel">
+            <div className="analysis-detail-title">
+              {analysisSelectedPosition
+                ? t("analysis.engineContinuationFrom", { label: analysisSelectedPosition.label })
+                : t("analysis.engineContinuation")}
+            </div>
+            {renderAnalysisPositionBoard()}
+          </div>
+        )}
         <div className="analysis-lines-panel">
           <div className="analysis-detail-title">{databaseTabActive ? t("analysis.databaseContinuations") : t("analysis.engineVariations")}</div>
           {databaseTabActive ? <AnalysisDatabasePanel ply={analysisSelectedPosition?.ply ?? null} /> : renderAnalysisLinesForSelection()}
