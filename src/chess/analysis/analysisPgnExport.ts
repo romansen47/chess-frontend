@@ -64,6 +64,9 @@ function addAnnotationDiagnostics(
   if (annotation.brilliantReason) {
     parts.push(`reason=${annotation.brilliantReason}`);
   }
+  if (annotation.sacrificeType) {
+    parts.push(`sacrificeType=${annotation.sacrificeType}`);
+  }
 
   const optionalNumbers: Array<[string, number | null | undefined]> = [
     ["bestEvalBefore", annotation.bestEvaluation],
