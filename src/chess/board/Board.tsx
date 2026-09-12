@@ -4,6 +4,7 @@ import type {
   LastMove,
   MoveAnnotationKind,
   MoveAnnotationSymbol,
+  PgnNagSymbol,
   Piece,
 } from "../types";
 import { getPieceSymbol, squareName } from "./boardUtils";
@@ -15,8 +16,8 @@ import {
 
 export interface BoardAnnotation {
   square: string;
-  symbol: MoveAnnotationSymbol;
-  kind: MoveAnnotationKind;
+  symbol: MoveAnnotationSymbol | PgnNagSymbol;
+  kind: MoveAnnotationKind | "saved";
 }
 
 interface BoardProps {

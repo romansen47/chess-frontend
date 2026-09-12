@@ -378,9 +378,19 @@ export const ChessBoard: React.FC = () => {
     const point = analysisProfile.find(
       (candidate) => candidate.ply === analysisSelectedPosition.ply
     );
-    const annotation =
-      moveAnnotations[analysisSelectedPosition.ply];
-    if (!point?.to || !annotation) return null;
+    if (!point?.to) return null;
+
+    const savedNag = gameAnnotations[analysisSelectedPosition.ply]?.nag;
+    if (savedNag) {
+      return {
+        square: point.to,
+        symbol: savedNag,
+        kind: "saved",
+      };
+    }
+
+    const annotation = moveAnnotations[analysisSelectedPosition.ply];
+    if (!annotation) return null;
     return {
       square: point.to,
       symbol: annotation.symbol,
@@ -395,6 +405,7 @@ export const ChessBoard: React.FC = () => {
     analysisEvaluationEnabled,
     analysisEvaluation,
     moveAnnotations,
+    gameAnnotations,
   ]);
 
   const squareToPieceMap = useMemo(() => {
