@@ -212,6 +212,8 @@ export interface MoveAnnotation {
   extraordinaryReason?: ExtraordinaryReason | null;
   materialInvestment?: number | null;
   sacrificeType?: MaterialSacrificeType | null;
+  shortTermMaterialCompensated?: boolean | null;
+  materialCompensationPlies?: number | null;
   earlyDepth?: number | null;
   earlyRank?: number | null;
   finalDepth?: number | null;

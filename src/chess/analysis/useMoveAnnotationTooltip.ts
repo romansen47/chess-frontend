@@ -30,6 +30,7 @@ export function useMoveAnnotationTooltip() {
         material: formatNumber(annotation.materialInvestment ?? 0),
         earlyStrength: formatNumber(annotation.earlyStrength ?? 0),
         finalStrength: formatNumber(annotation.finalStrength ?? 0),
+        compensationPlies: annotation.materialCompensationPlies ?? 0,
       };
 
       if (
@@ -43,6 +44,16 @@ export function useMoveAnnotationTooltip() {
       }
 
       if (annotation.extraordinaryReason === "materialSacrifice") {
+        if (
+          annotation.shortTermMaterialCompensated === true &&
+          annotation.sacrificeType !== "activeInvestment"
+        ) {
+          return `${annotation.symbol} · ${t(
+            "analysis.moveAnnotationExtraordinaryShortTermCompensation",
+            values
+          )}`;
+        }
+
         const key =
           annotation.sacrificeType === "activeInvestment"
             ? "analysis.moveAnnotationExtraordinaryActiveSacrifice"

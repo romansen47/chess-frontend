@@ -485,6 +485,11 @@ const translations = {
     de: "Außergewöhnlicher Zug · verzichtet bewusst auf die Rettung von Material im Wert von {material}",
     fr: "Coup exceptionnel · renonce volontairement à sauver du matériel d’une valeur de {material}",
   },
+  "analysis.moveAnnotationExtraordinaryShortTermCompensation": {
+    en: "Extraordinary move · allows short-term material exposure nominally worth {material}; the loss is tactically compensated within {compensationPlies} plies",
+    de: "Außergewöhnlicher Zug · lässt kurzfristig Material im nominellen Wert von {material} zu; die Einbuße wird innerhalb von {compensationPlies} Halbzügen taktisch kompensiert",
+    fr: "Coup exceptionnel · accepte une exposition matérielle temporaire d’une valeur nominale de {material} ; la perte est compensée tactiquement en {compensationPlies} demi-coups",
+  },
   "analysis.moveAnnotationExtraordinaryCombined": {
     en: "Extraordinary move · deep discovery plus material sacrifice worth {material}",
     de: "Außergewöhnlicher Zug · tiefe Entdeckung plus Materialopfer im Wert von {material}",
