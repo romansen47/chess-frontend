@@ -11,6 +11,7 @@ interface ChessHeaderProps {
   terminatingProgram: boolean;
   onCancelAnalysis: () => void;
   onOpenAnalysis: () => void;
+  onExportAnalysisPgn: () => void;
   onNewGame: () => void;
   onExportCurrentGame: () => void;
   onImportNewGame: () => void;
@@ -29,6 +30,7 @@ export default function ChessHeader({
   terminatingProgram,
   onCancelAnalysis,
   onOpenAnalysis,
+  onExportAnalysisPgn,
   onNewGame,
   onExportCurrentGame,
   onImportNewGame,
@@ -80,13 +82,22 @@ export default function ChessHeader({
         )}
 
         {analysisReplayActive && analysisReplayFinished && (
-          <button
-            className="top-engine-button analysis-repeat"
-            onClick={onOpenAnalysis}
-            title={t("analysis.analyzeAgainTitle")}
-          >
-            {t("analysis.analyzeAgain")}
-          </button>
+          <>
+            <button
+              className="top-engine-button analysis-repeat"
+              onClick={onOpenAnalysis}
+              title={t("analysis.analyzeAgainTitle")}
+            >
+              {t("analysis.analyzeAgain")}
+            </button>
+            <button
+              className="top-engine-button analysis-export"
+              onClick={onExportAnalysisPgn}
+              title={t("analysis.exportPgnTitle")}
+            >
+              {t("analysis.exportPgn")}
+            </button>
+          </>
         )}
 
         {!analysisReplayActive && uciAnalysisLoaded && (
