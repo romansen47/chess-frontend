@@ -171,7 +171,7 @@ export function buildDiagnosticAnalysisPgn({
     `[Black "${escapeTagValue(blackPlayerName || "Black")}"]`,
     `[Result "${result}"]`,
     `[Annotator "${escapeTagValue(engineName || "ChessAnalysisTool")}"]`,
-    '[AnalysisFormat "ChessAnalysisTool-Diagnostic-v1"]',
+    '[AnalysisFormat "ChessAnalysisTool-Diagnostic-v2"]',
   ];
 
   const moveLines: string[] = [];
