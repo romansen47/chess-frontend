@@ -3,6 +3,7 @@ import type { AnalysisProfilePoint, MoveAnnotation } from "../types";
 export type {
   BrilliantReason,
   MoveAnnotation,
+  MaterialSacrificeType,
   MoveAnnotationKind,
   MoveAnnotationSymbol,
 } from "../types";
