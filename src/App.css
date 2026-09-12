@@ -1457,3 +1457,44 @@
   background: #eb5757;
   color: #ffffff;
 }
+
+
+/* Persisted PGN annotations. */
+.move-annotation-saved {
+  background: #7659b8;
+  color: #ffffff;
+}
+
+.move-stored-indicators {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+
+.move-stored-indicators span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #aeb8cf;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.analysis-annotation-container {
+  min-height: 330px;
+  max-height: 520px;
+  overflow: hidden;
+  padding: 10px;
+  border-radius: 8px;
+  background: #2b2b2b;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
+  box-sizing: border-box;
+}
