@@ -24,6 +24,8 @@ export const italianTranslations: Record<string, string> = {
   "common.file": "File",
   "common.size": "Dimensione",
 
+  "board.flip": "Ruota scacchiera",
+
   "moves.title": "Mosse",
   "moves.empty": "Nessuna mossa ancora",
   "moves.computerThinking": "Il computer sta pensando…",

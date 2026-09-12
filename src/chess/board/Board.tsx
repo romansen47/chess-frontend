@@ -7,6 +7,11 @@ import type {
   Piece,
 } from "../types";
 import { getPieceSymbol, squareName } from "./boardUtils";
+import {
+  displayCellToSquare,
+  squareToBoardOffset,
+  type BoardOrientation,
+} from "./boardOrientation";
 
 export interface BoardAnnotation {
   square: string;
@@ -21,6 +26,7 @@ interface BoardProps {
   possibleTargets: string[];
   dragState: DragState | null;
   annotation: BoardAnnotation | null;
+  orientation: BoardOrientation;
   boardContainerRef: RefObject<HTMLDivElement | null>;
   onSquareClick: (square: string) => void | Promise<void>;
   onPiecePointerDown: (event: PointerEvent<HTMLDivElement>, piece: Piece) => void | Promise<void>;
@@ -36,6 +42,7 @@ export default function Board({
   possibleTargets,
   dragState,
   annotation,
+  orientation,
   boardContainerRef,
   onSquareClick,
   onPiecePointerDown,
@@ -44,9 +51,11 @@ export default function Board({
   onPiecePointerCancel,
 }: BoardProps) {
   const squares = [];
-  for (let rank = 8; rank >= 1; rank--) {
-    for (let file = 1; file <= 8; file++) {
-      const name = squareName(file, rank);
+  for (let row = 0; row < 8; row++) {
+    for (let column = 0; column < 8; column++) {
+      const name = displayCellToSquare(row, column, orientation);
+      const file = name.charCodeAt(0) - "a".charCodeAt(0) + 1;
+      const rank = Number(name.substring(1));
       const squareClasses = [
         "square",
         (file + rank) % 2 !== 0 ? "square-light" : "square-dark",
@@ -63,8 +72,13 @@ export default function Board({
   }
 
   const renderedPieces = pieces.map((piece) => {
-    const x = (piece.file - 1) * 80;
-    const y = (8 - piece.rank) * 80;
+    const pieceOffset = squareToBoardOffset(
+      squareName(piece.file, piece.rank),
+      orientation,
+      80
+    );
+    const x = pieceOffset?.x ?? 0;
+    const y = pieceOffset?.y ?? 0;
     const isDragging = dragState?.pieceId === piece.id;
     const renderX = isDragging ? dragState.x : x;
     const renderY = isDragging ? dragState.y : y;
@@ -90,15 +104,7 @@ export default function Board({
   });
 
   const annotationCoords = annotation
-    ? (() => {
-        const file = annotation.square.charCodeAt(0) - "a".charCodeAt(0) + 1;
-        const rank = Number(annotation.square.substring(1));
-        if (file < 1 || file > 8 || rank < 1 || rank > 8) return null;
-        return {
-          x: (file - 1) * 80,
-          y: (8 - rank) * 80,
-        };
-      })()
+    ? squareToBoardOffset(annotation.square, orientation, 80)
     : null;
 
   return (

@@ -24,6 +24,8 @@ export const spanishTranslations: Record<string, string> = {
   "common.file": "Archivo",
   "common.size": "Tamaño",
 
+  "board.flip": "Girar tablero",
+
   "moves.title": "Jugadas",
   "moves.empty": "Aún no hay jugadas",
   "moves.computerThinking": "El ordenador está pensando…",

@@ -45,6 +45,13 @@ import {
   squareName,
 } from "./chess/board/boardUtils";
 import {
+  BOARD_ORIENTATION_STORAGE_KEY,
+  boardPointToSquare,
+  normalizeBoardOrientation,
+  positionIndexForDisplayCell,
+  type BoardOrientation,
+} from "./chess/board/boardOrientation";
+import {
   getPieceSymbolFromPositionChar,
   getPromotionTypeForLocalMove,
   isWhitePositionPiece,
@@ -122,6 +129,12 @@ function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
 
 export const ChessBoard: React.FC = () => {
   const { t } = useI18n();
+  const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>(() => {
+    if (typeof window === "undefined") return "white";
+    return normalizeBoardOrientation(
+      window.localStorage.getItem(BOARD_ORIENTATION_STORAGE_KEY)
+    );
+  });
 
   function localizedGameState(gameState: string | null | undefined, currentClock?: ClockState | null): string {
     if (gameState === "LOST_ON_TIME") {
@@ -161,6 +174,25 @@ export const ChessBoard: React.FC = () => {
   function updatePossibleTargets(targets: string[]) {
     possibleTargetsRef.current = targets;
     setPossibleTargets(targets);
+  }
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      BOARD_ORIENTATION_STORAGE_KEY,
+      boardOrientation
+    );
+  }, [boardOrientation]);
+
+  function flipBoardOrientation() {
+    setBoardOrientation((current) =>
+      current === "white" ? "black" : "white"
+    );
+    setDragState(null);
+    setSelectedSquare(null);
+    updatePossibleTargets([]);
+    setPromotionContext(null);
+    setHoverPreview(null);
+    setHoverAnnotationText(null);
   }
 
   const [engineEval, setEngineEval] = useState<EngineEvaluation | null>(null);
@@ -264,8 +296,29 @@ export const ChessBoard: React.FC = () => {
       !analysisReplayActive
       || !analysisReplayFinished
       || !analysisSelectedPosition
-      || analysisVariationMoves.length > 0
     ) return null;
+
+    if (analysisVariationMoves.length > 0) {
+      if (
+        !analysisEvaluationEnabled
+        || !analysisEvaluation?.moveAnnotationReady
+        || !analysisEvaluation.moveAnnotation
+      ) {
+        return null;
+      }
+
+      const latestVariationMove =
+        analysisVariationMoves[analysisVariationMoves.length - 1];
+      const destination = latestVariationMove?.substring(2, 4);
+      if (!destination || destination.length !== 2) return null;
+
+      return {
+        square: destination,
+        symbol: analysisEvaluation.moveAnnotation.symbol,
+        kind: analysisEvaluation.moveAnnotation.kind,
+      };
+    }
+
     const point = analysisProfile.find(
       (candidate) => candidate.ply === analysisSelectedPosition.ply
     );
@@ -282,7 +335,9 @@ export const ChessBoard: React.FC = () => {
     analysisReplayFinished,
     analysisSelectedPosition,
     analysisProfile,
-    analysisVariationMoves.length,
+    analysisVariationMoves,
+    analysisEvaluationEnabled,
+    analysisEvaluation,
     moveAnnotations,
   ]);
 
@@ -692,7 +747,7 @@ export const ChessBoard: React.FC = () => {
     const key = analysisEvaluationKey(ply, variationSnapshot);
     analysisEvaluationPlyRef.current = ply;
     analysisEvaluationKeyRef.current = key;
-    if (variationSnapshot.length === 0) setAnalysisEvaluation(null);
+    setAnalysisEvaluation(null);
     setAnalysisEvaluationError(null);
     void loadAnalysisEvaluation(ply, variationSnapshot);
     const intervalId = window.setInterval(() => { void loadAnalysisEvaluation(ply, variationSnapshot); }, 2000);
@@ -1262,13 +1317,13 @@ export const ChessBoard: React.FC = () => {
   function getSquareFromClientPoint(clientX: number, clientY: number): string | null {
     const boardRect = boardContainerRef.current?.getBoundingClientRect();
     if (!boardRect) return null;
-    const x = clientX - boardRect.left;
-    const y = clientY - boardRect.top;
-    if (x < 0 || y < 0 || x >= boardRect.width || y >= boardRect.height) return null;
-    const file = Math.floor(x / 80) + 1;
-    const rank = 8 - Math.floor(y / 80);
-    if (file < 1 || file > 8 || rank < 1 || rank > 8) return null;
-    return squareName(file, rank);
+    return boardPointToSquare(
+      clientX - boardRect.left,
+      clientY - boardRect.top,
+      boardRect.width,
+      boardRect.height,
+      boardOrientation
+    );
   }
 
   async function handlePiecePointerDown(event: React.PointerEvent<HTMLDivElement>, piece: Piece) {
@@ -1434,7 +1489,12 @@ export const ChessBoard: React.FC = () => {
     for (let i = 0; i < 64; i++) {
       const rankFromTop = Math.floor(i / 8);
       const fileFromLeft = i % 8;
-      const pieceChar = hoverPreview.position.charAt(i);
+      const positionIndex = positionIndexForDisplayCell(
+        rankFromTop,
+        fileFromLeft,
+        boardOrientation
+      );
+      const pieceChar = hoverPreview.position.charAt(positionIndex);
       const pieceSymbol = getPieceSymbolFromPositionChar(pieceChar);
       const isLight = (rankFromTop + fileFromLeft) % 2 === 0;
       squares.push(
@@ -1597,7 +1657,12 @@ export const ChessBoard: React.FC = () => {
     for (let i = 0; i < 64; i++) {
       const rankFromTop = Math.floor(i / 8);
       const fileFromLeft = i % 8;
-      const pieceChar = animatedPosition.charAt(i);
+      const positionIndex = positionIndexForDisplayCell(
+        rankFromTop,
+        fileFromLeft,
+        boardOrientation
+      );
+      const pieceChar = animatedPosition.charAt(positionIndex);
       const pieceSymbol = getPieceSymbolFromPositionChar(pieceChar);
       const isLight = (rankFromTop + fileFromLeft) % 2 === 0;
       squares.push(
@@ -1714,6 +1779,7 @@ export const ChessBoard: React.FC = () => {
         onTerminateProgram={() => void terminateProgram()}
         onToggleEngineSettings={() => setShowEngineConfig((prev) => !prev)}
         onOpenEngineManager={() => setShowEngineManager(true)}
+        onFlipBoard={flipBoardOrientation}
       />
 
       {showEngineManager && <EngineManager onClose={() => setShowEngineManager(false)} />}
@@ -1760,6 +1826,7 @@ export const ChessBoard: React.FC = () => {
                 possibleTargets={possibleTargets}
                 dragState={dragState}
                 annotation={selectedBoardAnnotation}
+                orientation={boardOrientation}
                 boardContainerRef={boardContainerRef}
                 onSquareClick={handleSquareClick}
                 onPiecePointerDown={handlePiecePointerDown}
@@ -1788,7 +1855,11 @@ export const ChessBoard: React.FC = () => {
           <section className="engine-panel">
             <div className="engine-panel-main">
               {!analysisReplayActive && !uciAnalysisLoaded && (
-                <button type="button" className={["engine-bar-wrapper", engineAutoUpdate ? "engine-bar-enabled" : "engine-bar-disabled"].join(" ")}
+                <button type="button" className={[
+                    "engine-bar-wrapper",
+                    engineAutoUpdate ? "engine-bar-enabled" : "engine-bar-disabled",
+                    boardOrientation === "black" ? "engine-bar-black-bottom" : "",
+                  ].filter(Boolean).join(" ")}
                   onClick={toggleEngineAutoUpdate} aria-pressed={engineAutoUpdate}
                   aria-label={engineAutoUpdate ? t("game.disableEvaluationEngine") : t("game.enableEvaluationEngine")}
                   title={engineAutoUpdate ? t("game.disableEvaluationEngine") : `${t("game.enableEvaluationEngine")} · 0.0`}>
@@ -1797,7 +1868,11 @@ export const ChessBoard: React.FC = () => {
                 </button>
               )}
               {analysisReplayActive && analysisReplayFinished && (
-                <button type="button" className={["engine-bar-wrapper", analysisEvaluationEnabled ? "engine-bar-enabled" : "engine-bar-disabled"].join(" ")}
+                <button type="button" className={[
+                    "engine-bar-wrapper",
+                    analysisEvaluationEnabled ? "engine-bar-enabled" : "engine-bar-disabled",
+                    boardOrientation === "black" ? "engine-bar-black-bottom" : "",
+                  ].filter(Boolean).join(" ")}
                   onClick={toggleAnalysisEvaluation} aria-pressed={analysisEvaluationEnabled} disabled={!analysisSelectedPosition}
                   aria-label={analysisEvaluationEnabled ? t("game.disableAnalysisEvaluation") : t("game.enableAnalysisEvaluation")}
                   title={!analysisSelectedPosition ? t("game.selectMoveEvaluation")
