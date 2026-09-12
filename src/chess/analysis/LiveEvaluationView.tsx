@@ -12,6 +12,7 @@ interface LiveEvaluationViewProps {
   evaluationKey: string | null;
   activePly: number | null;
   variationMode: boolean;
+  deepAnalysisRunning?: boolean;
 }
 
 function formatEngineScore(evaluation: number): string {
@@ -52,6 +53,7 @@ export default function LiveEvaluationView({
   evaluationKey,
   activePly,
   variationMode,
+  deepAnalysisRunning = false,
 }: LiveEvaluationViewProps) {
   const { t } = useI18n();
   const [selectedLineIndex, setSelectedLineIndex] = useState(0);
@@ -100,7 +102,9 @@ export default function LiveEvaluationView({
         <div className="analysis-detail-placeholder">
           {evaluation
             ? t("analysis.noBoardPositionsVariation")
-            : t("analysis.enableEvaluationBar")}
+            : deepAnalysisRunning && !variationMode
+              ? t("analysis.liveEvaluationUnavailableDuringDeepAnalysis")
+              : t("analysis.enableEvaluationBar")}
         </div>
       );
     }
@@ -204,11 +208,13 @@ export default function LiveEvaluationView({
 
         {!evaluation && (
           <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
-            {variationMode
-              ? t("analysis.evaluationCalculating")
-              : activePly
-                ? t("analysis.evaluationPlyCalculating", { ply: activePly })
-                : t("analysis.enableSelectedInfinite")}
+            {deepAnalysisRunning && !variationMode
+              ? t("analysis.liveEvaluationUnavailableDuringDeepAnalysis")
+              : variationMode
+                ? t("analysis.evaluationCalculating")
+                : activePly
+                  ? t("analysis.evaluationPlyCalculating", { ply: activePly })
+                  : t("analysis.enableSelectedInfinite")}
           </div>
         )}
 

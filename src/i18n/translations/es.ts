@@ -363,6 +363,7 @@ export const spanishTranslations: Record<string, string> = {
   "analysis.continuationFromPly": "Continuación de EvaluationEngine desde el medio movimiento {ply}",
   "analysis.variationsInfinite": "Variantes de EvaluationEngine · infinitas",
   "analysis.evaluationPlyCalculating": "Calculando la evaluación del medio movimiento {ply}…",
+  "analysis.liveEvaluationUnavailableDuringDeepAnalysis": "La evaluación en directo no está activa durante el análisis profundo. Estará disponible cuando termine el análisis.",
   "analysis.terminalPosition": "posición terminal",
   "analysis.depthInfinite": "profundidad {depth} · infinita",
   "common.database": "Base de datos",

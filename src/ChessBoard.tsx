@@ -2071,6 +2071,7 @@ export const ChessBoard: React.FC = () => {
               evaluationKey={evaluationKey}
               activePly={analysisSelectedPosition?.ply ?? null}
               variationMode
+              deepAnalysisRunning={isAnalysisReplayRunning}
             />
           </>
         ) : analysisDetailsTab === "annotations" ? (
@@ -2086,6 +2087,7 @@ export const ChessBoard: React.FC = () => {
                 evaluationKey={evaluationKey}
                 activePly={analysisSelectedPosition?.ply ?? null}
                 variationMode={false}
+                deepAnalysisRunning={isAnalysisReplayRunning}
               />
             ) : renderAnalysisDetails()}
           </>

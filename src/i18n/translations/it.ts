@@ -363,6 +363,7 @@ export const italianTranslations: Record<string, string> = {
   "analysis.continuationFromPly": "Continuazione EvaluationEngine dalla semimossa {ply}",
   "analysis.variationsInfinite": "Varianti EvaluationEngine · infinite",
   "analysis.evaluationPlyCalculating": "Calcolo della valutazione della semimossa {ply}…",
+  "analysis.liveEvaluationUnavailableDuringDeepAnalysis": "La valutazione in tempo reale non è attiva durante l’analisi approfondita. Sarà disponibile al termine dell’analisi.",
   "analysis.terminalPosition": "posizione terminale",
   "analysis.depthInfinite": "profondità {depth} · infinita",
   "common.database": "Database",

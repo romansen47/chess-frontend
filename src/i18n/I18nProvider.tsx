@@ -560,6 +560,11 @@ const translations = {
   "analysis.continuationFromPly": { en: "EvaluationEngine continuation from ply {ply}", de: "EvaluationEngine-Fortsetzung ab Halbzug {ply}", fr: "Suite EvaluationEngine à partir du demi-coup {ply}" },
   "analysis.variationsInfinite": { en: "EvaluationEngine variations · infinite", de: "EvaluationEngine-Varianten · unbegrenzt", fr: "Variantes EvaluationEngine · infinies" },
   "analysis.evaluationPlyCalculating": { en: "Evaluation for ply {ply} is being calculated…", de: "Bewertung für Halbzug {ply} wird berechnet…", fr: "Calcul de l’évaluation du demi-coup {ply}…" },
+  "analysis.liveEvaluationUnavailableDuringDeepAnalysis": {
+    en: "Live evaluation is not active while DeepAnalysis is running. It will be available after the analysis finishes.",
+    de: "Die Live-Bewertung ist während der Tiefenanalyse nicht aktiv. Sie steht nach Abschluss der Analyse zur Verfügung.",
+    fr: "L’évaluation en direct n’est pas active pendant l’analyse approfondie. Elle sera disponible une fois l’analyse terminée.",
+  },
   "analysis.terminalPosition": { en: "terminal position", de: "Endstellung", fr: "position terminale" },
   "analysis.depthInfinite": { en: "depth {depth} · infinite", de: "Tiefe {depth} · unbegrenzt", fr: "profondeur {depth} · infinie" },
   "common.database": { en: "Database", de: "Datenbank", fr: "Base de données" },
