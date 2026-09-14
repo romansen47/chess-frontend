@@ -431,7 +431,6 @@
   font-size: 70px;
   line-height: 88px;
   text-align: center;
-  transition: transform 120ms ease-out;
 }
 
 /* Figurendarstellung mit Animation */
@@ -448,7 +447,6 @@
   cursor: grab;
   user-select: none;
   touch-action: none;
-  transition: transform 180ms ease-out;
   will-change: transform;
 }
 

@@ -63,7 +63,8 @@ import {
 } from "./chess/board/positionUtils";
 import {
   applyLocalMoveTransition,
-  transitionAnalysisBoard,
+  reconcilePieceSnapshot,
+  transitionBoardPosition,
 } from "./chess/board/pieceTransitions";
 import {
   formatClockTime,
@@ -102,8 +103,6 @@ import {
   terminateBackend,
   terminateDevelopmentFrontend,
 } from "./chess/api/programApi";
-import { MOVE_ANIMATION_DURATION_MS } from "./boardMoveAnimation";
-
 const LIVE_EVALUATION_FAST_POLL_MS = 250;
 const LIVE_EVALUATION_NORMAL_POLL_MS = 2000;
 
@@ -215,6 +214,41 @@ export const ChessBoard: React.FC = () => {
     setPossibleTargets(targets);
   }
 
+  function beginBoardAnimation(): Promise<void> {
+    if (
+      typeof window === "undefined"
+      || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return Promise.resolve();
+    }
+
+    if (boardAnimationResolveRef.current) {
+      return boardAnimationPromiseRef.current;
+    }
+
+    let resolveAnimation: () => void = () => undefined;
+    const animationPromise = new Promise<void>((resolve) => {
+      resolveAnimation = resolve;
+    });
+
+    boardAnimationResolveRef.current = resolveAnimation;
+    boardAnimationPromiseRef.current = animationPromise;
+    return animationPromise;
+  }
+
+  function finishBoardAnimation() {
+    const resolveAnimation = boardAnimationResolveRef.current;
+    if (!resolveAnimation) return;
+
+    boardAnimationResolveRef.current = null;
+    boardAnimationPromiseRef.current = Promise.resolve();
+    resolveAnimation();
+  }
+
+  function waitForBoardAnimation(): Promise<void> {
+    return boardAnimationPromiseRef.current;
+  }
+
   useEffect(() => {
     window.localStorage.setItem(
       BOARD_ORIENTATION_STORAGE_KEY,
@@ -297,7 +331,8 @@ export const ChessBoard: React.FC = () => {
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const [analysisSelectedPosition, setAnalysisSelectedPosition] = useState<AnalysisPositionSelection | null>(null);
   const analysisSelectedPlyRef = useRef<number | null>(null);
-  const analysisNavigationLockedUntilRef = useRef<number>(0);
+  const boardAnimationResolveRef = useRef<(() => void) | null>(null);
+  const boardAnimationPromiseRef = useRef<Promise<void>>(Promise.resolve());
   const [analysisDetailsTab, setAnalysisDetailsTab] = useState<"engine" | "database" | "annotations">("engine");
   const [gameAnnotations, setGameAnnotations] = useState<Record<number, GameAnnotation>>({});
   const [annotationsDirty, setAnnotationsDirty] = useState<boolean>(false);
@@ -544,7 +579,10 @@ export const ChessBoard: React.FC = () => {
   async function loadBoardFromBackend() {
     try {
       const data = await fetchBoard();
-      setPieces(mapBackendPiecesToLocalPieces(data.pieces ?? []));
+      const targetPieces = mapBackendPiecesToLocalPieces(data.pieces ?? []);
+      setPieces((previousPieces) =>
+        reconcilePieceSnapshot(previousPieces, targetPieces)
+      );
     } catch (e) {
       console.error("[loadBoardFromBackend] error:", e);
       setLoadError(t("game.boardLoadFailed"));
@@ -1323,7 +1361,13 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
-  function animateMoveLocally(from: string, to: string, requestedPromotion?: PieceType | null, resultingPosition?: string | null) {
+  function animateMoveLocally(
+    from: string,
+    to: string,
+    requestedPromotion?: PieceType | null,
+    resultingPosition?: string | null
+  ): Promise<void> {
+    const animation = beginBoardAnimation();
     setPieces((previousPieces) =>
       applyLocalMoveTransition(
         previousPieces,
@@ -1333,6 +1377,7 @@ export const ChessBoard: React.FC = () => {
         resultingPosition
       )
     );
+    return animation;
   }
 
   function mergeAuthoritativeMoveRows(current: MoveRow[], authoritative: MoveRow[]): MoveRow[] {
@@ -1497,29 +1542,38 @@ export const ChessBoard: React.FC = () => {
   }
 
   function selectAnalysisPositionByPly(ply: number) {
+    if (analysisReplayFinished) {
+      navigateAnalysisPositionByPly(ply);
+      return;
+    }
+
     const selection = getAnalysisMoveSelectionForPly(ply);
-    if (selection) selectAnalysisPosition(selection.position, selection.san, selection.ply);
+    if (selection) {
+      selectAnalysisPosition(selection.position, selection.san, selection.ply);
+    }
   }
 
   function animateAnalysisNavigationMove(
     moveFrom: string,
     moveTo: string,
     targetPosition: string,
-    targetPly: number,
     reverse: boolean
-  ) {
+  ): Promise<void> {
+    const animation = beginBoardAnimation();
     setPieces((previousPieces) =>
-      transitionAnalysisBoard(previousPieces, {
+      transitionBoardPosition(previousPieces, {
         moveFrom,
         moveTo,
         targetPosition,
-        targetPly,
         reverse,
       })
     );
+    return animation;
   }
 
   function navigateAnalysisPositionByPly(ply: number) {
+    if (boardAnimationResolveRef.current) return;
+
     const selection = getAnalysisMoveSelectionForPly(ply);
     if (!selection?.position || selection.position.length !== 64) return;
 
@@ -1534,11 +1588,10 @@ export const ChessBoard: React.FC = () => {
       );
 
       if (movedPoint?.from && movedPoint.to) {
-        animateAnalysisNavigationMove(
+        void animateAnalysisNavigationMove(
           movedPoint.from,
           movedPoint.to,
           selection.position,
-          ply,
           reverse
         );
         selectAnalysisPosition(
@@ -1584,8 +1637,7 @@ export const ChessBoard: React.FC = () => {
         return;
       }
 
-      const now = performance.now();
-      if (now < analysisNavigationLockedUntilRef.current) {
+      if (boardAnimationResolveRef.current) {
         event.preventDefault();
         return;
       }
@@ -1598,9 +1650,7 @@ export const ChessBoard: React.FC = () => {
       }
 
       event.preventDefault();
-      analysisNavigationLockedUntilRef.current =
-        now + MOVE_ANIMATION_DURATION_MS;
-      navigateAnalysisPositionByPly(nextPly);
+      selectAnalysisPositionByPly(nextPly);
     }
 
     window.addEventListener("keydown", handleAnalysisArrowNavigation);
@@ -1630,13 +1680,14 @@ export const ChessBoard: React.FC = () => {
     return true;
   }
 
-  function handleComputerMove(data: MoveResult) {
+  async function handleComputerMove(data: MoveResult) {
     if (!data.from || !data.to) return;
-    animateMoveLocally(data.from, data.to, null, data.position);
+    const animation = animateMoveLocally(data.from, data.to, null, data.position);
     setLastMove({ from: data.from, to: data.to });
     const moveListGapDetected = addMoveToMoveList(data);
     if (moveListGapDetected) void reconcileMoveListFromBackend();
     playMoveResultSound(data);
+    await animation;
   }
 
   async function synchronizeAfterMoveSequence() {
@@ -1661,13 +1712,16 @@ export const ChessBoard: React.FC = () => {
         setLoadError(data.message || `HTTP ${result.status}`);
         return;
       }
-      if (!options?.localMoveAlreadyApplied) animateMoveLocally(from, to, promotion, data.position);
+      const moveAnimation = options?.localMoveAlreadyApplied
+        ? waitForBoardAnimation()
+        : animateMoveLocally(from, to, promotion, data.position);
       setLastMove({ from, to });
       setSelectedSquare(null);
       updatePossibleTargets([]);
       const moveListGapDetected = addMoveToMoveList(data);
       if (moveListGapDetected) await reconcileMoveListFromBackend();
       playMoveResultSound(data);
+      await moveAnimation;
       if (handleGameEndState(data.gameState)) { await synchronizeAfterMoveSequence(); return; }
       await requestComputerMoveIfEnabled(data.sideToMove);
       setIsLoadingMoves(false);
@@ -1702,7 +1756,7 @@ export const ChessBoard: React.FC = () => {
       const nextMoves = [...previousMoves, data.uci];
       setAnalysisVariationMoves(nextMoves);
       setAnalysisVariationGameState(data.gameState ?? null);
-      setPieces(mapPositionStringToLocalPieces(data.position));
+      const animation = animateMoveLocally(from, to, promotion, data.position);
       setLastMove({ from, to });
       setSelectedSquare(null);
       updatePossibleTargets([]);
@@ -1712,6 +1766,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisEvaluationError(null);
       analysisEvaluationKeyRef.current = analysisEvaluationKey(analysisSelectedPosition.ply, nextMoves);
       void playGameSound(data.gameState ? "notify" : "move");
+      await animation;
     } catch (e) {
       console.error("[performAnalysisVariationMove] failed", e);
       setLoadError(t("analysis.variationMoveFailed"));
@@ -2276,7 +2331,7 @@ export const ChessBoard: React.FC = () => {
               showAnnotationTooltip,
               hideAnnotationTooltip,
               flipBoard: flipBoardOrientation,
-              selectPosition: selectAnalysisPosition,
+              selectPosition: (_position, _san, ply) => selectAnalysisPositionByPly(ply),
             }}
           />
 
@@ -2296,6 +2351,7 @@ export const ChessBoard: React.FC = () => {
                 onPiecePointerMove={handlePiecePointerMove}
                 onPiecePointerUp={handlePiecePointerUp}
                 onPiecePointerCancel={handlePiecePointerCancel}
+                onPieceTransitionEnd={finishBoardAnimation}
               />
             </div>
             {!analysisReplayActive && !uciAnalysisLoaded && (
