@@ -86,17 +86,11 @@ import {
   saveGameAnnotations,
 } from "./chess/api/gameApi";
 import { useComputerMoves } from "./chess/game/useComputerMoves";
-import {
-  fetchCurrentEvaluation,
-  openEvaluationStream,
-  startEvaluation,
-  stopEvaluation,
-} from "./chess/api/evaluationApi";
+import { fetchEvaluation, openEvaluationStream, stopEvaluation } from "./chess/api/evaluationApi";
 import {
   cancelAnalysisReplayRequest,
   fetchAnalysisEvaluation as fetchAnalysisEvaluationRequest,
   fetchAnalysisPossibleMoves,
-  fetchAnalysisReplayState,
   fetchAnalysisVariationEvaluation,
   fetchNextAnalysisReplayStep,
   startAnalysisReplayRequest,
@@ -243,11 +237,10 @@ export const ChessBoard: React.FC = () => {
   const [liveEvaluationBar, setLiveEvaluationBar] = useState<number | null>(null);
   const [isLoadingEval, setIsLoadingEval] = useState(false);
   const [evalError, setEvalError] = useState<string | null>(null);
-  const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(false);
-  const engineAutoUpdateRef = useRef<boolean>(false);
+  const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(true);
+  const engineAutoUpdateRef = useRef<boolean>(true);
   const [liveEvaluationFastPolling, setLiveEvaluationFastPolling] = useState<boolean>(true);
   const liveEvaluationRequestInFlightRef = useRef<boolean>(false);
-  const liveEvaluationStartInFlightRef = useRef<boolean>(false);
   const [showEngineConfig, setShowEngineConfig] = useState<boolean>(false);
   const [engineConfigOverview, setEngineConfigOverview] = useState<EngineConfigOverview | null>(null);
   const [engineConfigLoadError, setEngineConfigLoadError] = useState<string | null>(null);
@@ -313,7 +306,6 @@ export const ChessBoard: React.FC = () => {
   const [analysisWhitePlayerName, setAnalysisWhitePlayerName] = useState<string | null>(null);
   const [analysisBlackPlayerName, setAnalysisBlackPlayerName] = useState<string | null>(null);
   const analysisReplayCancelledRef = useRef<boolean>(false);
-  const analysisReplayDriverRef = useRef<boolean>(false);
   const [analysisEvaluationEnabled, setAnalysisEvaluationEnabledState] = useState<boolean>(false);
   const analysisEvaluationEnabledRef = useRef<boolean>(false);
   const [analysisEvaluation, setAnalysisEvaluation] = useState<EngineEvaluation | null>(null);
@@ -671,30 +663,13 @@ export const ChessBoard: React.FC = () => {
   }
 
   async function loadEvaluation() {
-    if (
-      !engineAutoUpdateRef.current
-      || analysisReplayActiveRef.current
-      || uciAnalysisLoadedRef.current
-      || gameEndStateRef.current
-      || liveEvaluationRequestInFlightRef.current
-    ) return;
-
+    if (!engineAutoUpdateRef.current || liveEvaluationRequestInFlightRef.current) return;
     liveEvaluationRequestInFlightRef.current = true;
     try {
       setIsLoadingEval(true);
       setEvalError(null);
-      const data = await fetchCurrentEvaluation();
+      const data = await fetchEvaluation();
       if (!engineAutoUpdateRef.current) return;
-
-      if (!data) {
-        if (!liveEvaluationStartInFlightRef.current) {
-          setEngineAutoUpdate(false);
-          setEngineEval(null);
-          setLiveEvaluationBar(null);
-        }
-        return;
-      }
-
       const hasLines = Boolean(data.lines && data.lines.length > 0);
       setLiveEvaluationFastPolling(!hasLines);
       if (hasLines) setEngineEval(data);
@@ -704,35 +679,6 @@ export const ChessBoard: React.FC = () => {
       setLiveEvaluationFastPolling(false);
     } finally {
       liveEvaluationRequestInFlightRef.current = false;
-      setIsLoadingEval(false);
-    }
-  }
-
-  async function startLiveEvaluation() {
-    if (
-      analysisReplayActiveRef.current
-      || uciAnalysisLoadedRef.current
-      || gameEndStateRef.current
-      || liveEvaluationStartInFlightRef.current
-    ) return;
-
-    liveEvaluationStartInFlightRef.current = true;
-    try {
-      setIsLoadingEval(true);
-      setEvalError(null);
-      const data = await startEvaluation();
-      if (!engineAutoUpdateRef.current) return;
-
-      const hasLines = Boolean(data.lines && data.lines.length > 0);
-      setLiveEvaluationFastPolling(!hasLines);
-      if (hasLines) setEngineEval(data);
-    } catch (e) {
-      console.error("[startLiveEvaluation] error", e);
-      setEngineAutoUpdate(false);
-      setEvalError(t("evaluation.failed"));
-      setLiveEvaluationFastPolling(false);
-    } finally {
-      liveEvaluationStartInFlightRef.current = false;
       setIsLoadingEval(false);
     }
   }
@@ -842,7 +788,7 @@ export const ChessBoard: React.FC = () => {
       void stopLiveEvaluation();
       return;
     }
-    void startLiveEvaluation();
+    void loadEvaluation();
   }
 
   async function loadEngineConfigs() {
@@ -876,57 +822,6 @@ export const ChessBoard: React.FC = () => {
     setLiveEvaluationFastPolling(true);
     if (engineAutoUpdateRef.current) void loadEvaluation();
   }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function synchronizeSharedLiveEvaluation() {
-      if (
-        analysisReplayActiveRef.current
-        || uciAnalysisLoadedRef.current
-        || gameEndStateRef.current
-        || liveEvaluationStartInFlightRef.current
-      ) {
-        return;
-      }
-
-      try {
-        const data = await fetchCurrentEvaluation();
-        if (cancelled) return;
-
-        if (!data) {
-          if (engineAutoUpdateRef.current) {
-            setEngineAutoUpdate(false);
-            setEngineEval(null);
-            setLiveEvaluationBar(null);
-          }
-          return;
-        }
-
-        if (!engineAutoUpdateRef.current) {
-          setEngineAutoUpdate(true);
-        }
-        const hasLines = Boolean(data.lines && data.lines.length > 0);
-        setLiveEvaluationFastPolling(!hasLines);
-        if (hasLines) setEngineEval(data);
-      } catch (error) {
-        if (!cancelled) {
-          console.debug("[liveEvaluationState] passive sync unavailable", error);
-        }
-      }
-    }
-
-    void synchronizeSharedLiveEvaluation();
-    const intervalId = window.setInterval(
-      () => { void synchronizeSharedLiveEvaluation(); },
-      1000
-    );
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [analysisReplayActive, uciAnalysisLoaded, clock?.gameState]);
 
   useEffect(() => {
     if (analysisReplayActive || !engineAutoUpdate || clock?.gameState) return;
@@ -1042,17 +937,9 @@ export const ChessBoard: React.FC = () => {
     setShowAnalysisSettingsDialog(true);
   }
 
-  function applyAnalysisReplayStep(
-    step: AnalysisReplayStep,
-    options?: { syncBoard?: boolean }
-  ) {
-    const syncBoard = options?.syncBoard ?? !analysisReplayActiveRef.current;
-    if (step.board?.pieces && syncBoard) {
-      setPieces(mapBackendPiecesToLocalPieces(step.board.pieces));
-    }
-    if (syncBoard) {
-      setLastMove(step.from && step.to ? { from: step.from, to: step.to } : null);
-    }
+  function applyAnalysisReplayStep(step: AnalysisReplayStep) {
+    if (step.board?.pieces && !analysisReplayActiveRef.current) setPieces(mapBackendPiecesToLocalPieces(step.board.pieces));
+    if (step.from && step.to && !analysisReplayActiveRef.current) setLastMove({ from: step.from, to: step.to });
     setAnalysisTotalPlies(Math.max(0, step.totalPlies ?? 0));
     setAnalysisProfile(step.profile?.length ? step.profile : [
       { ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 },
@@ -1066,78 +953,9 @@ export const ChessBoard: React.FC = () => {
     });
   }
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function synchronizeSharedAnalysisReplay() {
-      if (analysisReplayDriverRef.current) return;
-
-      try {
-        const state = await fetchAnalysisReplayState();
-        if (cancelled) return;
-        if (!state) {
-          if (analysisReplayActiveRef.current) {
-            setAnalysisReplayActive(false);
-            setAnalysisReplayFinished(false);
-            setIsAnalysisReplayRunning(false);
-            setAnalysisReplayStatus(null);
-            setAnalysisSelectedPosition(null);
-          }
-          return;
-        }
-
-        const wasAnalysisActive = analysisReplayActiveRef.current;
-        if (state.active || !wasAnalysisActive) {
-          applyAnalysisReplayStep(state, { syncBoard: true });
-        } else {
-          applyAnalysisReplayStep(state);
-        }
-
-        setAnalysisReplayActive(true);
-        setAnalysisReplayFinished(Boolean(state.done));
-        setIsAnalysisReplayRunning(Boolean(state.active));
-        setEngineAutoUpdate(false);
-        setLiveEvaluationBar(null);
-
-        const selection = getAnalysisMoveSelectionForPly(state.currentPly);
-        if (selection?.position && selection.position.length === 64) {
-          const moveLabel = selection.san ? ` · ${selection.san}` : "";
-          setAnalysisSelectedPosition({
-            position: selection.position,
-            label: `Ply ${selection.ply}${moveLabel}`,
-            ply: selection.ply,
-          });
-        }
-
-        const progressText = `${state.currentPly} / ${state.totalPlies}`;
-        setAnalysisReplayStatus(
-          state.active
-            ? `Analyzing ${progressText}…`
-            : `Analysis complete (${progressText}).`
-        );
-      } catch (error) {
-        if (!cancelled) {
-          console.debug("[analysisReplayState] passive sync unavailable", error);
-        }
-      }
-    }
-
-    void synchronizeSharedAnalysisReplay();
-    const intervalId = window.setInterval(
-      () => { void synchronizeSharedAnalysisReplay(); },
-      750
-    );
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [moves]);
-
   async function runAnalysisReplayLoop(initialStep: AnalysisReplayStep) {
     setIsAnalysisReplayRunning(true);
     analysisReplayCancelledRef.current = false;
-    analysisReplayDriverRef.current = true;
     let currentStep = initialStep;
     try {
       while (!analysisReplayCancelledRef.current) {
@@ -1160,7 +978,6 @@ export const ChessBoard: React.FC = () => {
       console.error("[runAnalysisReplayLoop] error", error);
       setAnalysisReplayError(t("analysis.failed"));
     } finally {
-      analysisReplayDriverRef.current = false;
       setIsAnalysisReplayRunning(false);
     }
   }
@@ -1218,7 +1035,6 @@ export const ChessBoard: React.FC = () => {
 
   async function cancelAnalysisReplay() {
     analysisReplayCancelledRef.current = true;
-    analysisReplayDriverRef.current = false;
     setIsAnalysisReplayRunning(false);
     setAnalysisReplayFinished(true);
     setAnalysisReplayStatus(t("analysis.cancelled"));
