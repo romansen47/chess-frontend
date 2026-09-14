@@ -1,4 +1,5 @@
 import type { Piece, PieceType } from "../types";
+import { createPieceId } from "./pieceIdentity";
 
 export function squareName(file: number, rank: number): string {
   const fileChar = String.fromCharCode("a".charCodeAt(0) + file - 1);
@@ -28,11 +29,11 @@ export function createInitialPieces(): Piece[] {
   const pieces: Piece[] = [];
 
   for (let file = 1; file <= 8; file++) {
-    pieces.push({ id: `wp${file}`, color: "white", type: "pawn", file, rank: 2 });
+    pieces.push({ id: createPieceId(), color: "white", type: "pawn", file, rank: 2 });
   }
 
   for (let file = 1; file <= 8; file++) {
-    pieces.push({ id: `bp${file}`, color: "black", type: "pawn", file, rank: 7 });
+    pieces.push({ id: createPieceId(), color: "black", type: "pawn", file, rank: 7 });
   }
 
   const backRankOrder: PieceType[] = [
@@ -41,7 +42,7 @@ export function createInitialPieces(): Piece[] {
 
   for (let file = 1; file <= 8; file++) {
     pieces.push({
-      id: `w${backRankOrder[file - 1]}${file}`,
+      id: createPieceId(),
       color: "white",
       type: backRankOrder[file - 1],
       file,
@@ -51,7 +52,7 @@ export function createInitialPieces(): Piece[] {
 
   for (let file = 1; file <= 8; file++) {
     pieces.push({
-      id: `b${backRankOrder[file - 1]}${file}`,
+      id: createPieceId(),
       color: "black",
       type: backRankOrder[file - 1],
       file,

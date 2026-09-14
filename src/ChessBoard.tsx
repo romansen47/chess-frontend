@@ -63,6 +63,7 @@ import {
 } from "./chess/board/positionUtils";
 import {
   applyLocalMoveTransition,
+  piecesMatchPosition,
   reconcilePieceSnapshot,
   transitionBoardPosition,
 } from "./chess/board/pieceTransitions";
@@ -1627,36 +1628,59 @@ export const ChessBoard: React.FC = () => {
   function animateAnalysisNavigationMove(
     moveFrom: string,
     moveTo: string,
+    sourcePosition: string,
     targetPosition: string,
     reverse: boolean
   ) {
-    setPieces((previousPieces) =>
-      transitionBoardPosition(previousPieces, {
+    setPieces((previousPieces) => {
+      if (!piecesMatchPosition(previousPieces, sourcePosition)) {
+        console.warn(
+          "[analysis-navigation] board/source mismatch; snapping to target position",
+          {
+            currentPly: analysisSelectedPlyRef.current,
+            moveFrom,
+            moveTo,
+            reverse,
+          }
+        );
+      }
+
+      return transitionBoardPosition(previousPieces, {
         moveFrom,
         moveTo,
+        sourcePosition,
         targetPosition,
         reverse,
-      })
-    );
+      });
+    });
   }
 
   function navigateAnalysisPositionByKeyboard(targetPly: number) {
     const currentPly = analysisSelectedPlyRef.current;
-    if (currentPly == null || Math.abs(targetPly - currentPly) !== 1) {
+    if (
+      currentPly == null
+      || Math.abs(targetPly - currentPly) !== 1
+      || analysisVariationMovesRef.current.length > 0
+    ) {
       selectAnalysisPositionByPly(targetPly);
       return;
     }
 
+    const sourceSelection = getAnalysisMoveSelectionForPly(currentPly);
     const targetSelection = getAnalysisMoveSelectionForPly(targetPly);
-    if (!targetSelection?.position || targetSelection.position.length !== 64) {
+    if (
+      !sourceSelection?.position
+      || sourceSelection.position.length !== 64
+      || !targetSelection?.position
+      || targetSelection.position.length !== 64
+    ) {
+      selectAnalysisPositionByPly(targetPly);
       return;
     }
 
     const reverse = targetPly < currentPly;
-    const moveSelection = reverse
-      ? getAnalysisMoveSelectionForPly(currentPly)
-      : targetSelection;
-    const uci = moveSelection?.uci;
+    const moveSelection = reverse ? sourceSelection : targetSelection;
+    const uci = moveSelection.uci;
 
     if (!uci || uci.length < 4) {
       console.warn(
@@ -1674,6 +1698,7 @@ export const ChessBoard: React.FC = () => {
     animateAnalysisNavigationMove(
       uci.substring(0, 2),
       uci.substring(2, 4),
+      sourceSelection.position,
       targetSelection.position,
       reverse
     );

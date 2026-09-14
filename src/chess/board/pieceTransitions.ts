@@ -3,7 +3,26 @@ import { getCastlingSquares, getSquareCoords, squareName } from "./boardUtils";
 import {
   getPromotionTypeForLocalMove,
   mapPositionStringToLocalPieces,
+  parsePositionString,
 } from "./positionUtils";
+
+function piecePositionKey(
+  piece: Pick<Piece, "color" | "type" | "file" | "rank">
+): string {
+  return `${piece.color}:${piece.type}:${squareName(piece.file, piece.rank)}`;
+}
+
+export function piecesMatchPosition(
+  pieces: Piece[],
+  position: string
+): boolean {
+  const expectedPieces = parsePositionString(position);
+  if (pieces.length !== expectedPieces.length) return false;
+
+  const actual = pieces.map(piecePositionKey).sort();
+  const expected = expectedPieces.map(piecePositionKey).sort();
+  return actual.every((value, index) => value === expected[index]);
+}
 
 export function reconcilePieceSnapshot(
   previousPieces: Piece[],
@@ -34,6 +53,7 @@ export interface BoardPositionTransition {
   moveTo: string;
   targetPosition: string;
   reverse: boolean;
+  sourcePosition?: string;
 }
 
 export function transitionBoardPosition(
@@ -45,22 +65,28 @@ export function transitionBoardPosition(
     moveTo,
     targetPosition,
     reverse,
+    sourcePosition,
   } = transition;
 
   const targetPieces = mapPositionStringToLocalPieces(targetPosition);
+
+  if (sourcePosition && !piecesMatchPosition(previousPieces, sourcePosition)) {
+    return targetPieces;
+  }
+
   const sourceSquare = reverse ? moveTo : moveFrom;
   const destinationSquare = reverse ? moveFrom : moveTo;
   const destinationCoords = getSquareCoords(destinationSquare);
 
   if (!destinationCoords) {
-    return reconcilePieceSnapshot(previousPieces, targetPieces);
+    return targetPieces;
   }
 
   const movingPiece = previousPieces.find(
     (piece) => squareName(piece.file, piece.rank) === sourceSquare
   );
   if (!movingPiece) {
-    return reconcilePieceSnapshot(previousPieces, targetPieces);
+    return targetPieces;
   }
 
   const originalCastling = getCastlingSquares(movingPiece, moveFrom, moveTo);
@@ -78,7 +104,7 @@ export function transitionBoardPosition(
     );
 
     if (!kingDestination || !rookDestination) {
-      return reconcilePieceSnapshot(previousPieces, targetPieces);
+      return targetPieces;
     }
 
     animatedPieces = previousPieces.map((piece) => {
@@ -143,6 +169,8 @@ export function applyLocalMoveTransition(
   const movingPiece = previousPieces.find(
     (piece) => squareName(piece.file, piece.rank) === from
   );
+  if (!movingPiece) return previousPieces;
+
   const promotionType = getPromotionTypeForLocalMove(
     movingPiece,
     to,
@@ -168,12 +196,27 @@ export function applyLocalMoveTransition(
     });
   }
 
-  const withoutCaptured = previousPieces.filter(
-    (piece) => squareName(piece.file, piece.rank) !== to
+  const targetOccupied = previousPieces.some(
+    (piece) => squareName(piece.file, piece.rank) === to
   );
+  const enPassant =
+    movingPiece.type === "pawn"
+    && movingPiece.file !== targetCoords.file
+    && !targetOccupied;
+  const capturedSquare = enPassant
+    ? squareName(targetCoords.file, movingPiece.rank)
+    : to;
+
+  const withoutCaptured = previousPieces.filter((piece) => {
+    if (piece.id === movingPiece.id) return true;
+    return !(
+      piece.color !== movingPiece.color
+      && squareName(piece.file, piece.rank) === capturedSquare
+    );
+  });
 
   return withoutCaptured.map((piece) =>
-    squareName(piece.file, piece.rank) === from
+    piece.id === movingPiece.id
       ? {
           ...piece,
           type: promotionType ?? piece.type,
