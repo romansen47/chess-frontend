@@ -1,4 +1,4 @@
-const MOVE_ANIMATION_DURATION_MS = 100;
+export const MOVE_ANIMATION_DURATION_MS = 200;
 const BOARD_RESYNC_SAFETY_MARGIN_MS = 20;
 
 let installed = false;
