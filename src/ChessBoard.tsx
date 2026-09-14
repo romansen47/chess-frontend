@@ -818,13 +818,13 @@ export const ChessBoard: React.FC = () => {
   }
 
   useEffect(() => {
-    if (!engineAutoUpdate || clock?.gameState) return;
+    if (analysisReplayActive || !engineAutoUpdate || clock?.gameState) return;
     const intervalId = window.setInterval(
       () => { void loadEvaluation(); },
       liveEvaluationFastPolling ? LIVE_EVALUATION_FAST_POLL_MS : LIVE_EVALUATION_NORMAL_POLL_MS,
     );
     return () => window.clearInterval(intervalId);
-  }, [engineAutoUpdate, clock?.gameState, liveEvaluationFastPolling]);
+  }, [analysisReplayActive, engineAutoUpdate, clock?.gameState, liveEvaluationFastPolling]);
 
   useEffect(() => { setAnalysisLineAnimationIndex(0); }, [analysisSelectedPosition?.ply, analysisSelectedLineIndex]);
 
