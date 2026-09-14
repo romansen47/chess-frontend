@@ -1466,7 +1466,12 @@ export const ChessBoard: React.FC = () => {
     setHoverAnnotationText(null);
   }
 
-  function selectAnalysisPosition(position: string | undefined, san: string | undefined, ply: number) {
+  function selectAnalysisPosition(
+    position: string | undefined,
+    san: string | undefined,
+    ply: number,
+    options?: { updateBoard?: boolean }
+  ) {
     if (!analysisReplayActiveRef.current || !position || position.length !== 64) return;
     const hadVariation = analysisVariationMovesRef.current.length > 0;
     if (hadVariation) void stopAnalysisEvaluation();
@@ -1479,7 +1484,9 @@ export const ChessBoard: React.FC = () => {
     setAnalysisSelectedPosition({ position, label: `Ply ${ply}${moveLabel}`, ply });
     setAnalysisSelectedLineIndex(null);
     setAnalysisLineAnimationIndex(0);
-    setPieces(mapPositionStringToLocalPieces(position));
+    if (options?.updateBoard !== false) {
+      setPieces(mapPositionStringToLocalPieces(position));
+    }
     setLastMove(null);
   }
 
@@ -1496,6 +1503,146 @@ export const ChessBoard: React.FC = () => {
   function selectAnalysisPositionByPly(ply: number) {
     const selection = getAnalysisMoveSelectionForPly(ply);
     if (selection) selectAnalysisPosition(selection.position, selection.san, selection.ply);
+  }
+
+  function animateAnalysisNavigationMove(
+    moveFrom: string,
+    moveTo: string,
+    targetPosition: string,
+    targetPly: number,
+    reverse: boolean
+  ) {
+    const targetPieces = mapPositionStringToLocalPieces(targetPosition);
+    const sourceSquare = reverse ? moveTo : moveFrom;
+    const destinationSquare = reverse ? moveFrom : moveTo;
+    const destinationCoords = getSquareCoords(destinationSquare);
+    if (!destinationCoords) {
+      setPieces(targetPieces);
+      return;
+    }
+
+    setPieces((previousPieces) => {
+      const movingPiece = previousPieces.find(
+        (piece) => squareName(piece.file, piece.rank) === sourceSquare
+      );
+      if (!movingPiece) {
+        return targetPieces;
+      }
+
+      const originalCastling = getCastlingSquares(movingPiece, moveFrom, moveTo);
+      let animatedPieces: Piece[];
+
+      if (originalCastling) {
+        const kingDestination = getSquareCoords(
+          reverse ? moveFrom : originalCastling.kingTo
+        );
+        const rookSource = reverse
+          ? originalCastling.rookTo
+          : originalCastling.rookFrom;
+        const rookDestination = getSquareCoords(
+          reverse ? originalCastling.rookFrom : originalCastling.rookTo
+        );
+
+        if (!kingDestination || !rookDestination) {
+          return targetPieces;
+        }
+
+        animatedPieces = previousPieces.map((piece) => {
+          const square = squareName(piece.file, piece.rank);
+          if (piece.id === movingPiece.id) {
+            return {
+              ...piece,
+              file: kingDestination.file,
+              rank: kingDestination.rank,
+            };
+          }
+          if (square === rookSource) {
+            return {
+              ...piece,
+              file: rookDestination.file,
+              rank: rookDestination.rank,
+            };
+          }
+          return piece;
+        });
+      } else {
+        const targetMovingPiece = targetPieces.find(
+          (piece) =>
+            piece.color === movingPiece.color
+            && squareName(piece.file, piece.rank) === destinationSquare
+        );
+
+        animatedPieces = previousPieces.map((piece) =>
+          piece.id === movingPiece.id
+            ? {
+                ...piece,
+                type: targetMovingPiece?.type ?? piece.type,
+                file: destinationCoords.file,
+                rank: destinationCoords.rank,
+              }
+            : piece
+        );
+      }
+
+      // Match the authoritative target position while preserving the ids of
+      // pieces that already exist. This removes captures (including en passant)
+      // and restores captured pieces when navigating backwards.
+      const availablePieces = [...animatedPieces];
+      return targetPieces.map((targetPiece) => {
+        const targetSquare = squareName(targetPiece.file, targetPiece.rank);
+        const existingIndex = availablePieces.findIndex(
+          (piece) =>
+            piece.color === targetPiece.color
+            && piece.type === targetPiece.type
+            && squareName(piece.file, piece.rank) === targetSquare
+        );
+
+        if (existingIndex >= 0) {
+          const [existingPiece] = availablePieces.splice(existingIndex, 1);
+          return existingPiece;
+        }
+
+        return {
+          ...targetPiece,
+          id: `analysis-restored-${targetPly}-${targetPiece.id}`,
+        };
+      });
+    });
+  }
+
+  function navigateAnalysisPositionByPly(ply: number) {
+    const selection = getAnalysisMoveSelectionForPly(ply);
+    if (!selection?.position || selection.position.length !== 64) return;
+
+    const currentPly = analysisSelectedPosition?.ply;
+    const adjacent = currentPly != null && Math.abs(ply - currentPly) === 1;
+    const variationActive = analysisVariationMovesRef.current.length > 0;
+
+    if (adjacent && !variationActive) {
+      const reverse = ply < currentPly!;
+      const movedPoint = analysisProfile.find(
+        (point) => point.ply === (reverse ? currentPly : ply)
+      );
+
+      if (movedPoint?.from && movedPoint.to) {
+        animateAnalysisNavigationMove(
+          movedPoint.from,
+          movedPoint.to,
+          selection.position,
+          ply,
+          reverse
+        );
+        selectAnalysisPosition(
+          selection.position,
+          selection.san,
+          selection.ply,
+          { updateBoard: false }
+        );
+        return;
+      }
+    }
+
+    selectAnalysisPosition(selection.position, selection.san, selection.ply);
   }
 
   useEffect(() => {
@@ -1536,7 +1683,7 @@ export const ChessBoard: React.FC = () => {
       }
 
       event.preventDefault();
-      selectAnalysisPositionByPly(nextPly);
+      navigateAnalysisPositionByPly(nextPly);
     }
 
     window.addEventListener("keydown", handleAnalysisArrowNavigation);
