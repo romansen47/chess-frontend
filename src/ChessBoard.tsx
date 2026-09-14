@@ -86,7 +86,12 @@ import {
   saveGameAnnotations,
 } from "./chess/api/gameApi";
 import { useComputerMoves } from "./chess/game/useComputerMoves";
-import { fetchEvaluation, openEvaluationStream, stopEvaluation } from "./chess/api/evaluationApi";
+import {
+  fetchCurrentEvaluation,
+  openEvaluationStream,
+  startEvaluation,
+  stopEvaluation,
+} from "./chess/api/evaluationApi";
 import {
   cancelAnalysisReplayRequest,
   fetchAnalysisEvaluation as fetchAnalysisEvaluationRequest,
@@ -242,6 +247,7 @@ export const ChessBoard: React.FC = () => {
   const engineAutoUpdateRef = useRef<boolean>(false);
   const [liveEvaluationFastPolling, setLiveEvaluationFastPolling] = useState<boolean>(true);
   const liveEvaluationRequestInFlightRef = useRef<boolean>(false);
+  const liveEvaluationStartInFlightRef = useRef<boolean>(false);
   const [showEngineConfig, setShowEngineConfig] = useState<boolean>(false);
   const [engineConfigOverview, setEngineConfigOverview] = useState<EngineConfigOverview | null>(null);
   const [engineConfigLoadError, setEngineConfigLoadError] = useState<string | null>(null);
@@ -672,12 +678,23 @@ export const ChessBoard: React.FC = () => {
       || gameEndStateRef.current
       || liveEvaluationRequestInFlightRef.current
     ) return;
+
     liveEvaluationRequestInFlightRef.current = true;
     try {
       setIsLoadingEval(true);
       setEvalError(null);
-      const data = await fetchEvaluation();
+      const data = await fetchCurrentEvaluation();
       if (!engineAutoUpdateRef.current) return;
+
+      if (!data) {
+        if (!liveEvaluationStartInFlightRef.current) {
+          setEngineAutoUpdate(false);
+          setEngineEval(null);
+          setLiveEvaluationBar(null);
+        }
+        return;
+      }
+
       const hasLines = Boolean(data.lines && data.lines.length > 0);
       setLiveEvaluationFastPolling(!hasLines);
       if (hasLines) setEngineEval(data);
@@ -687,6 +704,35 @@ export const ChessBoard: React.FC = () => {
       setLiveEvaluationFastPolling(false);
     } finally {
       liveEvaluationRequestInFlightRef.current = false;
+      setIsLoadingEval(false);
+    }
+  }
+
+  async function startLiveEvaluation() {
+    if (
+      analysisReplayActiveRef.current
+      || uciAnalysisLoadedRef.current
+      || gameEndStateRef.current
+      || liveEvaluationStartInFlightRef.current
+    ) return;
+
+    liveEvaluationStartInFlightRef.current = true;
+    try {
+      setIsLoadingEval(true);
+      setEvalError(null);
+      const data = await startEvaluation();
+      if (!engineAutoUpdateRef.current) return;
+
+      const hasLines = Boolean(data.lines && data.lines.length > 0);
+      setLiveEvaluationFastPolling(!hasLines);
+      if (hasLines) setEngineEval(data);
+    } catch (e) {
+      console.error("[startLiveEvaluation] error", e);
+      setEngineAutoUpdate(false);
+      setEvalError(t("evaluation.failed"));
+      setLiveEvaluationFastPolling(false);
+    } finally {
+      liveEvaluationStartInFlightRef.current = false;
       setIsLoadingEval(false);
     }
   }
@@ -796,7 +842,7 @@ export const ChessBoard: React.FC = () => {
       void stopLiveEvaluation();
       return;
     }
-    void loadEvaluation();
+    void startLiveEvaluation();
   }
 
   async function loadEngineConfigs() {
@@ -830,6 +876,57 @@ export const ChessBoard: React.FC = () => {
     setLiveEvaluationFastPolling(true);
     if (engineAutoUpdateRef.current) void loadEvaluation();
   }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function synchronizeSharedLiveEvaluation() {
+      if (
+        analysisReplayActiveRef.current
+        || uciAnalysisLoadedRef.current
+        || gameEndStateRef.current
+        || liveEvaluationStartInFlightRef.current
+      ) {
+        return;
+      }
+
+      try {
+        const data = await fetchCurrentEvaluation();
+        if (cancelled) return;
+
+        if (!data) {
+          if (engineAutoUpdateRef.current) {
+            setEngineAutoUpdate(false);
+            setEngineEval(null);
+            setLiveEvaluationBar(null);
+          }
+          return;
+        }
+
+        if (!engineAutoUpdateRef.current) {
+          setEngineAutoUpdate(true);
+        }
+        const hasLines = Boolean(data.lines && data.lines.length > 0);
+        setLiveEvaluationFastPolling(!hasLines);
+        if (hasLines) setEngineEval(data);
+      } catch (error) {
+        if (!cancelled) {
+          console.debug("[liveEvaluationState] passive sync unavailable", error);
+        }
+      }
+    }
+
+    void synchronizeSharedLiveEvaluation();
+    const intervalId = window.setInterval(
+      () => { void synchronizeSharedLiveEvaluation(); },
+      1000
+    );
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [analysisReplayActive, uciAnalysisLoaded, clock?.gameState]);
 
   useEffect(() => {
     if (analysisReplayActive || !engineAutoUpdate || clock?.gameState) return;
