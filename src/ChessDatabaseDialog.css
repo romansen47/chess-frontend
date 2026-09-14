@@ -219,13 +219,14 @@
 
 .chess-database-import-result > div {
   display: grid;
-  grid-template-columns: 145px minmax(0, 1fr);
+  grid-template-columns: 210px minmax(0, 1fr);
   gap: 20px;
   align-items: baseline;
 }
 
 .chess-database-import-result > div > span {
   opacity: 0.72;
+  white-space: nowrap;
 }
 
 .chess-database-import-result > div > strong {
