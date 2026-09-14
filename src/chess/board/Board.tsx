@@ -124,7 +124,7 @@ export default function Board({
             data-tooltip={annotation.tooltip ?? undefined}
             aria-label={annotation.tooltip ?? undefined}
             style={{
-              left: annotationCoords.x + 62 - index * 24,
+              left: annotationCoords.x + 66 - index * 20,
               top: annotationCoords.y + 4,
             }}
           >
