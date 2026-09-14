@@ -102,6 +102,7 @@ import {
   terminateBackend,
   terminateDevelopmentFrontend,
 } from "./chess/api/programApi";
+import { MOVE_ANIMATION_DURATION_MS } from "./boardMoveAnimation";
 
 const LIVE_EVALUATION_FAST_POLL_MS = 250;
 const LIVE_EVALUATION_NORMAL_POLL_MS = 2000;
@@ -295,6 +296,8 @@ export const ChessBoard: React.FC = () => {
   ]);
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const [analysisSelectedPosition, setAnalysisSelectedPosition] = useState<AnalysisPositionSelection | null>(null);
+  const analysisSelectedPlyRef = useRef<number | null>(null);
+  const analysisNavigationLockedUntilRef = useRef<number>(0);
   const [analysisDetailsTab, setAnalysisDetailsTab] = useState<"engine" | "database" | "annotations">("engine");
   const [gameAnnotations, setGameAnnotations] = useState<Record<number, GameAnnotation>>({});
   const [annotationsDirty, setAnnotationsDirty] = useState<boolean>(false);
@@ -1016,6 +1019,7 @@ export const ChessBoard: React.FC = () => {
       setEngineAutoUpdate(false);
       setLiveEvaluationBar(null);
       setAnalysisTotalPlies(0);
+      analysisSelectedPlyRef.current = null;
       setAnalysisSelectedPosition(null);
       setAnalysisSelectedLineIndex(null);
       setAnalysisLineAnimationIndex(0);
@@ -1193,6 +1197,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisReplayStatus(null);
       setAnalysisReplayError(null);
       setAnalysisReplayFinished(false);
+      analysisSelectedPlyRef.current = null;
       setAnalysisSelectedPosition(null);
       setAnalysisSelectedLineIndex(null);
       setAnalysisLineAnimationIndex(0);
@@ -1268,6 +1273,7 @@ export const ChessBoard: React.FC = () => {
       setAnalysisReplayError(null);
       setAnalysisReplayFinished(false);
       setAnalysisTotalPlies(0);
+      analysisSelectedPlyRef.current = null;
       setAnalysisSelectedPosition(null);
       setAnalysisSelectedLineIndex(null);
       setAnalysisLineAnimationIndex(0);
@@ -1470,6 +1476,7 @@ export const ChessBoard: React.FC = () => {
     analysisEvaluationKeyRef.current = `ply:${ply}`;
     setAnalysisEvaluation(null);
     setAnalysisEvaluationError(null);
+    analysisSelectedPlyRef.current = ply;
     setAnalysisSelectedPosition({ position, label: `Ply ${ply}${moveLabel}`, ply });
     setAnalysisSelectedLineIndex(null);
     setAnalysisLineAnimationIndex(0);
@@ -1577,7 +1584,13 @@ export const ChessBoard: React.FC = () => {
         return;
       }
 
-      const currentPly = analysisSelectedPosition?.ply
+      const now = performance.now();
+      if (now < analysisNavigationLockedUntilRef.current) {
+        event.preventDefault();
+        return;
+      }
+
+      const currentPly = analysisSelectedPlyRef.current
         ?? (event.key === "ArrowRight" ? 0 : analysisTotalPlies + 1);
       const nextPly = currentPly + (event.key === "ArrowRight" ? 1 : -1);
       if (nextPly < 1 || nextPly > analysisTotalPlies) {
@@ -1585,6 +1598,8 @@ export const ChessBoard: React.FC = () => {
       }
 
       event.preventDefault();
+      analysisNavigationLockedUntilRef.current =
+        now + MOVE_ANIMATION_DURATION_MS;
       navigateAnalysisPositionByPly(nextPly);
     }
 
