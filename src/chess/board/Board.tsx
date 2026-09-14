@@ -27,7 +27,7 @@ interface BoardProps {
   lastMove: LastMove | null;
   possibleTargets: string[];
   dragState: DragState | null;
-  annotation: BoardAnnotation | null;
+  annotations: BoardAnnotation[];
   orientation: BoardOrientation;
   boardContainerRef: RefObject<HTMLDivElement | null>;
   onSquareClick: (square: string) => void | Promise<void>;
@@ -43,7 +43,7 @@ export default function Board({
   lastMove,
   possibleTargets,
   dragState,
-  annotation,
+  annotations,
   orientation,
   boardContainerRef,
   onSquareClick,
@@ -105,27 +105,33 @@ export default function Board({
     );
   });
 
-  const annotationCoords = annotation
-    ? squareToBoardOffset(annotation.square, orientation, 88)
-    : null;
-
   return (
     <div className="board-container" ref={boardContainerRef}>
       <div className="board">{squares}</div>
       <div className="pieces-layer">{renderedPieces}</div>
-      {annotation && annotationCoords && (
-        <div
-          className={`board-move-annotation move-annotation-${annotation.kind}`}
-          data-tooltip={annotation.tooltip ?? undefined}
-          aria-label={annotation.tooltip ?? undefined}
-          style={{
-            left: annotationCoords.x + 62,
-            top: annotationCoords.y + 4,
-          }}
-        >
-          {annotation.symbol}
-        </div>
-      )}
+      {annotations.map((annotation, index) => {
+        const annotationCoords = squareToBoardOffset(
+          annotation.square,
+          orientation,
+          88
+        );
+        if (!annotationCoords) return null;
+
+        return (
+          <div
+            key={`${annotation.kind}-${annotation.symbol}-${index}`}
+            className={`board-move-annotation move-annotation-${annotation.kind}`}
+            data-tooltip={annotation.tooltip ?? undefined}
+            aria-label={annotation.tooltip ?? undefined}
+            style={{
+              left: annotationCoords.x + 62 - index * 24,
+              top: annotationCoords.y + 4,
+            }}
+          >
+            {annotation.symbol}
+          </div>
+        );
+      })}
     </div>
   );
 }
