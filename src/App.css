@@ -345,6 +345,7 @@
   position: absolute;
   top: 50%;
   left: 50%;
+  z-index: 40;
   width: 30px;
   height: 30px;
   transform: translate(-50%, -50%);
@@ -352,6 +353,7 @@
   background: rgba(0, 0, 0, 0.35);
   border: 3px solid rgba(0, 255, 200, 0.9);
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
 }
 
 .square-selected.square-possible::after {
@@ -376,8 +378,8 @@
 .board-move-annotation {
   position: absolute;
   z-index: 45;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -385,10 +387,10 @@
   pointer-events: auto;
   cursor: help;
   box-sizing: border-box;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
   line-height: 1;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 .board-move-annotation[data-tooltip]::after {
