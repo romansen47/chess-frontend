@@ -340,23 +340,25 @@
 }
 
 /* Mögliche Ziel-Felder */
-.square-possible::after {
-  content: "";
+.possible-targets-layer {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  inset: 0;
   z-index: 40;
+  pointer-events: none;
+}
+
+.possible-target-marker {
+  position: absolute;
   width: 30px;
   height: 30px;
-  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.35);
   border: 3px solid rgba(0, 255, 200, 0.9);
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
-  pointer-events: none;
+  box-sizing: border-box;
 }
 
-.square-selected.square-possible::after {
+.possible-target-marker-selected {
   border-color: rgba(255, 255, 0, 0.95);
   background: rgba(0, 0, 0, 0.3);
 }
@@ -378,8 +380,8 @@
 .board-move-annotation {
   position: absolute;
   z-index: 45;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -387,10 +389,10 @@
   pointer-events: auto;
   cursor: help;
   box-sizing: border-box;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 800;
   line-height: 1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 
 .board-move-annotation[data-tooltip]::after {
