@@ -352,12 +352,12 @@ export const ChessBoard: React.FC = () => {
     [analysisProfile]
   );
 
-  const selectedBoardAnnotation = useMemo<BoardAnnotation | null>(() => {
+  const selectedBoardAnnotations = useMemo<BoardAnnotation[]>(() => {
     if (
       !analysisReplayActive
       || !analysisReplayFinished
       || !analysisSelectedPosition
-    ) return null;
+    ) return [];
 
     if (analysisVariationMoves.length > 0) {
       if (
@@ -365,45 +365,49 @@ export const ChessBoard: React.FC = () => {
         || !analysisEvaluation?.moveAnnotationReady
         || !analysisEvaluation.moveAnnotation
       ) {
-        return null;
+        return [];
       }
 
       const latestVariationMove =
         analysisVariationMoves[analysisVariationMoves.length - 1];
       const destination = latestVariationMove?.substring(2, 4);
-      if (!destination || destination.length !== 2) return null;
+      if (!destination || destination.length !== 2) return [];
 
-      return {
+      return [{
         square: destination,
         symbol: analysisEvaluation.moveAnnotation.symbol,
         kind: analysisEvaluation.moveAnnotation.kind,
         tooltip: getMoveAnnotationTooltip(analysisEvaluation.moveAnnotation),
-      };
+      }];
     }
 
     const point = analysisProfile.find(
       (candidate) => candidate.ply === analysisSelectedPosition.ply
     );
-    if (!point?.to) return null;
+    if (!point?.to) return [];
 
+    const annotations: BoardAnnotation[] = [];
     const savedNag = gameAnnotations[analysisSelectedPosition.ply]?.nag;
     if (savedNag) {
-      return {
+      annotations.push({
         square: point.to,
         symbol: savedNag,
         kind: "saved",
         tooltip: `${savedNag} · ${t("annotations.savedAnnotation")}`,
-      };
+      });
     }
 
     const annotation = moveAnnotations[analysisSelectedPosition.ply];
-    if (!annotation) return null;
-    return {
-      square: point.to,
-      symbol: annotation.symbol,
-      kind: annotation.kind,
-      tooltip: getMoveAnnotationTooltip(annotation),
-    };
+    if (annotation) {
+      annotations.push({
+        square: point.to,
+        symbol: annotation.symbol,
+        kind: annotation.kind,
+        tooltip: getMoveAnnotationTooltip(annotation),
+      });
+    }
+
+    return annotations;
   }, [
     analysisReplayActive,
     analysisReplayFinished,
@@ -2163,7 +2167,7 @@ export const ChessBoard: React.FC = () => {
                 lastMove={lastMove}
                 possibleTargets={possibleTargets}
                 dragState={dragState}
-                annotation={selectedBoardAnnotation}
+                annotations={selectedBoardAnnotations}
                 orientation={boardOrientation}
                 boardContainerRef={boardContainerRef}
                 onSquareClick={handleSquareClick}
