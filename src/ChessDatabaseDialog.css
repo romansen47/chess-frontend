@@ -101,7 +101,7 @@
 }
 
 .chess-database-import-dialog {
-  width: min(620px, calc(100vw - 48px));
+  width: min(780px, calc(100vw - 48px));
 }
 
 .chess-database-import-file {
