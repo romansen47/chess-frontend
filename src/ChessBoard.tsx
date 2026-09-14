@@ -307,6 +307,7 @@ export const ChessBoard: React.FC = () => {
   const [analysisWhitePlayerName, setAnalysisWhitePlayerName] = useState<string | null>(null);
   const [analysisBlackPlayerName, setAnalysisBlackPlayerName] = useState<string | null>(null);
   const analysisReplayCancelledRef = useRef<boolean>(false);
+  const analysisReplayDriverRef = useRef<boolean>(false);
   const [analysisEvaluationEnabled, setAnalysisEvaluationEnabledState] = useState<boolean>(false);
   const analysisEvaluationEnabledRef = useRef<boolean>(false);
   const [analysisEvaluation, setAnalysisEvaluation] = useState<EngineEvaluation | null>(null);
@@ -972,9 +973,21 @@ export const ChessBoard: React.FC = () => {
     let cancelled = false;
 
     async function synchronizeSharedAnalysisReplay() {
+      if (analysisReplayDriverRef.current) return;
+
       try {
         const state = await fetchAnalysisReplayState();
-        if (cancelled || !state) return;
+        if (cancelled) return;
+        if (!state) {
+          if (analysisReplayActiveRef.current) {
+            setAnalysisReplayActive(false);
+            setAnalysisReplayFinished(false);
+            setIsAnalysisReplayRunning(false);
+            setAnalysisReplayStatus(null);
+            setAnalysisSelectedPosition(null);
+          }
+          return;
+        }
 
         const wasAnalysisActive = analysisReplayActiveRef.current;
         if (state.active || !wasAnalysisActive) {
@@ -1027,6 +1040,7 @@ export const ChessBoard: React.FC = () => {
   async function runAnalysisReplayLoop(initialStep: AnalysisReplayStep) {
     setIsAnalysisReplayRunning(true);
     analysisReplayCancelledRef.current = false;
+    analysisReplayDriverRef.current = true;
     let currentStep = initialStep;
     try {
       while (!analysisReplayCancelledRef.current) {
@@ -1049,6 +1063,7 @@ export const ChessBoard: React.FC = () => {
       console.error("[runAnalysisReplayLoop] error", error);
       setAnalysisReplayError(t("analysis.failed"));
     } finally {
+      analysisReplayDriverRef.current = false;
       setIsAnalysisReplayRunning(false);
     }
   }
@@ -1106,6 +1121,7 @@ export const ChessBoard: React.FC = () => {
 
   async function cancelAnalysisReplay() {
     analysisReplayCancelledRef.current = true;
+    analysisReplayDriverRef.current = false;
     setIsAnalysisReplayRunning(false);
     setAnalysisReplayFinished(true);
     setAnalysisReplayStatus(t("analysis.cancelled"));
