@@ -13,9 +13,11 @@ export function mapImportedUciMovesToRows(importedMoves: UciGameMove[]): MoveRow
     const displayMove = move.san && move.san.trim().length > 0 ? move.san : move.uci;
     if (ply % 2 === 1) {
       row.white = displayMove;
+      row.whiteUci = move.uci;
       row.whitePosition = move.position;
     } else {
       row.black = displayMove;
+      row.blackUci = move.uci;
       row.blackPosition = move.position;
     }
   }

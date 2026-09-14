@@ -14,6 +14,8 @@ export interface MoveRow {
   moveNumber: number;
   white?: string;
   black?: string;
+  whiteUci?: string;
+  blackUci?: string;
   whitePosition?: string;
   blackPosition?: string;
 }

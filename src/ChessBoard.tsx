@@ -215,41 +215,6 @@ export const ChessBoard: React.FC = () => {
     setPossibleTargets(targets);
   }
 
-  function beginBoardAnimation(): Promise<void> {
-    if (
-      typeof window === "undefined"
-      || window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return Promise.resolve();
-    }
-
-    if (boardAnimationResolveRef.current) {
-      return boardAnimationPromiseRef.current;
-    }
-
-    let resolveAnimation: () => void = () => undefined;
-    const animationPromise = new Promise<void>((resolve) => {
-      resolveAnimation = resolve;
-    });
-
-    boardAnimationResolveRef.current = resolveAnimation;
-    boardAnimationPromiseRef.current = animationPromise;
-    return animationPromise;
-  }
-
-  function finishBoardAnimation() {
-    const resolveAnimation = boardAnimationResolveRef.current;
-    if (!resolveAnimation) return;
-
-    boardAnimationResolveRef.current = null;
-    boardAnimationPromiseRef.current = Promise.resolve();
-    resolveAnimation();
-  }
-
-  function waitForBoardAnimation(): Promise<void> {
-    return boardAnimationPromiseRef.current;
-  }
-
   useEffect(() => {
     window.localStorage.setItem(
       BOARD_ORIENTATION_STORAGE_KEY,
@@ -332,8 +297,6 @@ export const ChessBoard: React.FC = () => {
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const [analysisSelectedPosition, setAnalysisSelectedPosition] = useState<AnalysisPositionSelection | null>(null);
   const analysisSelectedPlyRef = useRef<number | null>(null);
-  const boardAnimationResolveRef = useRef<(() => void) | null>(null);
-  const boardAnimationPromiseRef = useRef<Promise<void>>(Promise.resolve());
   const [analysisDetailsTab, setAnalysisDetailsTab] = useState<"engine" | "database" | "annotations">("engine");
   const [gameAnnotations, setGameAnnotations] = useState<Record<number, GameAnnotation>>({});
   const [annotationsDirty, setAnnotationsDirty] = useState<boolean>(false);
@@ -1451,8 +1414,7 @@ export const ChessBoard: React.FC = () => {
     to: string,
     requestedPromotion?: PieceType | null,
     resultingPosition?: string | null
-  ): Promise<void> {
-    const animation = beginBoardAnimation();
+  ) {
     setPieces((previousPieces) =>
       applyLocalMoveTransition(
         previousPieces,
@@ -1462,7 +1424,6 @@ export const ChessBoard: React.FC = () => {
         resultingPosition
       )
     );
-    return animation;
   }
 
   function mergeAuthoritativeMoveRows(current: MoveRow[], authoritative: MoveRow[]): MoveRow[] {
@@ -1524,11 +1485,14 @@ export const ChessBoard: React.FC = () => {
           row = { moveNumber };
           copy.push(row);
         }
+        const uci = `${result.from}${result.to}`;
         if (resultPly % 2 === 1) {
           row.white = sanText;
+          row.whiteUci = uci;
           row.whitePosition = position;
         } else {
           row.black = sanText;
+          row.blackUci = uci;
           row.blackPosition = position;
         }
         return copy.sort((a, b) => a.moveNumber - b.moveNumber);
@@ -1545,27 +1509,36 @@ export const ChessBoard: React.FC = () => {
       const copy = current.map((row) => ({ ...row }));
       const last = copy[copy.length - 1];
 
+      const uci = `${result.from}${result.to}`;
+
       if (moverSide === "white") {
         const moveNumber = last ? last.moveNumber + 1 : 1;
-        copy.push({ moveNumber, white: sanText, whitePosition: position });
+        copy.push({ moveNumber, white: sanText, whiteUci: uci, whitePosition: position });
         return copy;
       }
 
       if (moverSide === "black") {
         if (last && last.white && !last.black) {
           last.black = sanText;
+          last.blackUci = uci;
           last.blackPosition = position;
           return copy;
         }
         const moveNumber = last ? last.moveNumber + 1 : 1;
-        copy.push({ moveNumber, black: sanText, blackPosition: position });
+        copy.push({ moveNumber, black: sanText, blackUci: uci, blackPosition: position });
         return copy;
       }
 
       if (!last || last.black) {
-        copy.push({ moveNumber: last ? last.moveNumber + 1 : 1, white: sanText, whitePosition: position });
+        copy.push({
+          moveNumber: last ? last.moveNumber + 1 : 1,
+          white: sanText,
+          whiteUci: uci,
+          whitePosition: position,
+        });
       } else {
         last.black = sanText;
+        last.blackUci = uci;
         last.blackPosition = position;
       }
       return copy;
@@ -1616,22 +1589,35 @@ export const ChessBoard: React.FC = () => {
     setLastMove(null);
   }
 
-  function getAnalysisMoveSelectionForPly(ply: number): { position: string | undefined; san: string | undefined; ply: number } | null {
+  function getAnalysisMoveSelectionForPly(
+    ply: number
+  ): {
+    position: string | undefined;
+    san: string | undefined;
+    uci: string | undefined;
+    ply: number;
+  } | null {
     if (ply <= 0) return null;
     const moveNumber = Math.ceil(ply / 2);
     const row = moves.find((candidate) => candidate.moveNumber === moveNumber);
     if (!row) return null;
+
     return ply % 2 === 1
-      ? { position: row.whitePosition, san: row.white, ply }
-      : { position: row.blackPosition, san: row.black, ply };
+      ? {
+          position: row.whitePosition,
+          san: row.white,
+          uci: row.whiteUci,
+          ply,
+        }
+      : {
+          position: row.blackPosition,
+          san: row.black,
+          uci: row.blackUci,
+          ply,
+        };
   }
 
   function selectAnalysisPositionByPly(ply: number) {
-    if (analysisReplayFinished) {
-      navigateAnalysisPositionByPly(ply);
-      return;
-    }
-
     const selection = getAnalysisMoveSelectionForPly(ply);
     if (selection) {
       selectAnalysisPosition(selection.position, selection.san, selection.ply);
@@ -1643,8 +1629,7 @@ export const ChessBoard: React.FC = () => {
     moveTo: string,
     targetPosition: string,
     reverse: boolean
-  ): Promise<void> {
-    const animation = beginBoardAnimation();
+  ) {
     setPieces((previousPieces) =>
       transitionBoardPosition(previousPieces, {
         moveFrom,
@@ -1653,43 +1638,51 @@ export const ChessBoard: React.FC = () => {
         reverse,
       })
     );
-    return animation;
   }
 
-  function navigateAnalysisPositionByPly(ply: number) {
-    if (boardAnimationResolveRef.current) return;
-
-    const selection = getAnalysisMoveSelectionForPly(ply);
-    if (!selection?.position || selection.position.length !== 64) return;
-
-    const currentPly = analysisSelectedPosition?.ply;
-    const adjacent = currentPly != null && Math.abs(ply - currentPly) === 1;
-    const variationActive = analysisVariationMovesRef.current.length > 0;
-
-    if (adjacent && !variationActive) {
-      const reverse = ply < currentPly!;
-      const movedPoint = analysisProfile.find(
-        (point) => point.ply === (reverse ? currentPly : ply)
-      );
-
-      if (movedPoint?.from && movedPoint.to) {
-        void animateAnalysisNavigationMove(
-          movedPoint.from,
-          movedPoint.to,
-          selection.position,
-          reverse
-        );
-        selectAnalysisPosition(
-          selection.position,
-          selection.san,
-          selection.ply,
-          { updateBoard: false }
-        );
-        return;
-      }
+  function navigateAnalysisPositionByKeyboard(targetPly: number) {
+    const currentPly = analysisSelectedPlyRef.current;
+    if (currentPly == null || Math.abs(targetPly - currentPly) !== 1) {
+      selectAnalysisPositionByPly(targetPly);
+      return;
     }
 
-    selectAnalysisPosition(selection.position, selection.san, selection.ply);
+    const targetSelection = getAnalysisMoveSelectionForPly(targetPly);
+    if (!targetSelection?.position || targetSelection.position.length !== 64) {
+      return;
+    }
+
+    const reverse = targetPly < currentPly;
+    const moveSelection = reverse
+      ? getAnalysisMoveSelectionForPly(currentPly)
+      : targetSelection;
+    const uci = moveSelection?.uci;
+
+    if (!uci || uci.length < 4) {
+      console.warn(
+        "[navigateAnalysisPositionByKeyboard] missing UCI move for ply",
+        reverse ? currentPly : targetPly
+      );
+      selectAnalysisPosition(
+        targetSelection.position,
+        targetSelection.san,
+        targetSelection.ply
+      );
+      return;
+    }
+
+    animateAnalysisNavigationMove(
+      uci.substring(0, 2),
+      uci.substring(2, 4),
+      targetSelection.position,
+      reverse
+    );
+    selectAnalysisPosition(
+      targetSelection.position,
+      targetSelection.san,
+      targetSelection.ply,
+      { updateBoard: false }
+    );
   }
 
   useEffect(() => {
@@ -1708,7 +1701,10 @@ export const ChessBoard: React.FC = () => {
         return;
       }
 
-      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      if (
+        (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+        || event.repeat
+      ) {
         return;
       }
 
@@ -1722,11 +1718,6 @@ export const ChessBoard: React.FC = () => {
         return;
       }
 
-      if (boardAnimationResolveRef.current) {
-        event.preventDefault();
-        return;
-      }
-
       const currentPly = analysisSelectedPlyRef.current
         ?? (event.key === "ArrowRight" ? 0 : analysisTotalPlies + 1);
       const nextPly = currentPly + (event.key === "ArrowRight" ? 1 : -1);
@@ -1735,7 +1726,7 @@ export const ChessBoard: React.FC = () => {
       }
 
       event.preventDefault();
-      selectAnalysisPositionByPly(nextPly);
+      navigateAnalysisPositionByKeyboard(nextPly);
     }
 
     window.addEventListener("keydown", handleAnalysisArrowNavigation);
@@ -1765,14 +1756,13 @@ export const ChessBoard: React.FC = () => {
     return true;
   }
 
-  async function handleComputerMove(data: MoveResult) {
+  function handleComputerMove(data: MoveResult) {
     if (!data.from || !data.to) return;
-    const animation = animateMoveLocally(data.from, data.to, null, data.position);
+    animateMoveLocally(data.from, data.to, null, data.position);
     setLastMove({ from: data.from, to: data.to });
     const moveListGapDetected = addMoveToMoveList(data);
     if (moveListGapDetected) void reconcileMoveListFromBackend();
     playMoveResultSound(data);
-    await animation;
   }
 
   async function synchronizeAfterMoveSequence() {
@@ -1797,16 +1787,15 @@ export const ChessBoard: React.FC = () => {
         setLoadError(data.message || `HTTP ${result.status}`);
         return;
       }
-      const moveAnimation = options?.localMoveAlreadyApplied
-        ? waitForBoardAnimation()
-        : animateMoveLocally(from, to, promotion, data.position);
+      if (!options?.localMoveAlreadyApplied) {
+        animateMoveLocally(from, to, promotion, data.position);
+      }
       setLastMove({ from, to });
       setSelectedSquare(null);
       updatePossibleTargets([]);
       const moveListGapDetected = addMoveToMoveList(data);
       if (moveListGapDetected) await reconcileMoveListFromBackend();
       playMoveResultSound(data);
-      await moveAnimation;
       if (handleGameEndState(data.gameState)) { await synchronizeAfterMoveSequence(); return; }
       await requestComputerMoveIfEnabled(data.sideToMove);
       setIsLoadingMoves(false);
@@ -1841,7 +1830,7 @@ export const ChessBoard: React.FC = () => {
       const nextMoves = [...previousMoves, data.uci];
       setAnalysisVariationMoves(nextMoves);
       setAnalysisVariationGameState(data.gameState ?? null);
-      const animation = animateMoveLocally(from, to, promotion, data.position);
+      animateMoveLocally(from, to, promotion, data.position);
       setLastMove({ from, to });
       setSelectedSquare(null);
       updatePossibleTargets([]);
@@ -1851,7 +1840,6 @@ export const ChessBoard: React.FC = () => {
       setAnalysisEvaluationError(null);
       analysisEvaluationKeyRef.current = analysisEvaluationKey(analysisSelectedPosition.ply, nextMoves);
       void playGameSound(data.gameState ? "notify" : "move");
-      await animation;
     } catch (e) {
       console.error("[performAnalysisVariationMove] failed", e);
       setLoadError(t("analysis.variationMoveFailed"));
@@ -2416,7 +2404,7 @@ export const ChessBoard: React.FC = () => {
               showAnnotationTooltip,
               hideAnnotationTooltip,
               flipBoard: flipBoardOrientation,
-              selectPosition: (_position, _san, ply) => selectAnalysisPositionByPly(ply),
+              selectPosition: selectAnalysisPosition,
             }}
           />
 
@@ -2436,7 +2424,6 @@ export const ChessBoard: React.FC = () => {
                 onPiecePointerMove={handlePiecePointerMove}
                 onPiecePointerUp={handlePiecePointerUp}
                 onPiecePointerCancel={handlePiecePointerCancel}
-                onPieceTransitionEnd={finishBoardAnimation}
               />
             </div>
             {!analysisReplayActive && !uciAnalysisLoaded && (
@@ -2491,7 +2478,9 @@ export const ChessBoard: React.FC = () => {
                   <EngineConfigManager overview={engineConfigOverview} onOverviewChange={handleEngineConfigOverviewChange} onClose={() => setShowEngineConfig(false)} />
                   {engineConfigLoadError && <div className="engine-error">{engineConfigLoadError}</div>}
                 </>}
-                {analysisReplayActive ? renderAnalysisReplayContent() : <>
+                {analysisReplayActive ? renderAnalysisReplayContent() : uciAnalysisLoaded ? (
+                  <div className="engine-placeholder-text">{t("analysis.analyzeTitle")}</div>
+                ) : <>
                   {evalError && <div className="engine-error">{t("common.error")}: {evalError}</div>}
                   {engineAutoUpdate && engineEval && !clock?.gameState && (
                     <div className="engine-lines">

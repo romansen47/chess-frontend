@@ -35,7 +35,6 @@ interface BoardProps {
   onPiecePointerMove: (event: PointerEvent<HTMLDivElement>) => void;
   onPiecePointerUp: (event: PointerEvent<HTMLDivElement>) => void | Promise<void>;
   onPiecePointerCancel: (event: PointerEvent<HTMLDivElement>) => void;
-  onPieceTransitionEnd: () => void;
 }
 
 export default function Board({
@@ -52,7 +51,6 @@ export default function Board({
   onPiecePointerMove,
   onPiecePointerUp,
   onPiecePointerCancel,
-  onPieceTransitionEnd,
 }: BoardProps) {
   const squares = [];
   for (let row = 0; row < 8; row++) {
@@ -100,8 +98,6 @@ export default function Board({
         onPointerMove={onPiecePointerMove}
         onPointerUp={onPiecePointerUp}
         onPointerCancel={onPiecePointerCancel}
-        onTransitionEnd={onPieceTransitionEnd}
-        onTransitionCancel={onPieceTransitionEnd}
       >
         {getPieceSymbol(piece)}
       </div>
