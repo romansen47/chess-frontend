@@ -1498,6 +1498,63 @@ export const ChessBoard: React.FC = () => {
     if (selection) selectAnalysisPosition(selection.position, selection.san, selection.ply);
   }
 
+  useEffect(() => {
+    function handleAnalysisArrowNavigation(event: KeyboardEvent) {
+      if (
+        !analysisReplayActive
+        || !analysisReplayFinished
+        || analysisTotalPlies <= 0
+        || showAnalysisSettingsDialog
+        || showGameSettingsDialog
+        || showEngineConfig
+        || showEngineManager
+        || showChessDatabaseDialog
+        || promotionContext
+      ) {
+        return;
+      }
+
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const currentPly = analysisSelectedPosition?.ply
+        ?? (event.key === "ArrowRight" ? 0 : analysisTotalPlies + 1);
+      const nextPly = currentPly + (event.key === "ArrowRight" ? 1 : -1);
+      if (nextPly < 1 || nextPly > analysisTotalPlies) {
+        return;
+      }
+
+      event.preventDefault();
+      selectAnalysisPositionByPly(nextPly);
+    }
+
+    window.addEventListener("keydown", handleAnalysisArrowNavigation);
+    return () => window.removeEventListener("keydown", handleAnalysisArrowNavigation);
+  }, [
+    analysisReplayActive,
+    analysisReplayFinished,
+    analysisSelectedPosition?.ply,
+    analysisTotalPlies,
+    showAnalysisSettingsDialog,
+    showGameSettingsDialog,
+    showEngineConfig,
+    showEngineManager,
+    showChessDatabaseDialog,
+    promotionContext,
+    moves,
+  ]);
+
   function handleGameEndState(gameState: string | null | undefined) {
     if (!gameState) return false;
     setGameEndState(gameState);
