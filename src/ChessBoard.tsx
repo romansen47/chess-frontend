@@ -858,6 +858,69 @@ export const ChessBoard: React.FC = () => {
 
 
 
+  useEffect(() => {
+    if (
+      !analysisReplayActive
+      || !analysisReplayFinished
+      || !analysisEvaluationEnabled
+      || !analysisSelectedPosition
+      || analysisVariationMoves.length > 0
+      || !analysisEvaluation?.moveAnnotationReady
+    ) {
+      return;
+    }
+
+    const ply = analysisSelectedPosition.ply;
+    const liveAnnotation = analysisEvaluation.moveAnnotation ?? null;
+
+    setAnalysisProfile((previous) => {
+      let changed = false;
+      const next = previous.map((point) => {
+        if (point.ply !== ply) return point;
+
+        const current = point.annotation ?? null;
+        const sameAnnotation =
+          current === liveAnnotation
+          || (
+            current !== null
+            && liveAnnotation !== null
+            && current.symbol === liveAnnotation.symbol
+            && current.kind === liveAnnotation.kind
+            && current.winChanceLoss === liveAnnotation.winChanceLoss
+            && current.bestEvaluation === liveAnnotation.bestEvaluation
+            && current.secondBestEvaluation === liveAnnotation.secondBestEvaluation
+            && current.extraordinaryReason === liveAnnotation.extraordinaryReason
+            && current.materialInvestment === liveAnnotation.materialInvestment
+            && current.sacrificeType === liveAnnotation.sacrificeType
+            && current.shortTermMaterialCompensated === liveAnnotation.shortTermMaterialCompensated
+            && current.materialCompensationPlies === liveAnnotation.materialCompensationPlies
+            && current.forcedMateDistance === liveAnnotation.forcedMateDistance
+            && current.earlyDepth === liveAnnotation.earlyDepth
+            && current.earlyRank === liveAnnotation.earlyRank
+            && current.finalDepth === liveAnnotation.finalDepth
+            && current.finalRank === liveAnnotation.finalRank
+            && current.givesCheck === liveAnnotation.givesCheck
+            && current.earlyRegret === liveAnnotation.earlyRegret
+            && current.earlyStrength === liveAnnotation.earlyStrength
+            && current.finalStrength === liveAnnotation.finalStrength
+          );
+
+        if (sameAnnotation) return point;
+        changed = true;
+        return { ...point, annotation: liveAnnotation };
+      });
+
+      return changed ? next : previous;
+    });
+  }, [
+    analysisReplayActive,
+    analysisReplayFinished,
+    analysisEvaluationEnabled,
+    analysisSelectedPosition,
+    analysisVariationMoves.length,
+    analysisEvaluation,
+  ]);
+
   function openAnalysisSettingsDialog() {
     setAnalysisReplayError(null);
     setAnalysisReplayStatus(null);
