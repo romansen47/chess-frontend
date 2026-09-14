@@ -93,6 +93,7 @@ import {
   fetchAnalysisEvaluation as fetchAnalysisEvaluationRequest,
   fetchAnalysisPossibleMoves,
   fetchAnalysisVariationEvaluation,
+  fetchAnalysisReplayState,
   fetchNextAnalysisReplayStep,
   startAnalysisReplayRequest,
   stopAnalysisEvaluationRequest,
@@ -344,6 +345,7 @@ export const ChessBoard: React.FC = () => {
   const [analysisWhitePlayerName, setAnalysisWhitePlayerName] = useState<string | null>(null);
   const [analysisBlackPlayerName, setAnalysisBlackPlayerName] = useState<string | null>(null);
   const analysisReplayCancelledRef = useRef<boolean>(false);
+  const analysisReplayResumeRef = useRef<AnalysisReplayStep | null>(null);
   const [analysisEvaluationEnabled, setAnalysisEvaluationEnabledState] = useState<boolean>(false);
   const analysisEvaluationEnabledRef = useRef<boolean>(false);
   const [analysisEvaluation, setAnalysisEvaluation] = useState<EngineEvaluation | null>(null);
@@ -589,6 +591,77 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
+  async function restoreAnalysisReplayAfterReload(
+    restoredMoves: UciGameResponse["moves"]
+  ) {
+    const replayState = await fetchAnalysisReplayState();
+    if (!replayState) return;
+
+    const hasReplayState =
+      replayState.active
+      || replayState.totalPlies > 0
+      || (replayState.profile?.length ?? 0) > 1;
+    if (!hasReplayState) return;
+
+    setAnalysisReplayActive(true);
+    setAnalysisReplayFinished(Boolean(replayState.done));
+    setIsAnalysisReplayRunning(false);
+    setAnalysisReplayError(null);
+    setAnalysisEvaluationEnabled(false);
+    setAnalysisEvaluation(null);
+    setAnalysisEvaluationError(null);
+    analysisEvaluationPlyRef.current = null;
+    analysisEvaluationKeyRef.current = null;
+    resetAnalysisVariation();
+    setAnalysisDetailsTab("engine");
+    setEngineAutoUpdate(false);
+    setLiveEvaluationBar(null);
+    applyAnalysisReplayStep(replayState);
+
+    const currentPly = Math.max(
+      0,
+      Math.min(replayState.currentPly ?? 0, restoredMoves.length)
+    );
+    const selectedMove = currentPly > 0
+      ? restoredMoves.find((move) => move.ply === currentPly)
+        ?? restoredMoves[currentPly - 1]
+      : null;
+
+    if (selectedMove?.position && selectedMove.position.length === 64) {
+      const moveLabel = selectedMove.san ? ` · ${selectedMove.san}` : "";
+      analysisSelectedPlyRef.current = currentPly;
+      setAnalysisSelectedPosition({
+        position: selectedMove.position,
+        label: `Ply ${currentPly}${moveLabel}`,
+        ply: currentPly,
+      });
+      setPieces(mapPositionStringToLocalPieces(selectedMove.position));
+      setLastMove(
+        selectedMove.uci && selectedMove.uci.length >= 4
+          ? {
+              from: selectedMove.uci.substring(0, 2),
+              to: selectedMove.uci.substring(2, 4),
+            }
+          : null
+      );
+    } else if (replayState.board?.pieces) {
+      analysisSelectedPlyRef.current = null;
+      setAnalysisSelectedPosition(null);
+      setPieces(mapBackendPiecesToLocalPieces(replayState.board.pieces));
+      setLastMove(null);
+    }
+
+    const progressText = `${replayState.currentPly} / ${replayState.totalPlies}`;
+    setAnalysisReplayStatus(
+      replayState.done
+        ? `Analysis complete (${progressText}).`
+        : `Analyzing ${progressText}…`
+    );
+
+    analysisReplayResumeRef.current =
+      replayState.active && !replayState.done ? replayState : null;
+  }
+
   async function loadCurrentGameSnapshot() {
     try {
       const snapshot = await fetchGameSnapshot();
@@ -624,6 +697,7 @@ export const ChessBoard: React.FC = () => {
         setAnalysisTotalPlies(Math.max(0, game.totalPlies ?? restoredMoves.length));
       }
 
+      await restoreAnalysisReplayAfterReload(restoredMoves);
       return snapshot;
     } catch (e) {
       console.error("[loadCurrentGameSnapshot] error", e);
@@ -678,6 +752,14 @@ export const ChessBoard: React.FC = () => {
     const intervalId = window.setInterval(() => { loadClock(); }, 500);
     return () => window.clearInterval(intervalId);
   }, [uciAnalysisLoaded]);
+
+  useEffect(() => {
+    const replayState = analysisReplayResumeRef.current;
+    if (!replayState || !analysisReplayActive || moves.length === 0) return;
+
+    analysisReplayResumeRef.current = null;
+    void runAnalysisReplayLoop(replayState);
+  }, [analysisReplayActive, moves.length]);
 
   async function loadPossibleMoves(from: string): Promise<string[]> {
     try {
@@ -1026,6 +1108,7 @@ export const ChessBoard: React.FC = () => {
   async function startAnalysisReplay() {
     try {
       if (!analysisSettings.engineProfileId) throw new Error(t("analysis.noDeepProfile"));
+      analysisReplayResumeRef.current = null;
       setAnalysisReplayError(null);
       setAnalysisReplayStatus(t("analysis.preparing"));
       setAnalysisReplayFinished(false);
@@ -1230,6 +1313,7 @@ export const ChessBoard: React.FC = () => {
       analysisEvaluationKeyRef.current = null;
       resetAnalysisVariation();
       analysisReplayCancelledRef.current = true;
+      analysisReplayResumeRef.current = null;
       setAnalysisReplayActive(false);
       setIsAnalysisReplayRunning(false);
       setAnalysisReplayStatus(null);
@@ -1305,6 +1389,7 @@ export const ChessBoard: React.FC = () => {
       analysisEvaluationKeyRef.current = null;
       resetAnalysisVariation();
       analysisReplayCancelledRef.current = true;
+      analysisReplayResumeRef.current = null;
       setAnalysisReplayActive(false);
       setIsAnalysisReplayRunning(false);
       setAnalysisReplayStatus(null);

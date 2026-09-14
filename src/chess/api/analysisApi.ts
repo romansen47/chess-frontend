@@ -79,6 +79,16 @@ export async function startAnalysisReplayRequest(settings: AnalysisReplaySetting
   return (await response.json()) as AnalysisReplayStep;
 }
 
+export async function fetchAnalysisReplayState(): Promise<AnalysisReplayStep | null> {
+  const response = await fetch("/api/analysis-replay/state");
+  if (response.status === 204) return null;
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `HTTP ${response.status}`);
+  }
+  return (await response.json()) as AnalysisReplayStep;
+}
+
 export async function fetchNextAnalysisReplayStep(): Promise<AnalysisReplayStep> {
   const response = await fetch("/api/analysis-replay/next", { method: "POST", headers: { "Content-Type": "application/json" } });
   if (!response.ok) {
