@@ -44,7 +44,6 @@ import Board, { type BoardAnnotation } from "./chess/board/Board";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
 import {
   createInitialPieces,
-  getCastlingSquares,
   getRankFromSquare,
   getSquareCoords,
   squareName,
@@ -58,11 +57,14 @@ import {
 } from "./chess/board/boardOrientation";
 import {
   getPieceSymbolFromPositionChar,
-  getPromotionTypeForLocalMove,
   isWhitePositionPiece,
   mapBackendPiecesToLocalPieces,
   mapPositionStringToLocalPieces,
 } from "./chess/board/positionUtils";
+import {
+  applyLocalMoveTransition,
+  transitionAnalysisBoard,
+} from "./chess/board/pieceTransitions";
 import {
   formatClockTime,
   formatPlayerDisplayName,
@@ -1316,28 +1318,15 @@ export const ChessBoard: React.FC = () => {
   }
 
   function animateMoveLocally(from: string, to: string, requestedPromotion?: PieceType | null, resultingPosition?: string | null) {
-    const targetCoords = getSquareCoords(to);
-    if (!targetCoords) return;
-    setPieces((prev) => {
-      const movingPiece = prev.find((p) => squareName(p.file, p.rank) === from);
-      const promotionType = getPromotionTypeForLocalMove(movingPiece, to, requestedPromotion, resultingPosition);
-      const castlingSquares = getCastlingSquares(movingPiece, from, to);
-      if (castlingSquares) {
-        const kingToCoords = getSquareCoords(castlingSquares.kingTo);
-        const rookToCoords = getSquareCoords(castlingSquares.rookTo);
-        if (!kingToCoords || !rookToCoords) return prev;
-        return prev.map((p) => {
-          const currentSquare = squareName(p.file, p.rank);
-          if (currentSquare === from) return { ...p, file: kingToCoords.file, rank: kingToCoords.rank };
-          if (currentSquare === castlingSquares.rookFrom) return { ...p, file: rookToCoords.file, rank: rookToCoords.rank };
-          return p;
-        });
-      }
-      const withoutCaptured = prev.filter((p) => squareName(p.file, p.rank) !== to);
-      return withoutCaptured.map((p) => squareName(p.file, p.rank) === from
-        ? { ...p, type: promotionType ?? p.type, file: targetCoords.file, rank: targetCoords.rank }
-        : p);
-    });
+    setPieces((previousPieces) =>
+      applyLocalMoveTransition(
+        previousPieces,
+        from,
+        to,
+        requestedPromotion,
+        resultingPosition
+      )
+    );
   }
 
   function mergeAuthoritativeMoveRows(current: MoveRow[], authoritative: MoveRow[]): MoveRow[] {
@@ -1512,102 +1501,15 @@ export const ChessBoard: React.FC = () => {
     targetPly: number,
     reverse: boolean
   ) {
-    const targetPieces = mapPositionStringToLocalPieces(targetPosition);
-    const sourceSquare = reverse ? moveTo : moveFrom;
-    const destinationSquare = reverse ? moveFrom : moveTo;
-    const destinationCoords = getSquareCoords(destinationSquare);
-    if (!destinationCoords) {
-      setPieces(targetPieces);
-      return;
-    }
-
-    setPieces((previousPieces) => {
-      const movingPiece = previousPieces.find(
-        (piece) => squareName(piece.file, piece.rank) === sourceSquare
-      );
-      if (!movingPiece) {
-        return targetPieces;
-      }
-
-      const originalCastling = getCastlingSquares(movingPiece, moveFrom, moveTo);
-      let animatedPieces: Piece[];
-
-      if (originalCastling) {
-        const kingDestination = getSquareCoords(
-          reverse ? moveFrom : originalCastling.kingTo
-        );
-        const rookSource = reverse
-          ? originalCastling.rookTo
-          : originalCastling.rookFrom;
-        const rookDestination = getSquareCoords(
-          reverse ? originalCastling.rookFrom : originalCastling.rookTo
-        );
-
-        if (!kingDestination || !rookDestination) {
-          return targetPieces;
-        }
-
-        animatedPieces = previousPieces.map((piece) => {
-          const square = squareName(piece.file, piece.rank);
-          if (piece.id === movingPiece.id) {
-            return {
-              ...piece,
-              file: kingDestination.file,
-              rank: kingDestination.rank,
-            };
-          }
-          if (square === rookSource) {
-            return {
-              ...piece,
-              file: rookDestination.file,
-              rank: rookDestination.rank,
-            };
-          }
-          return piece;
-        });
-      } else {
-        const targetMovingPiece = targetPieces.find(
-          (piece) =>
-            piece.color === movingPiece.color
-            && squareName(piece.file, piece.rank) === destinationSquare
-        );
-
-        animatedPieces = previousPieces.map((piece) =>
-          piece.id === movingPiece.id
-            ? {
-                ...piece,
-                type: targetMovingPiece?.type ?? piece.type,
-                file: destinationCoords.file,
-                rank: destinationCoords.rank,
-              }
-            : piece
-        );
-      }
-
-      // Match the authoritative target position while preserving the ids of
-      // pieces that already exist. This removes captures (including en passant)
-      // and restores captured pieces when navigating backwards.
-      const availablePieces = [...animatedPieces];
-      return targetPieces.map((targetPiece) => {
-        const targetSquare = squareName(targetPiece.file, targetPiece.rank);
-        const existingIndex = availablePieces.findIndex(
-          (piece) =>
-            piece.color === targetPiece.color
-            && piece.type === targetPiece.type
-            && squareName(piece.file, piece.rank) === targetSquare
-        );
-
-        if (existingIndex >= 0) {
-          const [existingPiece] = availablePieces.splice(existingIndex, 1);
-          return existingPiece;
-        }
-
-        return {
-          ...targetPiece,
-          id: `analysis-restored-${targetPly}-${targetPiece.id}`,
-        };
-      });
-    });
+    setPieces((previousPieces) =>
+      transitionAnalysisBoard(previousPieces, {
+        moveFrom,
+        moveTo,
+        targetPosition,
+        targetPly,
+        reverse,
+      })
+    );
   }
 
   function navigateAnalysisPositionByPly(ply: number) {
