@@ -91,6 +91,7 @@ import {
   cancelAnalysisReplayRequest,
   fetchAnalysisEvaluation as fetchAnalysisEvaluationRequest,
   fetchAnalysisPossibleMoves,
+  fetchAnalysisReplayState,
   fetchAnalysisVariationEvaluation,
   fetchNextAnalysisReplayStep,
   startAnalysisReplayRequest,
@@ -237,8 +238,8 @@ export const ChessBoard: React.FC = () => {
   const [liveEvaluationBar, setLiveEvaluationBar] = useState<number | null>(null);
   const [isLoadingEval, setIsLoadingEval] = useState(false);
   const [evalError, setEvalError] = useState<string | null>(null);
-  const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(true);
-  const engineAutoUpdateRef = useRef<boolean>(true);
+  const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(false);
+  const engineAutoUpdateRef = useRef<boolean>(false);
   const [liveEvaluationFastPolling, setLiveEvaluationFastPolling] = useState<boolean>(true);
   const liveEvaluationRequestInFlightRef = useRef<boolean>(false);
   const [showEngineConfig, setShowEngineConfig] = useState<boolean>(false);
@@ -663,7 +664,13 @@ export const ChessBoard: React.FC = () => {
   }
 
   async function loadEvaluation() {
-    if (!engineAutoUpdateRef.current || liveEvaluationRequestInFlightRef.current) return;
+    if (
+      !engineAutoUpdateRef.current
+      || analysisReplayActiveRef.current
+      || uciAnalysisLoadedRef.current
+      || gameEndStateRef.current
+      || liveEvaluationRequestInFlightRef.current
+    ) return;
     liveEvaluationRequestInFlightRef.current = true;
     try {
       setIsLoadingEval(true);
@@ -937,9 +944,17 @@ export const ChessBoard: React.FC = () => {
     setShowAnalysisSettingsDialog(true);
   }
 
-  function applyAnalysisReplayStep(step: AnalysisReplayStep) {
-    if (step.board?.pieces && !analysisReplayActiveRef.current) setPieces(mapBackendPiecesToLocalPieces(step.board.pieces));
-    if (step.from && step.to && !analysisReplayActiveRef.current) setLastMove({ from: step.from, to: step.to });
+  function applyAnalysisReplayStep(
+    step: AnalysisReplayStep,
+    options?: { syncBoard?: boolean }
+  ) {
+    const syncBoard = options?.syncBoard ?? !analysisReplayActiveRef.current;
+    if (step.board?.pieces && syncBoard) {
+      setPieces(mapBackendPiecesToLocalPieces(step.board.pieces));
+    }
+    if (syncBoard) {
+      setLastMove(step.from && step.to ? { from: step.from, to: step.to } : null);
+    }
     setAnalysisTotalPlies(Math.max(0, step.totalPlies ?? 0));
     setAnalysisProfile(step.profile?.length ? step.profile : [
       { ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 },
@@ -952,6 +967,62 @@ export const ChessBoard: React.FC = () => {
       lines: latestProfilePoint?.lines ?? [],
     });
   }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function synchronizeSharedAnalysisReplay() {
+      try {
+        const state = await fetchAnalysisReplayState();
+        if (cancelled || !state) return;
+
+        const wasAnalysisActive = analysisReplayActiveRef.current;
+        if (state.active || !wasAnalysisActive) {
+          applyAnalysisReplayStep(state, { syncBoard: true });
+        } else {
+          applyAnalysisReplayStep(state);
+        }
+
+        setAnalysisReplayActive(true);
+        setAnalysisReplayFinished(Boolean(state.done));
+        setIsAnalysisReplayRunning(Boolean(state.active));
+        setEngineAutoUpdate(false);
+        setLiveEvaluationBar(null);
+
+        const selection = getAnalysisMoveSelectionForPly(state.currentPly);
+        if (selection?.position && selection.position.length === 64) {
+          const moveLabel = selection.san ? ` · ${selection.san}` : "";
+          setAnalysisSelectedPosition({
+            position: selection.position,
+            label: `Ply ${selection.ply}${moveLabel}`,
+            ply: selection.ply,
+          });
+        }
+
+        const progressText = `${state.currentPly} / ${state.totalPlies}`;
+        setAnalysisReplayStatus(
+          state.active
+            ? `Analyzing ${progressText}…`
+            : `Analysis complete (${progressText}).`
+        );
+      } catch (error) {
+        if (!cancelled) {
+          console.debug("[analysisReplayState] passive sync unavailable", error);
+        }
+      }
+    }
+
+    void synchronizeSharedAnalysisReplay();
+    const intervalId = window.setInterval(
+      () => { void synchronizeSharedAnalysisReplay(); },
+      750
+    );
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [moves]);
 
   async function runAnalysisReplayLoop(initialStep: AnalysisReplayStep) {
     setIsAnalysisReplayRunning(true);
