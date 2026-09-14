@@ -63,7 +63,6 @@ export default function Board({
         (file + rank) % 2 !== 0 ? "square-light" : "square-dark",
         selectedSquare === name ? "square-selected" : "",
         lastMove && (lastMove.from === name || lastMove.to === name) ? "square-last-move" : "",
-        possibleTargets.includes(name) ? "square-possible" : "",
       ].filter(Boolean).join(" ");
       squares.push(
         <div key={name} className={squareClasses} onClick={() => onSquareClick(name)}>
@@ -105,10 +104,30 @@ export default function Board({
     );
   });
 
+  const renderedPossibleTargets = possibleTargets.map((square) => {
+    const targetOffset = squareToBoardOffset(square, orientation, 88);
+    if (!targetOffset) return null;
+
+    return (
+      <div
+        key={square}
+        className={[
+          "possible-target-marker",
+          selectedSquare === square ? "possible-target-marker-selected" : "",
+        ].filter(Boolean).join(" ")}
+        style={{
+          left: targetOffset.x + 29,
+          top: targetOffset.y + 29,
+        }}
+      />
+    );
+  });
+
   return (
     <div className="board-container" ref={boardContainerRef}>
       <div className="board">{squares}</div>
       <div className="pieces-layer">{renderedPieces}</div>
+      <div className="possible-targets-layer">{renderedPossibleTargets}</div>
       {annotations.map((annotation, index) => {
         const annotationCoords = squareToBoardOffset(
           annotation.square,
@@ -124,8 +143,8 @@ export default function Board({
             data-tooltip={annotation.tooltip ?? undefined}
             aria-label={annotation.tooltip ?? undefined}
             style={{
-              left: annotationCoords.x + 66 - index * 20,
-              top: annotationCoords.y + 4,
+              left: annotationCoords.x + 71 - index * 16,
+              top: annotationCoords.y + 2,
             }}
           >
             {annotation.symbol}
