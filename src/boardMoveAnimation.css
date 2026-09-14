@@ -1,5 +1,5 @@
 .pieces-layer .piece:not(.piece-dragging) {
-  transition: transform 100ms ease-out;
+  transition: transform 200ms ease-in-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
