@@ -66,16 +66,6 @@ export async function stopAnalysisEvaluationRequest(options?: { keepalive?: bool
   });
 }
 
-export async function fetchAnalysisReplayState(): Promise<AnalysisReplayStep | null> {
-  const response = await fetch("/api/analysis-replay/state");
-  if (response.status === 204) return null;
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as AnalysisReplayStep;
-}
-
 export async function startAnalysisReplayRequest(settings: AnalysisReplaySettings): Promise<AnalysisReplayStep> {
   const response = await fetch("/api/analysis-replay/start", {
     method: "POST",
