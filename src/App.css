@@ -433,7 +433,7 @@
   text-align: center;
 }
 
-/* Figurendarstellung mit Animation */
+/* Figurendarstellung; die Bewegungstransition liegt in boardMoveAnimation.css. */
 .piece {
   position: absolute;
   width: 88px;

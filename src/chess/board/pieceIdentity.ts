@@ -1,7 +1,11 @@
-let nextPieceId = 0;
-const pieceIdSession = Math.random().toString(36).slice(2, 10);
+let nextRenderPieceId = 0;
+const renderSessionId = Math.random().toString(36).slice(2, 10);
 
+/**
+ * Creates an opaque identity for one rendered chess piece.
+ * The id must never encode square, color or piece type.
+ */
 export function createPieceId(): string {
-  nextPieceId += 1;
-  return `piece-${pieceIdSession}-${nextPieceId}`;
+  nextRenderPieceId += 1;
+  return `piece-${renderSessionId}-${nextRenderPieceId}`;
 }

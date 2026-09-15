@@ -9,7 +9,7 @@ export interface PositionPiece {
   rank: number;
 }
 
-function toLocalPiece(piece: PositionPiece): Piece {
+function toRenderPiece(piece: PositionPiece): Piece {
   return {
     id: createPieceId(),
     color: piece.color,
@@ -56,7 +56,7 @@ export function isWhitePositionPiece(pieceChar: string): boolean {
 
 export function mapBackendPiecesToLocalPieces(backendPieces: BackendPiece[]): Piece[] {
   return backendPieces.map((piece) =>
-    toLocalPiece({
+    toRenderPiece({
       color: piece.color,
       type: piece.type,
       file: piece.square.charAt(0).toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1,

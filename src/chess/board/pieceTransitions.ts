@@ -6,10 +6,19 @@ import {
   parsePositionString,
 } from "./positionUtils";
 
-function piecePositionKey(
-  piece: Pick<Piece, "color" | "type" | "file" | "rank">
-): string {
+type PositionedPiece = Pick<Piece, "color" | "type" | "file" | "rank">;
+
+function piecePositionKey(piece: PositionedPiece): string {
   return `${piece.color}:${piece.type}:${squareName(piece.file, piece.rank)}`;
+}
+
+function samePiecePosition(left: PositionedPiece, right: PositionedPiece): boolean {
+  return (
+    left.color === right.color
+    && left.type === right.type
+    && left.file === right.file
+    && left.rank === right.rank
+  );
 }
 
 export function piecesMatchPosition(
@@ -31,16 +40,11 @@ export function reconcilePieceSnapshot(
   const unmatchedTargets = [...targetPieces];
   const reconciled: Piece[] = [];
 
-  // Keep surviving render pieces in their existing array/DOM order.
-  // Reordering keyed children at the same time as changing transform can
-  // suppress the CSS transition in the browser.
+  // Preserve the DOM order of surviving keyed pieces.
+  // Reordering them while changing transform can suppress the CSS transition.
   for (const existingPiece of previousPieces) {
-    const existingSquare = squareName(existingPiece.file, existingPiece.rank);
     const targetIndex = unmatchedTargets.findIndex(
-      (targetPiece) =>
-        targetPiece.color === existingPiece.color
-        && targetPiece.type === existingPiece.type
-        && squareName(targetPiece.file, targetPiece.rank) === existingSquare
+      (targetPiece) => samePiecePosition(existingPiece, targetPiece)
     );
 
     if (targetIndex < 0) continue;
@@ -49,9 +53,7 @@ export function reconcilePieceSnapshot(
     unmatchedTargets.splice(targetIndex, 1);
   }
 
-  // Pieces that do not exist in the current render state (for example a
-  // captured piece restored while navigating backwards) are intentionally
-  // mounted as new render nodes.
+  // Restored/new pieces are mounted as new render nodes.
   reconciled.push(...unmatchedTargets);
   return reconciled;
 }
