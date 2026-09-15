@@ -28,24 +28,32 @@ export function reconcilePieceSnapshot(
   previousPieces: Piece[],
   targetPieces: Piece[]
 ): Piece[] {
-  const availablePieces = [...previousPieces];
+  const unmatchedTargets = [...targetPieces];
+  const reconciled: Piece[] = [];
 
-  return targetPieces.map((targetPiece) => {
-    const targetSquare = squareName(targetPiece.file, targetPiece.rank);
-    const existingIndex = availablePieces.findIndex(
-      (piece) =>
-        piece.color === targetPiece.color
-        && piece.type === targetPiece.type
-        && squareName(piece.file, piece.rank) === targetSquare
+  // Keep surviving render pieces in their existing array/DOM order.
+  // Reordering keyed children at the same time as changing transform can
+  // suppress the CSS transition in the browser.
+  for (const existingPiece of previousPieces) {
+    const existingSquare = squareName(existingPiece.file, existingPiece.rank);
+    const targetIndex = unmatchedTargets.findIndex(
+      (targetPiece) =>
+        targetPiece.color === existingPiece.color
+        && targetPiece.type === existingPiece.type
+        && squareName(targetPiece.file, targetPiece.rank) === existingSquare
     );
 
-    if (existingIndex >= 0) {
-      const [existingPiece] = availablePieces.splice(existingIndex, 1);
-      return existingPiece;
-    }
+    if (targetIndex < 0) continue;
 
-    return targetPiece;
-  });
+    reconciled.push(existingPiece);
+    unmatchedTargets.splice(targetIndex, 1);
+  }
+
+  // Pieces that do not exist in the current render state (for example a
+  // captured piece restored while navigating backwards) are intentionally
+  // mounted as new render nodes.
+  reconciled.push(...unmatchedTargets);
+  return reconciled;
 }
 
 export interface BoardPositionTransition {
