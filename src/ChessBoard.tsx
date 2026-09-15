@@ -239,8 +239,8 @@ export const ChessBoard: React.FC = () => {
   const [liveEvaluationBar, setLiveEvaluationBar] = useState<number | null>(null);
   const [isLoadingEval, setIsLoadingEval] = useState(false);
   const [evalError, setEvalError] = useState<string | null>(null);
-  const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(true);
-  const engineAutoUpdateRef = useRef<boolean>(true);
+  const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(false);
+  const engineAutoUpdateRef = useRef<boolean>(false);
   const [liveEvaluationFastPolling, setLiveEvaluationFastPolling] = useState<boolean>(true);
   const liveEvaluationRequestInFlightRef = useRef<boolean>(false);
   const [showEngineConfig, setShowEngineConfig] = useState<boolean>(false);
