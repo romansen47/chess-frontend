@@ -97,7 +97,7 @@ export function parsePositionString(position: string): PositionPiece[] {
 }
 
 export function mapPositionStringToLocalPieces(position: string): Piece[] {
-  return parsePositionString(position).map(toLocalPiece);
+  return parsePositionString(position).map(toRenderPiece);
 }
 
 export function getPieceTypeAtSquareFromPosition(
