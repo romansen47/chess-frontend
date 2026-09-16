@@ -76,7 +76,7 @@ export class BackendLiveEvaluationSource implements LiveEvaluationSource {
     };
   }
 
-  start(_position: LiveEvaluationPosition): void {
+  start(_position?: LiveEvaluationPosition): void {
     if (this.active) return;
 
     this.active = true;
