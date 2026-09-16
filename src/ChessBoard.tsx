@@ -1452,6 +1452,9 @@ export const ChessBoard: React.FC = () => {
       const snapshot = await fetchGameSnapshot();
       const position = createLiveEvaluationPosition(snapshot.game.moves ?? []);
       liveEvaluationPositionRef.current = position;
+      if (snapshot.importedAnalysisGame) {
+        return null;
+      }
       return position;
     } catch (error) {
       console.warn(
