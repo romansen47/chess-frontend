@@ -26,17 +26,17 @@ export interface EngineProfile {
 }
 
 export interface EngineProfileAssignments {
-  whitePlayerProfileId: string;
-  blackPlayerProfileId: string;
-  evaluationProfileId: string;
-  deepAnalysisProfileId: string;
+  whitePlayerProfileId: string | null;
+  blackPlayerProfileId: string | null;
+  evaluationProfileId: string | null;
+  deepAnalysisProfileId: string | null;
 }
 
 export interface EngineConfigOverview {
   engines: EngineDefinition[];
   profiles: EngineProfile[];
   defaults: EngineProfileAssignments;
-  fallbackProfileId: string;
+  fallbackProfileId: string | null;
   version: number;
 }
 

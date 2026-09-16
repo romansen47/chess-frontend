@@ -1,8 +1,9 @@
 import type { EngineEvaluation } from "../types";
+import { throwEngineAwareApiError } from "./engineErrors";
 
 export async function fetchEvaluation(): Promise<EngineEvaluation> {
   const response = await fetch("/api/eval");
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) await throwEngineAwareApiError(response);
   return (await response.json()) as EngineEvaluation;
 }
 

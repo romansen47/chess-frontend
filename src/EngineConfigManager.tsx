@@ -27,10 +27,10 @@ interface ProfileOptionEditorState {
 }
 
 const EMPTY_ASSIGNMENTS: EngineProfileAssignments = {
-  whitePlayerProfileId: "",
-  blackPlayerProfileId: "",
-  evaluationProfileId: "",
-  deepAnalysisProfileId: "",
+  whitePlayerProfileId: null,
+  blackPlayerProfileId: null,
+  evaluationProfileId: null,
+  deepAnalysisProfileId: null,
 };
 
 function copyEngine(engine: EngineDefinition): EngineDefinition {
@@ -713,7 +713,7 @@ export default function EngineConfigManager({
       )
     : [];
 
-  function profileAndEngine(profileId: string) {
+  function profileAndEngine(profileId: string | null | undefined) {
     const profile = profiles.find((candidate) => candidate.id === profileId) ?? null;
     const engine = profile
       ? engines.find((candidate) => candidate.id === profile.engineId) ?? null
