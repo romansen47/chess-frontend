@@ -56,10 +56,12 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     await this.search(this.position);
   }
 
-  updatePosition(position: LiveEvaluationPosition): void {
+  async updatePosition(position: LiveEvaluationPosition): Promise<void> {
     this.assertUsable();
     this.position = copyPosition(position);
-    if (this.active) void this.search(this.position);
+    if (this.active) {
+      await this.search(this.position);
+    }
   }
 
   refresh(): void {
