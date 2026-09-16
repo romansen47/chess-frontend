@@ -22,6 +22,7 @@ export class LiveEvaluationController {
   private readonly fetchCapabilities: () => Promise<EngineCapabilities>;
 
   private browserSource: LiveEvaluationSource | null = null;
+  private browserSourcePromise: Promise<LiveEvaluationSource> | null = null;
   private activeSource: LiveEvaluationSource | null = null;
   private activeSourceUnsubscribe: (() => void) | null = null;
   private currentPosition: LiveEvaluationPosition | null = null;
@@ -81,7 +82,14 @@ export class LiveEvaluationController {
     this.currentPosition = copyPosition(position);
 
     const generation = ++this.activationGeneration;
-    await this.stopActiveSource();
+    try {
+      await this.stopActiveSource();
+    } catch (error) {
+      console.debug(
+        "[LiveEvaluationController] source stop failed during reselection",
+        error,
+      );
+    }
     if (!this.isCurrent(generation)) return;
 
     let capabilities: EngineCapabilities;
@@ -165,8 +173,34 @@ export class LiveEvaluationController {
 
   private async getBrowserSource(): Promise<LiveEvaluationSource> {
     if (this.browserSource !== null) return this.browserSource;
-    this.browserSource = await this.createBrowserSource();
-    return this.browserSource;
+    if (this.browserSourcePromise !== null) return this.browserSourcePromise;
+
+    const creation = Promise.resolve(this.createBrowserSource())
+      .then((source) => {
+        if (this.disposed) {
+          source.dispose();
+          throw new Error("LiveEvaluationController is disposed");
+        }
+
+        if (this.browserSource === null) {
+          this.browserSource = source;
+          return source;
+        }
+
+        if (this.browserSource !== source) {
+          source.dispose();
+        }
+        return this.browserSource;
+      });
+
+    this.browserSourcePromise = creation;
+    try {
+      return await creation;
+    } finally {
+      if (this.browserSourcePromise === creation) {
+        this.browserSourcePromise = null;
+      }
+    }
   }
 
   private async activateSource(
