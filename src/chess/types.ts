@@ -40,6 +40,7 @@ export interface MoveResult {
   position?: string | null;
   gameState?: string | null;
   ply?: number | null;
+  uci?: string | null;
 }
 
 export interface AnalysisVariationRequest {
