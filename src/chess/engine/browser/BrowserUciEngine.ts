@@ -33,6 +33,7 @@ interface BrowserUciEngineOptions {
 }
 
 export class BrowserUciEngine {
+  private readonly createWorker: () => BrowserUciWorker;
   private readonly handshakeTimeoutMs: number;
   private worker: BrowserUciWorker | null = null;
   private initializePromise: Promise<void> | null = null;
