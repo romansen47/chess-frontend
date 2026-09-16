@@ -89,6 +89,9 @@ import {
 } from "./chess/api/gameApi";
 import { useComputerMoves } from "./chess/game/useComputerMoves";
 import { BackendLiveEvaluationSource } from "./chess/evaluation/BackendLiveEvaluationSource";
+import { LiveEvaluationController } from "./chess/evaluation/LiveEvaluationController";
+import type { LiveEvaluationPosition } from "./chess/evaluation/LiveEvaluationSource";
+import { createLiveEvaluationPosition } from "./chess/evaluation/liveEvaluationPosition";
 import {
   cancelAnalysisReplayRequest,
   fetchAnalysisEvaluation as fetchAnalysisEvaluationRequest,
@@ -196,7 +199,9 @@ export const ChessBoard: React.FC = () => {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [moves, setMoves] = useState<MoveRow[]>([]);
   const latestMovePlyRef = useRef(0);
-  const moveListReconcilePromiseRef = useRef<Promise<void> | null>(null);
+  const moveListReconcilePromiseRef =
+    useRef<Promise<LiveEvaluationPosition | null> | null>(null);
+  const liveEvaluationPositionRef = useRef<LiveEvaluationPosition | null>(null);
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
   const [hoverPreview, setHoverPreview] = useState<HoverPreview | null>(null);
   const [hoverAnnotationText, setHoverAnnotationText] = useState<string | null>(null);
@@ -238,9 +243,14 @@ export const ChessBoard: React.FC = () => {
   const [evalError, setEvalError] = useState<string | null>(null);
   const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(false);
   const engineAutoUpdateRef = useRef<boolean>(false);
-  const backendLiveEvaluationSourceRef = useRef<BackendLiveEvaluationSource | null>(null);
-  if (backendLiveEvaluationSourceRef.current === null) {
-    backendLiveEvaluationSourceRef.current = new BackendLiveEvaluationSource();
+  const liveEvaluationControllerRef = useRef<LiveEvaluationController | null>(null);
+  if (liveEvaluationControllerRef.current === null) {
+    liveEvaluationControllerRef.current = new LiveEvaluationController({
+      backendSource: new BackendLiveEvaluationSource(),
+      createBrowserSource: async () => {
+        throw new Error("Browser live evaluation source is not available yet");
+      },
+    });
   }
   const [showEngineConfig, setShowEngineConfig] = useState<boolean>(false);
   const [engineConfigOverview, setEngineConfigOverview] = useState<EngineConfigOverview | null>(null);
@@ -630,6 +640,8 @@ export const ChessBoard: React.FC = () => {
       const snapshot = await fetchGameSnapshot();
       const game = snapshot.game;
       const restoredMoves = game.moves ?? [];
+      liveEvaluationPositionRef.current =
+        createLiveEvaluationPosition(restoredMoves);
 
       setGameAnnotations(gameAnnotationRecord(game.annotations));
       setAnnotationsDirty(false);
@@ -749,10 +761,10 @@ export const ChessBoard: React.FC = () => {
   }
 
   useEffect(() => {
-    const source = backendLiveEvaluationSourceRef.current;
-    if (!source) return;
+    const controller = liveEvaluationControllerRef.current;
+    if (!controller) return;
 
-    return source.subscribe((event) => {
+    return controller.subscribe((event) => {
       switch (event.type) {
         case "evaluation":
           setEngineEval(event.evaluation);
@@ -776,33 +788,42 @@ export const ChessBoard: React.FC = () => {
   }, [t]);
 
   useEffect(() => {
-    const source = backendLiveEvaluationSourceRef.current;
-    if (!source) return;
+    const controller = liveEvaluationControllerRef.current;
+    if (!controller) return;
 
     if (engineAutoUpdate && !analysisReplayActive && !uciAnalysisLoaded && !clock?.gameState) {
-      source.start();
+      void ensureLiveEvaluationPosition().then((position) => {
+        if (!position
+            || !engineAutoUpdateRef.current
+            || analysisReplayActiveRef.current
+            || uciAnalysisLoadedRef.current
+            || gameEndStateRef.current) {
+          return;
+        }
+        void controller.start(position);
+      });
     } else {
-      source.suspend();
+      controller.suspend();
       setLiveEvaluationBar(null);
     }
 
     return () => {
-      source.suspend();
+      controller.suspend();
     };
   }, [engineAutoUpdate, analysisReplayActive, uciAnalysisLoaded, clock?.gameState]);
 
   useEffect(() => {
-    const source = backendLiveEvaluationSourceRef.current;
+    const controller = liveEvaluationControllerRef.current;
     return () => {
-      source?.dispose();
+      controller?.dispose();
     };
   }, []);
 
   async function stopLiveEvaluation() {
     try {
-      await backendLiveEvaluationSourceRef.current?.stop();
+      await liveEvaluationControllerRef.current?.stop();
     } catch (e) {
-      console.warn("[stopLiveEvaluation] backend stop failed", e);
+      console.warn("[stopLiveEvaluation] evaluation stop failed", e);
     }
   }
 
@@ -862,11 +883,6 @@ export const ChessBoard: React.FC = () => {
       return;
     }
 
-    if (!analysisReplayActiveRef.current
-        && !uciAnalysisLoadedRef.current
-        && !gameEndStateRef.current) {
-      backendLiveEvaluationSourceRef.current?.start();
-    }
   }
 
   async function loadEngineConfigs() {
@@ -898,7 +914,11 @@ export const ChessBoard: React.FC = () => {
     setEngineEval(null);
     setLiveEvaluationBar(null);
     if (engineAutoUpdateRef.current) {
-      backendLiveEvaluationSourceRef.current?.refresh();
+      void ensureLiveEvaluationPosition().then((position) => {
+        if (position && engineAutoUpdateRef.current) {
+          void liveEvaluationControllerRef.current?.reselect(position);
+        }
+      });
     }
   }
 
@@ -1273,6 +1293,8 @@ export const ChessBoard: React.FC = () => {
       setAnalysisDetailsTab("engine");
       setAnalysisProfile([{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }]);
       const importedMoves = imported.moves ?? [];
+      liveEvaluationPositionRef.current =
+        createLiveEvaluationPosition(importedMoves);
       const moveRows = mapImportedUciMovesToRows(importedMoves);
       latestMovePlyRef.current = importedMoves.reduce(
         (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0),
@@ -1358,6 +1380,7 @@ export const ChessBoard: React.FC = () => {
       setUciAnalysisLoaded(false);
       setPieces(createInitialPieces());
       latestMovePlyRef.current = 0;
+      liveEvaluationPositionRef.current = { uciMoves: [] };
       setMoves([]);
       setLastMove(null);
       setSelectedSquare(null);
@@ -1420,15 +1443,39 @@ export const ChessBoard: React.FC = () => {
     return Array.from(merged.values()).sort((a, b) => a.moveNumber - b.moveNumber);
   }
 
-  function reconcileMoveListFromBackend(): Promise<void> {
-    if (uciAnalysisLoadedRef.current) return Promise.resolve();
+  async function ensureLiveEvaluationPosition(): Promise<LiveEvaluationPosition | null> {
+    if (liveEvaluationPositionRef.current) {
+      return liveEvaluationPositionRef.current;
+    }
+
+    try {
+      const snapshot = await fetchGameSnapshot();
+      const position = createLiveEvaluationPosition(snapshot.game.moves ?? []);
+      liveEvaluationPositionRef.current = position;
+      return position;
+    } catch (error) {
+      console.warn(
+        "[ensureLiveEvaluationPosition] could not load authoritative position",
+        error,
+      );
+      setEvalError(t("evaluation.failed"));
+      return null;
+    }
+  }
+
+  function reconcileMoveListFromBackend(): Promise<LiveEvaluationPosition | null> {
+    if (uciAnalysisLoadedRef.current) {
+      return Promise.resolve(liveEvaluationPositionRef.current);
+    }
     if (moveListReconcilePromiseRef.current) return moveListReconcilePromiseRef.current;
 
-    const reconciliation = (async () => {
+    const reconciliation = (async (): Promise<LiveEvaluationPosition | null> => {
       try {
         const snapshot = await fetchGameSnapshot();
-        if (snapshot.importedAnalysisGame) return;
+        if (snapshot.importedAnalysisGame) return null;
         const authoritativeMoves = snapshot.game.moves ?? [];
+        const position = createLiveEvaluationPosition(authoritativeMoves);
+        liveEvaluationPositionRef.current = position;
         const authoritativeRows = mapImportedUciMovesToRows(authoritativeMoves);
         const authoritativePly = authoritativeMoves.reduce(
           (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0),
@@ -1436,8 +1483,10 @@ export const ChessBoard: React.FC = () => {
         );
         latestMovePlyRef.current = Math.max(latestMovePlyRef.current, authoritativePly);
         setMoves((current) => mergeAuthoritativeMoveRows(current, authoritativeRows));
+        return position;
       } catch (error) {
         console.warn("[reconcileMoveListFromBackend] could not refresh move list", error);
+        return null;
       }
     })().finally(() => {
       if (moveListReconcilePromiseRef.current === reconciliation) {
@@ -1774,12 +1823,12 @@ export const ChessBoard: React.FC = () => {
   }
 
   async function synchronizeAfterMoveSequence() {
-    await reconcileMoveListFromBackend();
+    const position = await reconcileMoveListFromBackend();
     await loadBoardFromBackend();
     await loadClock();
-    if (engineAutoUpdateRef.current && !gameEndStateRef.current) {
+    if (position && engineAutoUpdateRef.current && !gameEndStateRef.current) {
       setLiveEvaluationBar(null);
-      backendLiveEvaluationSourceRef.current?.refresh();
+      liveEvaluationControllerRef.current?.updatePosition(position);
     }
   }
 
