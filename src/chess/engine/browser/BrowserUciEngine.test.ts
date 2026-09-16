@@ -20,6 +20,8 @@ class FakeWorker implements BrowserUciWorker {
       this.emit("id name Stockfish Browser Test\nuciok");
     } else if (command === "isready") {
       this.emit("readyok");
+    } else if (command === "stop") {
+      this.emit("bestmove 0000");
     }
   }
 
@@ -146,6 +148,34 @@ describe("BrowserUciEngine", () => {
     expect(worker.commands.slice(0, secondPositionIndex)).toContain("stop");
   });
 
+  it("serializes rapid replacement searches", async () => {
+    const worker = new FakeWorker();
+    const engine = new BrowserUciEngine(() => worker);
+
+    await engine.startInfinite(
+      { uciMoves: ["e2e4"] },
+      { multiPv: 1 },
+      () => undefined,
+    );
+
+    const second = engine.startInfinite(
+      { uciMoves: ["d2d4"] },
+      { multiPv: 1 },
+      () => undefined,
+    );
+    const third = engine.startInfinite(
+      { uciMoves: ["c2c4"] },
+      { multiPv: 1 },
+      () => undefined,
+    );
+
+    await Promise.all([second, third]);
+
+    expect(worker.commands).not.toContain("position startpos moves d2d4");
+    expect(worker.commands.at(-2)).toBe("position startpos moves c2c4");
+    expect(worker.commands.at(-1)).toBe("go infinite");
+  });
+
   it("terminates the worker and rejects use after dispose", async () => {
     const worker = new FakeWorker();
     const engine = new BrowserUciEngine(() => worker);
@@ -172,11 +202,12 @@ describe("BrowserUciEngine", () => {
     );
 
     const initialization = engine.initialize();
-    await vi.advanceTimersByTimeAsync(100);
-
-    await expect(initialization).rejects.toThrow(
+    const expectation = expect(initialization).rejects.toThrow(
       "Timed out waiting for UCI uciok",
     );
+    await vi.advanceTimersByTimeAsync(100);
+
+    await expectation;
     expect(worker.terminated).toBe(true);
   });
 });
