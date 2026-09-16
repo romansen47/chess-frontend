@@ -141,11 +141,10 @@ describe("LiveEvaluationController", () => {
         "Native evaluation engine unavailable",
       ),
     });
-    await Promise.resolve();
-    await Promise.resolve();
-
     expect(backend.stopCount).toBe(1);
-    expect(browser.starts).toEqual([position]);
+    await vi.waitFor(() => {
+      expect(browser.starts).toEqual([position]);
+    });
   });
 
   it("does not fall back for unrelated backend errors", async () => {
