@@ -23,6 +23,8 @@ interface BrowserEvaluationEngine {
 
 export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
   private readonly listeners = new Set<LiveEvaluationListener>();
+  private readonly createEngine: () => BrowserEvaluationEngine;
+  private readonly multiPv: number;
   private engine: BrowserEvaluationEngine | null = null;
   private position: LiveEvaluationPosition | null = null;
   private generation = 0;
@@ -30,13 +32,15 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
   private disposed = false;
 
   constructor(
-    private readonly createEngine: () => BrowserEvaluationEngine =
+    createEngine: () => BrowserEvaluationEngine =
       createStockfishBrowserUciEngine,
-    private readonly multiPv: number = BROWSER_LIVE_EVALUATION_MULTIPV,
+    multiPv: number = BROWSER_LIVE_EVALUATION_MULTIPV,
   ) {
     if (!Number.isInteger(multiPv) || multiPv < 1) {
       throw new Error("Browser live evaluation MultiPV must be positive");
     }
+    this.createEngine = createEngine;
+    this.multiPv = multiPv;
   }
 
   subscribe(listener: LiveEvaluationListener): () => void {
