@@ -1,6 +1,12 @@
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdtemp,
+  readFile,
+  rm,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -34,8 +40,23 @@ for (const [path, expected] of EXPECTED) {
   }
 }
 
-const engine = spawn(process.execPath, [jsPath], {
-  cwd: engineDir,
+const smokeDir = await mkdtemp(
+  resolve(tmpdir(), "chess-stockfish-"),
+);
+const runnableJsPath = resolve(
+  smokeDir,
+  "stockfish-19-lite-single.cjs",
+);
+const runnableWasmPath = resolve(
+  smokeDir,
+  "stockfish-19-lite-single.wasm",
+);
+
+await copyFile(jsPath, runnableJsPath);
+await copyFile(wasmPath, runnableWasmPath);
+
+const engine = spawn(process.execPath, [runnableJsPath], {
+  cwd: smokeDir,
   stdio: ["pipe", "pipe", "pipe"],
 });
 
@@ -152,4 +173,6 @@ try {
 } catch (error) {
   engine.kill("SIGKILL");
   throw error;
+} finally {
+  await rm(smokeDir, { recursive: true, force: true });
 }
