@@ -17,6 +17,7 @@
     "src/chess/evaluation/liveEvaluationPosition.ts",
     "src/chess/engine/browser/BrowserUciEngine.ts",
     "src/chess/engine/browser/UciInfoParser.ts",
-    "src/chess/engine/browser/createStockfishWorker.ts"
+    "src/chess/engine/browser/createStockfishWorker.ts",
+    "src/chess/game/useComputerMoves.ts"
   ]
 }
