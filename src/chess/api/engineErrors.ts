@@ -28,13 +28,15 @@ function isEngineUnavailablePayload(
 export class EngineUnavailableApiError extends Error {
   readonly code = "ENGINE_UNAVAILABLE";
   readonly status = 503;
+  readonly role: NativeEngineRole;
 
   constructor(
-    readonly role: NativeEngineRole,
+    role: NativeEngineRole,
     message: string,
   ) {
     super(message);
     this.name = "EngineUnavailableApiError";
+    this.role = role;
   }
 }
 
