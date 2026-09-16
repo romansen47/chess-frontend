@@ -60,8 +60,13 @@ class FakeSource implements LiveEvaluationSource {
     this.suspendCount++;
   }
 
+  stopError: unknown = null;
+
   async stop(): Promise<void> {
     this.stopCount++;
+    if (this.stopError !== null) {
+      throw this.stopError;
+    }
   }
 
   dispose(): void {
@@ -180,6 +185,47 @@ describe("LiveEvaluationController", () => {
 
     expect(backend.starts).toHaveLength(0);
     expect(browser.starts).toHaveLength(0);
+  });
+
+  it("disposes a browser source that finishes creating after controller disposal", async () => {
+    const backend = new FakeSource();
+    const browser = new FakeSource();
+    const browserCreation = deferred<LiveEvaluationSource>();
+    const controller = new LiveEvaluationController({
+      backendSource: backend,
+      createBrowserSource: () => browserCreation.promise,
+      fetchCapabilities: vi.fn().mockResolvedValue(unavailableCapabilities),
+    });
+
+    const startPromise = controller.start(position);
+    await Promise.resolve();
+    controller.dispose();
+    browserCreation.resolve(browser);
+    await startPromise;
+
+    expect(browser.starts).toHaveLength(0);
+    expect(browser.disposeCount).toBe(1);
+  });
+
+  it("continues reselection when stopping the previous source fails", async () => {
+    const backend = new FakeSource();
+    backend.stopError = new Error("backend stop failed");
+    const browser = new FakeSource();
+    const fetchCapabilities = vi.fn()
+      .mockResolvedValueOnce(availableCapabilities)
+      .mockResolvedValueOnce(unavailableCapabilities);
+    const controller = new LiveEvaluationController({
+      backendSource: backend,
+      createBrowserSource: () => browser,
+      fetchCapabilities,
+    });
+
+    await controller.start(position);
+    await controller.reselect({ uciMoves: [...position.uciMoves, "g1f3"] });
+
+    expect(browser.starts).toEqual([
+      { uciMoves: ["e2e4", "e7e5", "g1f3"] },
+    ]);
   });
 
   it("reselects the source after an engine configuration change", async () => {
