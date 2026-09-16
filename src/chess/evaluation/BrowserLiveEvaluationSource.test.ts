@@ -96,9 +96,9 @@ describe("BrowserLiveEvaluationSource", () => {
     const source = new BrowserLiveEvaluationSource(() => engine);
 
     await source.start({ uciMoves: ["e2e4"] });
-    source.updatePosition({ uciMoves: ["e2e4", "e7e5"] });
+    await source.updatePosition({ uciMoves: ["e2e4", "e7e5"] });
 
-    await vi.waitFor(() => expect(engine.starts).toHaveLength(2));
+    expect(engine.starts).toHaveLength(2);
     expect(engine.starts[1].position).toEqual({
       uciMoves: ["e2e4", "e7e5"],
     });
