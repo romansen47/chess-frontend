@@ -115,11 +115,11 @@ export class LiveEvaluationController {
     await this.activateBrowserSource(generation);
   }
 
-  updatePosition(position: LiveEvaluationPosition): void {
+  async updatePosition(position: LiveEvaluationPosition): Promise<void> {
     this.assertNotDisposed();
     this.currentPosition = copyPosition(position);
     if (!this.desiredActive || this.activeSource === null) return;
-    void this.activeSource.updatePosition(this.currentPosition);
+    await this.activeSource.updatePosition(this.currentPosition);
   }
 
   refresh(): void {
