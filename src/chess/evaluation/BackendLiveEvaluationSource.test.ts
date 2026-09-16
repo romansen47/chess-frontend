@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { EngineEvaluation } from "../types";
-import {
-  BackendLiveEvaluationSource,
-  type BackendLiveEvaluationEvent,
-} from "./BackendLiveEvaluationSource";
+import { BackendLiveEvaluationSource } from "./BackendLiveEvaluationSource";
+import type {
+  LiveEvaluationEvent,
+  LiveEvaluationPosition,
+} from "./LiveEvaluationSource";
 
 class FakeEventSource {
   readonly listeners = new Map<string, Set<(event: Event) => void>>();
@@ -32,6 +33,8 @@ class FakeEventSource {
   }
 }
 
+const position: LiveEvaluationPosition = { uciMoves: [] };
+
 const evaluation: EngineEvaluation = {
   eval: 0.35,
   bar: 0.54,
@@ -53,7 +56,7 @@ describe("BackendLiveEvaluationSource", () => {
     vi.useFakeTimers();
     const eventSource = new FakeEventSource();
     const fetchEvaluation = vi.fn().mockResolvedValue(evaluation);
-    const events: BackendLiveEvaluationEvent[] = [];
+    const events: LiveEvaluationEvent[] = [];
 
     const source = new BackendLiveEvaluationSource({
       fetchEvaluation,
@@ -62,7 +65,7 @@ describe("BackendLiveEvaluationSource", () => {
     });
     source.subscribe((event) => events.push(event));
 
-    source.start();
+    source.start(position);
     await flushAsyncWork();
 
     expect(fetchEvaluation).toHaveBeenCalledTimes(1);
@@ -98,7 +101,7 @@ describe("BackendLiveEvaluationSource", () => {
       stopEvaluation: vi.fn().mockResolvedValue(undefined),
     });
 
-    source.start();
+    source.start(position);
     await flushAsyncWork();
     expect(fetchEvaluation).toHaveBeenCalledTimes(1);
 
@@ -124,7 +127,7 @@ describe("BackendLiveEvaluationSource", () => {
       stopEvaluation,
     });
 
-    source.start();
+    source.start(position);
     await flushAsyncWork();
     source.suspend();
 
