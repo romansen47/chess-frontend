@@ -54,9 +54,10 @@ export class BrowserUciEngine {
   };
 
   constructor(
-    private readonly createWorker: () => BrowserUciWorker,
+    createWorker: () => BrowserUciWorker,
     options: BrowserUciEngineOptions = {},
   ) {
+    this.createWorker = createWorker;
     this.handshakeTimeoutMs = options.handshakeTimeoutMs ?? 5000;
   }
 
