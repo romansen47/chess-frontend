@@ -93,6 +93,24 @@ describe("UciInfoParser", () => {
     ]);
   });
 
+  it("does not fall back to fewer variants after publishing a wider prefix", () => {
+    const parser = new UciInfoParser("white", 3);
+
+    expect(parser.push(
+      "info depth 8 multipv 1 score cp 40 pv e2e4",
+    )).toBeNull();
+    expect(parser.push(
+      "info depth 8 multipv 2 score cp 25 pv d2d4",
+    )).toBeNull();
+    expect(parser.push(
+      "info depth 9 multipv 1 score cp 45 pv e2e4",
+    )).toHaveLength(2);
+
+    expect(parser.push(
+      "info depth 10 multipv 1 score cp 50 pv e2e4",
+    )).toBeNull();
+  });
+
   it("ignores non-info and malformed lines", () => {
     const parser = new UciInfoParser("white", 1);
 
