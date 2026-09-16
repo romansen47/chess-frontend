@@ -1,4 +1,9 @@
 import type { EngineEvaluation } from "../types";
+import type {
+  LiveEvaluationListener,
+  LiveEvaluationPosition,
+  LiveEvaluationSource,
+} from "./LiveEvaluationSource";
 import {
   fetchEvaluation,
   openEvaluationStream,
@@ -7,16 +12,6 @@ import {
 
 const FAST_POLL_MS = 250;
 const NORMAL_POLL_MS = 2000;
-
-export type BackendLiveEvaluationEvent =
-  | { type: "evaluation"; evaluation: EngineEvaluation }
-  | { type: "bar"; bar: number }
-  | { type: "loading"; loading: boolean }
-  | { type: "error"; error: unknown | null };
-
-export type BackendLiveEvaluationListener = (
-  event: BackendLiveEvaluationEvent,
-) => void;
 
 interface BackendLiveEvaluationDependencies {
   fetchEvaluation: () => Promise<EngineEvaluation>;
@@ -31,9 +26,9 @@ interface BackendLiveEvaluationDependencies {
  * manages HTTP polling, SSE bar updates, request de-duplication and backend
  * stop requests.
  */
-export class BackendLiveEvaluationSource {
+export class BackendLiveEvaluationSource implements LiveEvaluationSource {
 
-  private readonly listeners = new Set<BackendLiveEvaluationListener>();
+  private readonly listeners = new Set<LiveEvaluationListener>();
   private readonly dependencies: BackendLiveEvaluationDependencies;
 
   private active = false;
@@ -74,14 +69,14 @@ export class BackendLiveEvaluationSource {
     };
   }
 
-  subscribe(listener: BackendLiveEvaluationListener): () => void {
+  subscribe(listener: LiveEvaluationListener): () => void {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
   }
 
-  start(): void {
+  start(_position: LiveEvaluationPosition): void {
     if (this.active) return;
 
     this.active = true;
@@ -99,6 +94,10 @@ export class BackendLiveEvaluationSource {
     this.active = false;
     this.disconnectEventSource();
     this.clearPolling();
+  }
+
+  updatePosition(_position: LiveEvaluationPosition): void {
+    this.refresh();
   }
 
   refresh(): void {
