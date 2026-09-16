@@ -40,6 +40,7 @@ export class BrowserUciEngine {
   private engineName: string | null = null;
   private searchGeneration = 0;
   private activeSearch: ActiveSearch | null = null;
+  private transitionChain: Promise<void> = Promise.resolve();
   private disposed = false;
 
   private readonly handleMessage = (event: MessageEvent<string>) => {
@@ -96,40 +97,41 @@ export class BrowserUciEngine {
     validateMultiPv(options.multiPv);
 
     const generation = ++this.searchGeneration;
-    await this.initialize();
-    if (!this.isCurrentGeneration(generation)) return;
+    return this.enqueueTransition(async () => {
+      await this.initialize();
+      if (!this.isCurrentGeneration(generation)) return;
 
-    this.cancelActiveSearch();
+      await this.cancelActiveSearch();
+      if (!this.isCurrentGeneration(generation)) return;
 
-    const worker = this.requireWorker();
-    worker.postMessage("setoption name MultiPV value " + options.multiPv);
+      const worker = this.requireWorker();
+      worker.postMessage("setoption name MultiPV value " + options.multiPv);
 
-    const ready = this.waitForLine((line) => line === "readyok", "readyok");
-    worker.postMessage("isready");
-    await ready;
-    if (!this.isCurrentGeneration(generation)) return;
+      const ready = this.waitForLine((line) => line === "readyok", "readyok");
+      worker.postMessage("isready");
+      await ready;
+      if (!this.isCurrentGeneration(generation)) return;
 
-    const sideToMove = position.uciMoves.length % 2 === 0
-      ? "white"
-      : "black";
-    const parser = new UciInfoParser(sideToMove, options.multiPv);
+      const sideToMove = position.uciMoves.length % 2 === 0
+        ? "white"
+        : "black";
+      const parser = new UciInfoParser(sideToMove, options.multiPv);
 
-    this.activeSearch = { generation, parser, listener };
+      this.activeSearch = { generation, parser, listener };
 
-    worker.postMessage(positionCommand(position));
-    worker.postMessage("go infinite");
+      worker.postMessage(positionCommand(position));
+      worker.postMessage("go infinite");
+    });
   }
 
   async stop(): Promise<void> {
     if (this.disposed) return;
 
     this.searchGeneration++;
-    const hadActiveSearch = this.activeSearch !== null;
-    this.activeSearch = null;
-
-    if (hadActiveSearch && this.worker !== null) {
-      this.worker.postMessage("stop");
-    }
+    return this.enqueueTransition(async () => {
+      if (this.disposed) return;
+      await this.cancelActiveSearch();
+    });
   }
 
   dispose(): void {
@@ -209,10 +211,29 @@ export class BrowserUciEngine {
     });
   }
 
-  private cancelActiveSearch(): void {
+  private async cancelActiveSearch(): Promise<void> {
     if (this.activeSearch === null) return;
+
     this.activeSearch = null;
-    this.requireWorker().postMessage("stop");
+    const worker = this.requireWorker();
+    const bestMove = this.waitForLine(
+      (line) => line.startsWith("bestmove "),
+      "bestmove",
+    );
+    worker.postMessage("stop");
+
+    try {
+      await bestMove;
+    } catch (error) {
+      this.destroyWorker();
+      throw error;
+    }
+  }
+
+  private enqueueTransition(operation: () => Promise<void>): Promise<void> {
+    const execution = this.transitionChain.then(operation);
+    this.transitionChain = execution.catch(() => undefined);
+    return execution;
   }
 
   private destroyWorker(): void {
