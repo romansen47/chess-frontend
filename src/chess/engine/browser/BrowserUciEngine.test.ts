@@ -1,0 +1,182 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import {
+  BrowserUciEngine,
+  type BrowserUciEvaluation,
+  type BrowserUciWorker,
+} from "./BrowserUciEngine";
+
+class FakeWorker implements BrowserUciWorker {
+  readonly commands: string[] = [];
+  readonly listeners = new Set<(event: MessageEvent<string>) => void>();
+  terminated = false;
+  autoHandshake = true;
+
+  postMessage(command: string): void {
+    this.commands.push(command);
+
+    if (!this.autoHandshake) return;
+    if (command === "uci") {
+      this.emit("id name Stockfish Browser Test\nuciok");
+    } else if (command === "isready") {
+      this.emit("readyok");
+    }
+  }
+
+  addEventListener(
+    type: "message",
+    listener: (event: MessageEvent<string>) => void,
+  ): void {
+    if (type === "message") this.listeners.add(listener);
+  }
+
+  removeEventListener(
+    type: "message",
+    listener: (event: MessageEvent<string>) => void,
+  ): void {
+    if (type === "message") this.listeners.delete(listener);
+  }
+
+  terminate(): void {
+    this.terminated = true;
+  }
+
+  emit(data: string): void {
+    const event = { data } as MessageEvent<string>;
+    for (const listener of this.listeners) {
+      listener(event);
+    }
+  }
+}
+
+describe("BrowserUciEngine", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("performs UCI handshake lazily and starts infinite analysis", async () => {
+    const worker = new FakeWorker();
+    const engine = new BrowserUciEngine(() => worker);
+    const updates: BrowserUciEvaluation[] = [];
+
+    expect(worker.commands).toEqual([]);
+
+    await engine.startInfinite(
+      { uciMoves: ["e2e4", "e7e5", "g1f3"] },
+      { multiPv: 2 },
+      (evaluation) => updates.push(evaluation),
+    );
+
+    expect(engine.name).toBe("Stockfish Browser Test");
+    expect(worker.commands).toEqual([
+      "uci",
+      "isready",
+      "setoption name MultiPV value 2",
+      "isready",
+      "position startpos moves e2e4 e7e5 g1f3",
+      "go infinite",
+    ]);
+
+    worker.emit(
+      "info depth 14 multipv 1 score cp 45 pv g8f6 f1b5",
+    );
+    worker.emit(
+      "info depth 14 multipv 2 score cp 20 pv b8c6 f1b5",
+    );
+
+    expect(updates).toEqual([{
+      engineName: "Stockfish Browser Test",
+      lines: [
+        { eval: -0.45, depth: 14, mateDistance: null, moves: "g8f6 f1b5" },
+        { eval: -0.2, depth: 14, mateDistance: null, moves: "b8c6 f1b5" },
+      ],
+    }]);
+  });
+
+  it("uses startpos without moves for a new game", async () => {
+    const worker = new FakeWorker();
+    const engine = new BrowserUciEngine(() => worker);
+
+    await engine.startInfinite(
+      { uciMoves: [] },
+      { multiPv: 1 },
+      () => undefined,
+    );
+
+    expect(worker.commands).toContain("position startpos");
+  });
+
+  it("ignores stale info after stop", async () => {
+    const worker = new FakeWorker();
+    const engine = new BrowserUciEngine(() => worker);
+    const listener = vi.fn();
+
+    await engine.startInfinite(
+      { uciMoves: ["e2e4"] },
+      { multiPv: 1 },
+      listener,
+    );
+    await engine.stop();
+
+    worker.emit("info depth 12 score cp 80 pv e7e5");
+
+    expect(worker.commands.at(-1)).toBe("stop");
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("stops the previous search before starting a replacement", async () => {
+    const worker = new FakeWorker();
+    const engine = new BrowserUciEngine(() => worker);
+
+    await engine.startInfinite(
+      { uciMoves: ["e2e4"] },
+      { multiPv: 1 },
+      () => undefined,
+    );
+    await engine.startInfinite(
+      { uciMoves: ["d2d4"] },
+      { multiPv: 1 },
+      () => undefined,
+    );
+
+    const secondPositionIndex = worker.commands.lastIndexOf(
+      "position startpos moves d2d4",
+    );
+    expect(secondPositionIndex).toBeGreaterThan(0);
+    expect(worker.commands.slice(0, secondPositionIndex)).toContain("stop");
+  });
+
+  it("terminates the worker and rejects use after dispose", async () => {
+    const worker = new FakeWorker();
+    const engine = new BrowserUciEngine(() => worker);
+
+    await engine.initialize();
+    engine.dispose();
+
+    expect(worker.commands.at(-1)).toBe("quit");
+    expect(worker.terminated).toBe(true);
+    await expect(engine.startInfinite(
+      { uciMoves: [] },
+      { multiPv: 1 },
+      () => undefined,
+    )).rejects.toThrow("BrowserUciEngine is disposed");
+  });
+
+  it("fails initialization when the UCI handshake times out", async () => {
+    vi.useFakeTimers();
+    const worker = new FakeWorker();
+    worker.autoHandshake = false;
+    const engine = new BrowserUciEngine(
+      () => worker,
+      { handshakeTimeoutMs: 100 },
+    );
+
+    const initialization = engine.initialize();
+    await vi.advanceTimersByTimeAsync(100);
+
+    await expect(initialization).rejects.toThrow(
+      "Timed out waiting for UCI uciok",
+    );
+    expect(worker.terminated).toBe(true);
+  });
+});
