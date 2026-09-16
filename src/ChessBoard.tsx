@@ -91,7 +91,10 @@ import { useComputerMoves } from "./chess/game/useComputerMoves";
 import { BackendLiveEvaluationSource } from "./chess/evaluation/BackendLiveEvaluationSource";
 import { LiveEvaluationController } from "./chess/evaluation/LiveEvaluationController";
 import type { LiveEvaluationPosition } from "./chess/evaluation/LiveEvaluationSource";
-import { createLiveEvaluationPosition } from "./chess/evaluation/liveEvaluationPosition";
+import {
+  appendCanonicalMoveToLiveEvaluationPosition,
+  createLiveEvaluationPosition,
+} from "./chess/evaluation/liveEvaluationPosition";
 import {
   cancelAnalysisReplayRequest,
   fetchAnalysisEvaluation as fetchAnalysisEvaluationRequest,
@@ -108,6 +111,16 @@ import {
   terminateBackend,
   terminateDevelopmentFrontend,
 } from "./chess/api/programApi";
+function sameLiveEvaluationPosition(
+  left: LiveEvaluationPosition | null,
+  right: LiveEvaluationPosition | null,
+): boolean {
+  if (left === right) return true;
+  if (left === null || right === null) return false;
+  if (left.uciMoves.length !== right.uciMoves.length) return false;
+  return left.uciMoves.every((move, index) => move === right.uciMoves[index]);
+}
+
 function formatEngineScore(evaluation: number): string {
   if (Math.abs(evaluation) >= 99) {
     return evaluation > 0 ? "Mate for White" : "Mate for Black";
@@ -1504,6 +1517,42 @@ export const ChessBoard: React.FC = () => {
     return reconciliation;
   }
 
+  async function synchronizeLiveEvaluationAfterCommittedMove(
+    result: MoveResult,
+  ): Promise<void> {
+    let position = appendCanonicalMoveToLiveEvaluationPosition(
+      liveEvaluationPositionRef.current,
+      result.ply,
+      result.uci,
+    );
+
+    if (position === null) {
+      position = await reconcileMoveListFromBackend();
+    } else {
+      liveEvaluationPositionRef.current = position;
+    }
+
+    if (
+      !position
+      || !engineAutoUpdateRef.current
+      || gameEndStateRef.current
+      || result.gameState
+    ) {
+      return;
+    }
+
+    setLiveEvaluationBar(null);
+    try {
+      await liveEvaluationControllerRef.current?.updatePosition(position);
+    } catch (error) {
+      console.warn(
+        "[synchronizeLiveEvaluationAfterCommittedMove] evaluation update failed",
+        error,
+      );
+      setEvalError(t("evaluation.failed"));
+    }
+  }
+
   function addMoveToMoveList(result: MoveResult): boolean {
     const sanText = result.san && result.san.trim().length > 0 ? result.san : `${result.from}-${result.to}`;
     const position = result.position ?? undefined;
@@ -1524,7 +1573,7 @@ export const ChessBoard: React.FC = () => {
           row = { moveNumber };
           copy.push(row);
         }
-        const uci = `${result.from}${result.to}`;
+        const uci = result.uci?.trim() || `${result.from}${result.to}`;
         if (resultPly % 2 === 1) {
           row.white = sanText;
           row.whiteUci = uci;
@@ -1548,7 +1597,7 @@ export const ChessBoard: React.FC = () => {
       const copy = current.map((row) => ({ ...row }));
       const last = copy[copy.length - 1];
 
-      const uci = `${result.from}${result.to}`;
+      const uci = result.uci?.trim() || `${result.from}${result.to}`;
 
       if (moverSide === "white") {
         const moveNumber = last ? last.moveNumber + 1 : 1;
@@ -1819,22 +1868,28 @@ export const ChessBoard: React.FC = () => {
     return true;
   }
 
-  function handleComputerMove(data: MoveResult) {
+  async function handleComputerMove(data: MoveResult): Promise<void> {
     if (!data.from || !data.to) return;
     animateMoveLocally(data.from, data.to, null, data.position);
     setLastMove({ from: data.from, to: data.to });
-    const moveListGapDetected = addMoveToMoveList(data);
-    if (moveListGapDetected) void reconcileMoveListFromBackend();
+    addMoveToMoveList(data);
     playMoveResultSound(data);
+    await synchronizeLiveEvaluationAfterCommittedMove(data);
   }
 
   async function synchronizeAfterMoveSequence() {
+    const previousPosition = liveEvaluationPositionRef.current;
     const position = await reconcileMoveListFromBackend();
     await loadBoardFromBackend();
     await loadClock();
-    if (position && engineAutoUpdateRef.current && !gameEndStateRef.current) {
+    if (
+      position
+      && engineAutoUpdateRef.current
+      && !gameEndStateRef.current
+      && !sameLiveEvaluationPosition(previousPosition, position)
+    ) {
       setLiveEvaluationBar(null);
-      liveEvaluationControllerRef.current?.updatePosition(position);
+      await liveEvaluationControllerRef.current?.updatePosition(position);
     }
   }
 
@@ -1855,9 +1910,9 @@ export const ChessBoard: React.FC = () => {
       setLastMove({ from, to });
       setSelectedSquare(null);
       updatePossibleTargets([]);
-      const moveListGapDetected = addMoveToMoveList(data);
-      if (moveListGapDetected) await reconcileMoveListFromBackend();
+      addMoveToMoveList(data);
       playMoveResultSound(data);
+      await synchronizeLiveEvaluationAfterCommittedMove(data);
       if (handleGameEndState(data.gameState)) { await synchronizeAfterMoveSequence(); return; }
       await requestComputerMoveIfEnabled(data.sideToMove);
       setIsLoadingMoves(false);
