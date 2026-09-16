@@ -6,6 +6,7 @@ export class UciInfoParser {
   private readonly linesByDepth = new Map<number, Map<number, EngineLine>>();
   private highestSeenDepth = 0;
   private lastEmittedDepth = 0;
+  private largestPublishedVariantCount = 0;
 
   constructor(
     private readonly sideToMove: UciSideToMove,
@@ -42,8 +43,38 @@ export class UciInfoParser {
   }
 
   flush(): EngineLine[] | null {
-    const depths = [...this.linesByDepth.keys()].sort((a, b) => b - a);
+    const depths = [...this.linesByDepth.keys()]
+      .filter((depth) => depth > this.lastEmittedDepth)
+      .sort((a, b) => b - a);
+
+    let largestContiguousCount = 0;
     for (const depth of depths) {
+      largestContiguousCount = Math.max(
+        largestContiguousCount,
+        countContiguousVariants(
+          this.linesByDepth.get(depth) ?? new Map<number, EngineLine>(),
+          this.requestedVariants,
+        ),
+      );
+    }
+
+    if (
+      largestContiguousCount === 0
+      || largestContiguousCount < this.largestPublishedVariantCount
+    ) {
+      return null;
+    }
+
+    for (const depth of depths) {
+      const depthLines = this.linesByDepth.get(depth);
+      if (!depthLines) continue;
+      if (
+        countContiguousVariants(depthLines, this.requestedVariants)
+        !== largestContiguousCount
+      ) {
+        continue;
+      }
+
       const snapshot = this.selectDepthSnapshot(depth, false);
       if (snapshot !== null) return snapshot;
     }
@@ -67,6 +98,12 @@ export class UciInfoParser {
     if (requireRequestedVariants && contiguousCount < this.requestedVariants) {
       return null;
     }
+    if (
+      !requireRequestedVariants
+      && contiguousCount < this.largestPublishedVariantCount
+    ) {
+      return null;
+    }
 
     const result: EngineLine[] = [];
     for (let multiPv = 1; multiPv <= contiguousCount; multiPv++) {
@@ -76,6 +113,10 @@ export class UciInfoParser {
     }
 
     this.lastEmittedDepth = depth;
+    this.largestPublishedVariantCount = Math.max(
+      this.largestPublishedVariantCount,
+      result.length,
+    );
     return result;
   }
 }
