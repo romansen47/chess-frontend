@@ -88,7 +88,7 @@ import {
   saveGameAnnotations,
 } from "./chess/api/gameApi";
 import { useComputerMoves } from "./chess/game/useComputerMoves";
-import { fetchEvaluation, openEvaluationStream, stopEvaluation } from "./chess/api/evaluationApi";
+import { BackendLiveEvaluationSource } from "./chess/evaluation/BackendLiveEvaluationSource";
 import {
   cancelAnalysisReplayRequest,
   fetchAnalysisEvaluation as fetchAnalysisEvaluationRequest,
@@ -105,9 +105,6 @@ import {
   terminateBackend,
   terminateDevelopmentFrontend,
 } from "./chess/api/programApi";
-const LIVE_EVALUATION_FAST_POLL_MS = 250;
-const LIVE_EVALUATION_NORMAL_POLL_MS = 2000;
-
 function formatEngineScore(evaluation: number): string {
   if (Math.abs(evaluation) >= 99) {
     return evaluation > 0 ? "Mate for White" : "Mate for Black";
@@ -241,8 +238,10 @@ export const ChessBoard: React.FC = () => {
   const [evalError, setEvalError] = useState<string | null>(null);
   const [engineAutoUpdate, setEngineAutoUpdateState] = useState<boolean>(false);
   const engineAutoUpdateRef = useRef<boolean>(false);
-  const [liveEvaluationFastPolling, setLiveEvaluationFastPolling] = useState<boolean>(true);
-  const liveEvaluationRequestInFlightRef = useRef<boolean>(false);
+  const backendLiveEvaluationSourceRef = useRef<BackendLiveEvaluationSource | null>(null);
+  if (backendLiveEvaluationSourceRef.current === null) {
+    backendLiveEvaluationSourceRef.current = new BackendLiveEvaluationSource();
+  }
   const [showEngineConfig, setShowEngineConfig] = useState<boolean>(false);
   const [engineConfigOverview, setEngineConfigOverview] = useState<EngineConfigOverview | null>(null);
   const [engineConfigLoadError, setEngineConfigLoadError] = useState<string | null>(null);
@@ -749,71 +748,59 @@ export const ChessBoard: React.FC = () => {
     }
   }
 
-  async function loadEvaluation() {
-    if (!engineAutoUpdateRef.current || liveEvaluationRequestInFlightRef.current) return;
-    liveEvaluationRequestInFlightRef.current = true;
-    try {
-      setIsLoadingEval(true);
-      setEvalError(null);
-      const data = await fetchEvaluation();
-      if (!engineAutoUpdateRef.current) return;
-      const hasLines = Boolean(data.lines && data.lines.length > 0);
-      setLiveEvaluationFastPolling(!hasLines);
-      if (hasLines) setEngineEval(data);
-    } catch (e) {
-      console.error("[loadEvaluation] error", e);
-      setEvalError(t("evaluation.failed"));
-      setLiveEvaluationFastPolling(false);
-    } finally {
-      liveEvaluationRequestInFlightRef.current = false;
-      setIsLoadingEval(false);
-    }
-  }
+  useEffect(() => {
+    const source = backendLiveEvaluationSourceRef.current;
+    if (!source) return;
+
+    return source.subscribe((event) => {
+      switch (event.type) {
+        case "evaluation":
+          setEngineEval(event.evaluation);
+          break;
+        case "bar":
+          setLiveEvaluationBar(event.bar);
+          break;
+        case "loading":
+          setIsLoadingEval(event.loading);
+          break;
+        case "error":
+          if (event.error === null) {
+            setEvalError(null);
+          } else {
+            console.error("[loadEvaluation] error", event.error);
+            setEvalError(t("evaluation.failed"));
+          }
+          break;
+      }
+    });
+  }, [t]);
 
   useEffect(() => {
-    if (!engineAutoUpdate || analysisReplayActive || uciAnalysisLoaded || clock?.gameState) {
+    const source = backendLiveEvaluationSourceRef.current;
+    if (!source) return;
+
+    if (engineAutoUpdate && !analysisReplayActive && !uciAnalysisLoaded && !clock?.gameState) {
+      source.start();
+    } else {
+      source.suspend();
       setLiveEvaluationBar(null);
-      return;
     }
 
-    const source = openEvaluationStream();
-
-    const handleReady = () => {
-      void loadEvaluation();
-    };
-
-    const handleBar = (event: Event) => {
-      try {
-        const data = JSON.parse((event as MessageEvent<string>).data) as {
-          eval?: number;
-          bar?: number;
-          depth?: number;
-        };
-        if (!engineAutoUpdateRef.current || analysisReplayActiveRef.current
-            || uciAnalysisLoadedRef.current || gameEndStateRef.current) return;
-        if (typeof data.bar !== "number" || !Number.isFinite(data.bar)) return;
-        setLiveEvaluationBar(Math.max(0, Math.min(1, data.bar)));
-      } catch (error) {
-        console.warn("[liveEvaluationBar] invalid SSE update", error);
-      }
-    };
-
-    source.addEventListener("ready", handleReady);
-    source.addEventListener("bar", handleBar);
-    source.onerror = () => {
-      console.debug("[liveEvaluationBar] SSE connection interrupted; waiting for reconnect");
-    };
-
     return () => {
-      source.removeEventListener("ready", handleReady);
-      source.removeEventListener("bar", handleBar);
-      source.close();
+      source.suspend();
     };
   }, [engineAutoUpdate, analysisReplayActive, uciAnalysisLoaded, clock?.gameState]);
 
+  useEffect(() => {
+    const source = backendLiveEvaluationSourceRef.current;
+    return () => {
+      source?.dispose();
+    };
+  }, []);
+
   async function stopLiveEvaluation() {
     try {
-      await stopEvaluation();
+      await backendLiveEvaluationSourceRef.current?.stop();
     } catch (e) {
       console.warn("[stopLiveEvaluation] backend stop failed", e);
     }
@@ -867,7 +854,6 @@ export const ChessBoard: React.FC = () => {
     const nextValue = !engineAutoUpdateRef.current;
     setEngineAutoUpdate(nextValue);
     setLiveEvaluationBar(null);
-    setLiveEvaluationFastPolling(true);
     if (!nextValue) {
       setEngineEval(null);
       setEvalError(null);
@@ -875,7 +861,12 @@ export const ChessBoard: React.FC = () => {
       void stopLiveEvaluation();
       return;
     }
-    void loadEvaluation();
+
+    if (!analysisReplayActiveRef.current
+        && !uciAnalysisLoadedRef.current
+        && !gameEndStateRef.current) {
+      backendLiveEvaluationSourceRef.current?.start();
+    }
   }
 
   async function loadEngineConfigs() {
@@ -906,18 +897,10 @@ export const ChessBoard: React.FC = () => {
     });
     setEngineEval(null);
     setLiveEvaluationBar(null);
-    setLiveEvaluationFastPolling(true);
-    if (engineAutoUpdateRef.current) void loadEvaluation();
+    if (engineAutoUpdateRef.current) {
+      backendLiveEvaluationSourceRef.current?.refresh();
+    }
   }
-
-  useEffect(() => {
-    if (analysisReplayActive || !engineAutoUpdate || clock?.gameState) return;
-    const intervalId = window.setInterval(
-      () => { void loadEvaluation(); },
-      liveEvaluationFastPolling ? LIVE_EVALUATION_FAST_POLL_MS : LIVE_EVALUATION_NORMAL_POLL_MS,
-    );
-    return () => window.clearInterval(intervalId);
-  }, [analysisReplayActive, engineAutoUpdate, clock?.gameState, liveEvaluationFastPolling]);
 
   useEffect(() => { setAnalysisLineAnimationIndex(0); }, [analysisSelectedPosition?.ply, analysisSelectedLineIndex]);
 
@@ -1796,8 +1779,7 @@ export const ChessBoard: React.FC = () => {
     await loadClock();
     if (engineAutoUpdateRef.current && !gameEndStateRef.current) {
       setLiveEvaluationBar(null);
-      setLiveEvaluationFastPolling(true);
-      void loadEvaluation();
+      backendLiveEvaluationSourceRef.current?.refresh();
     }
   }
 
