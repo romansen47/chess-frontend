@@ -25,3 +25,21 @@ export function createLiveEvaluationPosition(
 
   return { uciMoves: Object.freeze(uciMoves) };
 }
+
+
+export function appendCanonicalMoveToLiveEvaluationPosition(
+  position: LiveEvaluationPosition | null,
+  ply: number | null | undefined,
+  uci: string | null | undefined,
+): LiveEvaluationPosition | null {
+  if (position === null) return null;
+  if (!Number.isInteger(ply) || ply !== position.uciMoves.length + 1) {
+    return null;
+  }
+  if (typeof uci !== "string" || !UCI_MOVE_PATTERN.test(uci)) {
+    return null;
+  }
+  return {
+    uciMoves: Object.freeze([...position.uciMoves, uci]),
+  };
+}
