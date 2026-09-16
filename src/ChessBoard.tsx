@@ -248,7 +248,10 @@ export const ChessBoard: React.FC = () => {
     liveEvaluationControllerRef.current = new LiveEvaluationController({
       backendSource: new BackendLiveEvaluationSource(),
       createBrowserSource: async () => {
-        throw new Error("Browser live evaluation source is not available yet");
+        const { BrowserLiveEvaluationSource } = await import(
+          "./chess/evaluation/BrowserLiveEvaluationSource"
+        );
+        return new BrowserLiveEvaluationSource();
       },
     });
   }
