@@ -7,7 +7,7 @@ import type { MoveResult, PieceColor } from "../types";
 
 interface UseComputerMovesOptions {
   currentSideToMove: string | null | undefined;
-  onMove: (move: MoveResult) => void;
+  onMove: (move: MoveResult) => void | Promise<void>;
   onGameEnd: (gameState: string | null | undefined) => boolean;
   onRefreshClock: () => Promise<unknown>;
   onSynchronize: () => Promise<void>;
@@ -157,7 +157,9 @@ export function useComputerMoves({
         };
       }
 
-      if (data.from && data.to) onMove(data);
+      if (data.from && data.to) {
+        await onMove(data);
+      }
       const gameEnded = onGameEnd(data.gameState);
       if (gameEnded) {
         return { gameEnded: true, sideToMove: data.sideToMove ?? null, success: true };
