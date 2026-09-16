@@ -36,6 +36,7 @@ class FakeSource implements LiveEvaluationSource {
   readonly listeners = new Set<LiveEvaluationListener>();
   refreshCount = 0;
   suspendCount = 0;
+  updateBarrier: Promise<void> | null = null;
   stopCount = 0;
   disposeCount = 0;
 
@@ -48,8 +49,11 @@ class FakeSource implements LiveEvaluationSource {
     this.starts.push(value);
   }
 
-  updatePosition(value: LiveEvaluationPosition): void {
+  async updatePosition(value: LiveEvaluationPosition): Promise<void> {
     this.updates.push(value);
+    if (this.updateBarrier !== null) {
+      await this.updateBarrier;
+    }
   }
 
   refresh(): void {
@@ -165,6 +169,35 @@ describe("LiveEvaluationController", () => {
 
     expect(createBrowserSource).not.toHaveBeenCalled();
     expect(events).toContainEqual({ type: "error", error: failure });
+  });
+
+  it("waits for the active source to accept a position update", async () => {
+    const backend = new FakeSource();
+    const browser = new FakeSource();
+    const barrier = deferred<void>();
+    backend.updateBarrier = barrier.promise;
+    const controller = new LiveEvaluationController({
+      backendSource: backend,
+      createBrowserSource: () => browser,
+      fetchCapabilities: vi.fn().mockResolvedValue(availableCapabilities),
+    });
+
+    await controller.start(position);
+
+    let completed = false;
+    const update = controller
+      .updatePosition({ uciMoves: [...position.uciMoves, "g1f3"] })
+      .then(() => { completed = true; });
+
+    await Promise.resolve();
+    expect(backend.updates).toEqual([
+      { uciMoves: ["e2e4", "e7e5", "g1f3"] },
+    ]);
+    expect(completed).toBe(false);
+
+    barrier.resolve(undefined);
+    await update;
+    expect(completed).toBe(true);
   });
 
   it("cancels an in-flight capability selection when suspended", async () => {
