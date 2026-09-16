@@ -14,6 +14,10 @@ The UI supports English, German, and French browser-side localization. Engine na
 
 Large PGN libraries are processed by the backend database importer rather than in the browser. Depending on collection size and machine performance, importing a large library can take many minutes or several hours.
 
+## Third-party browser engine
+
+The optional browser live-evaluation fallback uses the vendored Stockfish.js 19.0.0 lite single-threaded build. Stockfish.js and its WASM binary are licensed separately under GNU GPL v3 and are not covered by this repository's Apache-2.0 license. The exact upstream source, release commit, checksums, and GPL text are documented under `public/third-party/stockfish/19.0.0/`.
+
 ## Development
 
 The frontend uses React 19, TypeScript, and Vite. During development Vite binds to `127.0.0.1` and proxies `/api` requests to the backend at `127.0.0.1:8080`.

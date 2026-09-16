@@ -12,7 +12,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "npm run test:unit && npm run test:stockfish",
+    "test:unit": "vitest run",
+    "test:stockfish": "node scripts/smoke-stockfish.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",
