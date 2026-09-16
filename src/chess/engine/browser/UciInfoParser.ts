@@ -4,17 +4,21 @@ export type UciSideToMove = "white" | "black";
 
 export class UciInfoParser {
   private readonly linesByDepth = new Map<number, Map<number, EngineLine>>();
+  private readonly sideToMove: UciSideToMove;
+  private readonly requestedVariants: number;
   private highestSeenDepth = 0;
   private lastEmittedDepth = 0;
   private largestPublishedVariantCount = 0;
 
   constructor(
-    private readonly sideToMove: UciSideToMove,
-    private readonly requestedVariants: number,
+    sideToMove: UciSideToMove,
+    requestedVariants: number,
   ) {
     if (!Number.isInteger(requestedVariants) || requestedVariants < 1) {
       throw new Error("requestedVariants must be a positive integer");
     }
+    this.sideToMove = sideToMove;
+    this.requestedVariants = requestedVariants;
   }
 
   push(rawLine: string): EngineLine[] | null {
