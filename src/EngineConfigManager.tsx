@@ -875,11 +875,12 @@ export default function EngineConfigManager({
                     <span className="engine-config-chip">{t("settings.global")}</span>
                   </div>
 
-                  <div className="engine-config-default-info">
-                    {t("settings.fallbackInfoBefore")} <strong>{fallbackEngine?.engine ?? t("settings.detectedUciEngine")}</strong>{" "}
-                    {t("settings.fallbackInfoAfter")} <strong>/usr/games/stockfish</strong>{" "}
-                    {t("settings.fallbackStockfish")}
-                  </div>
+                  {fallbackProfile && (
+                    <div className="engine-config-default-info">
+                      {t("settings.fallbackInfoBefore")} <strong>{fallbackEngine?.engine ?? t("settings.detectedUciEngine")}</strong>{" "}
+                      {t("settings.fallbackInfoAfter")}
+                    </div>
+                  )}
 
                   <div className="engine-config-default-grid">
                     {renderAssignmentCard(
