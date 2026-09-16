@@ -15,7 +15,7 @@
     "test": "npm run typecheck && npm run test:unit && npm run test:stockfish",
     "test:unit": "vitest run",
     "test:stockfish": "node scripts/smoke-stockfish.mjs",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -p tsconfig.evaluation.json"
   },
   "dependencies": {
     "react": "^19.3.0",

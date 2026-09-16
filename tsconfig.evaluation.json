@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.evaluation.tsbuildinfo"
+  },
+  "include": [
+    "src/chess/types.ts",
+    "src/chess/api/engineContracts.ts",
+    "src/chess/api/engineErrors.ts",
+    "src/chess/api/engineCapabilitiesApi.ts",
+    "src/chess/api/evaluationApi.ts",
+    "src/chess/evaluation/LiveEvaluationSource.ts",
+    "src/chess/evaluation/LiveEvaluationController.ts",
+    "src/chess/evaluation/BackendLiveEvaluationSource.ts",
+    "src/chess/evaluation/BrowserLiveEvaluationSource.ts",
+    "src/chess/evaluation/evaluationBar.ts",
+    "src/chess/evaluation/liveEvaluationPosition.ts",
+    "src/chess/engine/browser/BrowserUciEngine.ts",
+    "src/chess/engine/browser/UciInfoParser.ts",
+    "src/chess/engine/browser/createStockfishWorker.ts"
+  ]
+}
