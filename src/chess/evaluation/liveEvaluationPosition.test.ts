@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { UciGameMove } from "../types";
-import { createLiveEvaluationPosition } from "./liveEvaluationPosition";
+import {
+  appendCanonicalMoveToLiveEvaluationPosition,
+  createLiveEvaluationPosition,
+} from "./liveEvaluationPosition";
 
 function move(ply: number, uci: string): UciGameMove {
   return { ply, uci, san: null, position: "" };
@@ -38,6 +41,53 @@ describe("createLiveEvaluationPosition", () => {
       "b7a8q",
       "g2h1n",
     ]);
+  });
+
+  it("appends a canonical move only for the next authoritative ply", () => {
+    const position = createLiveEvaluationPosition([
+      move(1, "e2e4"),
+      move(2, "e7e5"),
+    ]);
+
+    expect(appendCanonicalMoveToLiveEvaluationPosition(
+      position,
+      3,
+      "g1f3",
+    )).toEqual({
+      uciMoves: ["e2e4", "e7e5", "g1f3"],
+    });
+
+    expect(appendCanonicalMoveToLiveEvaluationPosition(
+      position,
+      4,
+      "g1f3",
+    )).toBeNull();
+  });
+
+  it("preserves promotion suffixes and rejects non-canonical move text", () => {
+    const position = createLiveEvaluationPosition([]);
+
+    expect(appendCanonicalMoveToLiveEvaluationPosition(
+      position,
+      1,
+      "e7e8q",
+    )).toEqual({
+      uciMoves: ["e7e8q"],
+    });
+
+    expect(appendCanonicalMoveToLiveEvaluationPosition(
+      position,
+      1,
+      "e7e8",
+    )).toEqual({
+      uciMoves: ["e7e8"],
+    });
+
+    expect(appendCanonicalMoveToLiveEvaluationPosition(
+      position,
+      1,
+      "e7-e8q",
+    )).toBeNull();
   });
 
   it("rejects malformed UCI moves", () => {
