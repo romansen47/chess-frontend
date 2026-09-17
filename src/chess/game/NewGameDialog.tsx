@@ -91,7 +91,7 @@ export default function NewGameDialog({
               type="number"
               min={0}
               max={959}
-              value={settings.startingPositionId}
+              value={settings.startingPositionId ?? 518}
               onChange={(event) => updateStartingPosition(Number(event.target.value))}
               disabled={starting}
             />

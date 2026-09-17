@@ -192,7 +192,7 @@ export interface GameSettings {
   incrementForBlackSeconds: number;
   additionalTimeAfter40MovesSeconds: number;
   startingColor: string;
-  startingPositionId: number;
+  startingPositionId?: number;
   version: number;
 }
 
