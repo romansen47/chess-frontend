@@ -21,39 +21,27 @@ function samePiecePosition(left: PositionedPiece, right: PositionedPiece): boole
   );
 }
 
-export function piecesMatchPosition(
-  pieces: Piece[],
-  position: string
-): boolean {
+export function piecesMatchPosition(pieces: Piece[], position: string): boolean {
   const expectedPieces = parsePositionString(position);
   if (pieces.length !== expectedPieces.length) return false;
-
   const actual = pieces.map(piecePositionKey).sort();
   const expected = expectedPieces.map(piecePositionKey).sort();
   return actual.every((value, index) => value === expected[index]);
 }
 
-export function reconcilePieceSnapshot(
-  previousPieces: Piece[],
-  targetPieces: Piece[]
-): Piece[] {
+export function reconcilePieceSnapshot(previousPieces: Piece[], targetPieces: Piece[]): Piece[] {
   const unmatchedTargets = [...targetPieces];
   const reconciled: Piece[] = [];
 
-  // Preserve the DOM order of surviving keyed pieces.
-  // Reordering them while changing transform can suppress the CSS transition.
   for (const existingPiece of previousPieces) {
     const targetIndex = unmatchedTargets.findIndex(
-      (targetPiece) => samePiecePosition(existingPiece, targetPiece)
+      (targetPiece) => samePiecePosition(existingPiece, targetPiece),
     );
-
     if (targetIndex < 0) continue;
-
     reconciled.push(existingPiece);
     unmatchedTargets.splice(targetIndex, 1);
   }
 
-  // Restored/new pieces are mounted as new render nodes.
   reconciled.push(...unmatchedTargets);
   return reconciled;
 }
@@ -68,92 +56,84 @@ export interface BoardPositionTransition {
 
 export function transitionBoardPosition(
   previousPieces: Piece[],
-  transition: BoardPositionTransition
+  transition: BoardPositionTransition,
 ): Piece[] {
-  const {
-    moveFrom,
-    moveTo,
-    targetPosition,
-    reverse,
-    sourcePosition,
-  } = transition;
-
+  const { moveFrom, moveTo, targetPosition, reverse, sourcePosition } = transition;
   const targetPieces = mapPositionStringToLocalPieces(targetPosition);
 
   if (sourcePosition && !piecesMatchPosition(previousPieces, sourcePosition)) {
     return targetPieces;
   }
 
-  const sourceSquare = reverse ? moveTo : moveFrom;
-  const destinationSquare = reverse ? moveFrom : moveTo;
-  const destinationCoords = getSquareCoords(destinationSquare);
-
-  if (!destinationCoords) {
-    return targetPieces;
-  }
-
-  const movingPiece = previousPieces.find(
-    (piece) => squareName(piece.file, piece.rank) === sourceSquare
+  // For reverse Chess960 playback the UCI target is the original rook square,
+  // which is empty after castling. Detect the castle from the authoritative
+  // pre-castling snapshot (targetPieces) before looking for the moving king.
+  const castlingReferencePieces = reverse ? targetPieces : previousPieces;
+  const referenceKing = castlingReferencePieces.find(
+    (piece) => piece.type === "king" && squareName(piece.file, piece.rank) === moveFrom,
   );
-  if (!movingPiece) {
-    return targetPieces;
-  }
-
-  const originalCastling = getCastlingSquares(movingPiece, moveFrom, moveTo);
-  let animatedPieces: Piece[];
+  const originalCastling = getCastlingSquares(
+    referenceKing,
+    moveFrom,
+    moveTo,
+    castlingReferencePieces,
+  );
 
   if (originalCastling) {
-    const kingDestination = getSquareCoords(
-      reverse ? moveFrom : originalCastling.kingTo
-    );
-    const rookSource = reverse
-      ? originalCastling.rookTo
-      : originalCastling.rookFrom;
-    const rookDestination = getSquareCoords(
-      reverse ? originalCastling.rookFrom : originalCastling.rookTo
-    );
+    const kingCurrentSquare = reverse ? originalCastling.kingTo : moveFrom;
+    const rookCurrentSquare = reverse ? originalCastling.rookTo : originalCastling.rookFrom;
+    const kingDestinationSquare = reverse ? moveFrom : originalCastling.kingTo;
+    const rookDestinationSquare = reverse ? originalCastling.rookFrom : originalCastling.rookTo;
+    const kingDestination = getSquareCoords(kingDestinationSquare);
+    const rookDestination = getSquareCoords(rookDestinationSquare);
+    if (!kingDestination || !rookDestination) return targetPieces;
 
-    if (!kingDestination || !rookDestination) {
-      return targetPieces;
-    }
+    const currentKing = previousPieces.find(
+      (piece) => piece.type === "king" && squareName(piece.file, piece.rank) === kingCurrentSquare,
+    );
+    const currentRook = previousPieces.find(
+      (piece) => piece.type === "rook"
+        && piece.color === referenceKing?.color
+        && squareName(piece.file, piece.rank) === rookCurrentSquare,
+    );
+    if (!currentKing || !currentRook) return targetPieces;
 
-    animatedPieces = previousPieces.map((piece) => {
-      const square = squareName(piece.file, piece.rank);
-      if (piece.id === movingPiece.id) {
-        return {
-          ...piece,
-          file: kingDestination.file,
-          rank: kingDestination.rank,
-        };
+    const animatedPieces = previousPieces.map((piece) => {
+      if (piece.id === currentKing.id) {
+        return { ...piece, file: kingDestination.file, rank: kingDestination.rank };
       }
-      if (square === rookSource) {
-        return {
-          ...piece,
-          file: rookDestination.file,
-          rank: rookDestination.rank,
-        };
+      if (piece.id === currentRook.id) {
+        return { ...piece, file: rookDestination.file, rank: rookDestination.rank };
       }
       return piece;
     });
-  } else {
-    const targetMovingPiece = targetPieces.find(
-      (piece) =>
-        piece.color === movingPiece.color
-        && squareName(piece.file, piece.rank) === destinationSquare
-    );
-
-    animatedPieces = previousPieces.map((piece) =>
-      piece.id === movingPiece.id
-        ? {
-            ...piece,
-            type: targetMovingPiece?.type ?? piece.type,
-            file: destinationCoords.file,
-            rank: destinationCoords.rank,
-          }
-        : piece
-    );
+    return reconcilePieceSnapshot(animatedPieces, targetPieces);
   }
 
+  const sourceSquare = reverse ? moveTo : moveFrom;
+  const destinationSquare = reverse ? moveFrom : moveTo;
+  const destinationCoords = getSquareCoords(destinationSquare);
+  if (!destinationCoords) return targetPieces;
+
+  const movingPiece = previousPieces.find(
+    (piece) => squareName(piece.file, piece.rank) === sourceSquare,
+  );
+  if (!movingPiece) return targetPieces;
+
+  const targetMovingPiece = targetPieces.find(
+    (piece) => piece.color === movingPiece.color
+      && squareName(piece.file, piece.rank) === destinationSquare,
+  );
+  const animatedPieces = previousPieces.map((piece) =>
+    piece.id === movingPiece.id
+      ? {
+          ...piece,
+          type: targetMovingPiece?.type ?? piece.type,
+          file: destinationCoords.file,
+          rank: destinationCoords.rank,
+        }
+      : piece,
+  );
   return reconcilePieceSnapshot(animatedPieces, targetPieces);
 }
 
@@ -162,7 +142,7 @@ export function applyLocalMoveTransition(
   from: string,
   to: string,
   requestedPromotion?: PieceType | null,
-  resultingPosition?: string | null
+  resultingPosition?: string | null,
 ): Piece[] {
   if (resultingPosition && resultingPosition.length === 64) {
     return transitionBoardPosition(previousPieces, {
@@ -175,9 +155,8 @@ export function applyLocalMoveTransition(
 
   const targetCoords = getSquareCoords(to);
   if (!targetCoords) return previousPieces;
-
   const movingPiece = previousPieces.find(
-    (piece) => squareName(piece.file, piece.rank) === from
+    (piece) => squareName(piece.file, piece.rank) === from,
   );
   if (!movingPiece) return previousPieces;
 
@@ -185,9 +164,9 @@ export function applyLocalMoveTransition(
     movingPiece,
     to,
     requestedPromotion,
-    resultingPosition
+    resultingPosition,
   );
-  const castlingSquares = getCastlingSquares(movingPiece, from, to);
+  const castlingSquares = getCastlingSquares(movingPiece, from, to, previousPieces);
 
   if (castlingSquares) {
     const kingToCoords = getSquareCoords(castlingSquares.kingTo);
@@ -196,7 +175,7 @@ export function applyLocalMoveTransition(
 
     return previousPieces.map((piece) => {
       const currentSquare = squareName(piece.file, piece.rank);
-      if (currentSquare === from) {
+      if (piece.id === movingPiece.id) {
         return { ...piece, file: kingToCoords.file, rank: kingToCoords.rank };
       }
       if (currentSquare === castlingSquares.rookFrom) {
@@ -207,10 +186,9 @@ export function applyLocalMoveTransition(
   }
 
   const targetOccupied = previousPieces.some(
-    (piece) => squareName(piece.file, piece.rank) === to
+    (piece) => squareName(piece.file, piece.rank) === to,
   );
-  const enPassant =
-    movingPiece.type === "pawn"
+  const enPassant = movingPiece.type === "pawn"
     && movingPiece.file !== targetCoords.file
     && !targetOccupied;
   const capturedSquare = enPassant
@@ -233,6 +211,6 @@ export function applyLocalMoveTransition(
           file: targetCoords.file,
           rank: targetCoords.rank,
         }
-      : piece
+      : piece,
   );
 }

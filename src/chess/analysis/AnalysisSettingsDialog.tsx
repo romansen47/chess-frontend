@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { EngineDefinition, EngineProfile } from "../../engineConfig";
+import { fetchEngineCapabilities } from "../api/engineCapabilitiesApi";
 import type { AnalysisReplaySettings } from "../types";
 
 interface AnalysisSettingsDialogProps {
@@ -26,6 +28,21 @@ export default function AnalysisSettingsDialog({
   onStart,
 }: AnalysisSettingsDialogProps) {
   const { t } = useI18n();
+  const [deepAnalysisAvailable, setDeepAnalysisAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchEngineCapabilities()
+      .then((capabilities) => {
+        if (!cancelled) setDeepAnalysisAvailable(capabilities.deepAnalysis.available);
+      })
+      .catch(() => {
+        if (!cancelled) setDeepAnalysisAvailable(false);
+      });
+    return () => { cancelled = true; };
+  }, [profiles, selectedProfile?.id]);
+
+  const unavailable = deepAnalysisAvailable === false;
 
   return (
     <div
@@ -36,22 +53,18 @@ export default function AnalysisSettingsDialog({
     >
       <div className="analysis-settings-dialog-content">
         <h2 id="analysis-settings-title">{t("analysis.dialogTitle")}</h2>
-        <p className="analysis-settings-description">
-          {t("analysis.dialogDescription")}
-        </p>
+        <p className="analysis-settings-description">{t("analysis.dialogDescription")}</p>
 
         <div className="analysis-settings-form">
           <label className="analysis-settings-field analysis-settings-field-wide">
             <span>{t("analysis.engineProfile")}</span>
             <select
               value={settings.engineProfileId ?? ""}
-              onChange={(event) =>
-                onSettingsChange({
-                  ...settings,
-                  engineProfileId: event.target.value || null,
-                })
-              }
-              disabled={profiles.length === 0}
+              onChange={(event) => onSettingsChange({
+                ...settings,
+                engineProfileId: event.target.value || null,
+              })}
+              disabled={profiles.length === 0 || running}
             >
               {profiles.map((profile) => (
                 <option key={profile.id ?? profile.name} value={profile.id ?? ""}>
@@ -67,12 +80,11 @@ export default function AnalysisSettingsDialog({
               type="number"
               min={0}
               value={settings.depth}
-              onChange={(event) =>
-                onSettingsChange({
-                  ...settings,
-                  depth: Math.max(0, Number(event.target.value)),
-                })
-              }
+              onChange={(event) => onSettingsChange({
+                ...settings,
+                depth: Math.max(0, Number(event.target.value)),
+              })}
+              disabled={running}
             />
           </label>
 
@@ -82,25 +94,18 @@ export default function AnalysisSettingsDialog({
               type="number"
               min={1}
               value={settings.moveTimeSeconds}
-              onChange={(event) =>
-                onSettingsChange({
-                  ...settings,
-                  moveTimeSeconds: Math.max(1, Number(event.target.value)),
-                })
-              }
+              onChange={(event) => onSettingsChange({
+                ...settings,
+                moveTimeSeconds: Math.max(1, Number(event.target.value)),
+              })}
+              disabled={running}
             />
           </label>
 
           {selectedProfile && selectedEngine ? (
             <div className="analysis-settings-config-summary">
-              <div>
-                <span>{t("analysis.profile")}</span>
-                <strong>{selectedProfile.name}</strong>
-              </div>
-              <div>
-                <span>{t("analysis.engine")}</span>
-                <strong>{selectedEngine.engineName || selectedEngine.name}</strong>
-              </div>
+              <div><span>{t("analysis.profile")}</span><strong>{selectedProfile.name}</strong></div>
+              <div><span>{t("analysis.engine")}</span><strong>{selectedEngine.engineName || selectedEngine.name}</strong></div>
               <div>
                 <span>{t("analysis.search")}</span>
                 <strong>
@@ -115,12 +120,15 @@ export default function AnalysisSettingsDialog({
               </div>
             </div>
           ) : (
-            <div className="analysis-settings-empty">
-              {t("analysis.noEngineProfile")}
-            </div>
+            <div className="analysis-settings-empty">{t("analysis.noEngineProfile")}</div>
           )}
         </div>
 
+        {unavailable && (
+          <div className="analysis-settings-error">
+            Keine funktionsbereite native Engine für die Analyse verfügbar. Browser-Stockfish ist nur für die Live-Auswertung vorgesehen.
+          </div>
+        )}
         {error && <div className="analysis-settings-error">{error}</div>}
 
         <div className="analysis-settings-dialog-actions">
@@ -136,7 +144,7 @@ export default function AnalysisSettingsDialog({
             type="button"
             className="analysis-settings-dialog-button"
             onClick={onStart}
-            disabled={running || !settings.engineProfileId}
+            disabled={running || !settings.engineProfileId || unavailable || deepAnalysisAvailable === null}
           >
             {running ? t("analysis.starting") : t("common.ok")}
           </button>

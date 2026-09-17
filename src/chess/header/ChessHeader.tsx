@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import LanguageSelector from "../../i18n/LanguageSelector";
 import { useI18n } from "../../i18n/I18nProvider";
+import { fetchEngineCapabilities } from "../api/engineCapabilitiesApi";
 import DataMenu from "./DataMenu";
 
 interface ChessHeaderProps {
@@ -42,31 +43,44 @@ export default function ChessHeader({
 }: ChessHeaderProps) {
   const { language, t } = useI18n();
   const analysisBusy = analysisReplayActive && !analysisReplayFinished;
+  const [deepAnalysisAvailable, setDeepAnalysisAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       document.title = "ChessAnalysisTool";
     });
-
     return () => window.cancelAnimationFrame(frame);
   }, [language]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const capabilities = await fetchEngineCapabilities();
+        if (!cancelled) setDeepAnalysisAvailable(capabilities.deepAnalysis.available);
+      } catch {
+        if (!cancelled) setDeepAnalysisAvailable(false);
+      }
+    };
+    void refresh();
+    const intervalId = window.setInterval(() => { void refresh(); }, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  const analysisDisabled = deepAnalysisAvailable === false;
+  const analysisUnavailableTitle = "Keine funktionsbereite native Engine für die Analyse verfügbar.";
 
   return (
     <header className="app-header">
       <h1 className="app-title" translate="no" aria-label="ChessAnalysisTool">
-        <img
-          className="app-title-logo"
-          src="/favicon.png"
-          alt=""
-          aria-hidden="true"
-        />
+        <img className="app-title-logo" src="/favicon.png" alt="" aria-hidden="true" />
         <span className="app-title-name" aria-hidden="true">
-          <span className="app-title-initial">C</span>
-          <span className="app-title-rest">hess</span>
-          <span className="app-title-initial">A</span>
-          <span className="app-title-rest">nalysis</span>
-          <span className="app-title-initial">T</span>
-          <span className="app-title-rest">ool</span>
+          <span className="app-title-initial">C</span><span className="app-title-rest">hess</span>
+          <span className="app-title-initial">A</span><span className="app-title-rest">nalysis</span>
+          <span className="app-title-initial">T</span><span className="app-title-rest">ool</span>
         </span>
       </h1>
 
@@ -86,7 +100,8 @@ export default function ChessHeader({
             <button
               className="top-engine-button analysis-repeat"
               onClick={onOpenAnalysis}
-              title={t("analysis.analyzeAgainTitle")}
+              title={analysisDisabled ? analysisUnavailableTitle : t("analysis.analyzeAgainTitle")}
+              disabled={analysisDisabled}
             >
               {t("analysis.analyzeAgain")}
             </button>
@@ -106,7 +121,8 @@ export default function ChessHeader({
           <button
             className="top-engine-button analysis-repeat"
             onClick={onOpenAnalysis}
-            title={t("analysis.analyzeTitle")}
+            title={analysisDisabled ? analysisUnavailableTitle : t("analysis.analyzeTitle")}
+            disabled={analysisDisabled}
           >
             {t("analysis.analyze")}
           </button>
@@ -123,19 +139,11 @@ export default function ChessHeader({
           onTerminateProgram={onTerminateProgram}
         />
 
-        <button
-          className="top-engine-button engine-settings"
-          onClick={onToggleEngineSettings}
-          title={t("engine.settingsTitle")}
-        >
+        <button className="top-engine-button engine-settings" onClick={onToggleEngineSettings} title={t("engine.settingsTitle")}>
           {t("engine.settings")}
         </button>
 
-        <button
-          className="top-engine-button engine-settings"
-          onClick={onOpenEngineManager}
-          title={t("engine.managerTitle")}
-        >
+        <button className="top-engine-button engine-settings" onClick={onOpenEngineManager} title={t("engine.managerTitle")}>
           {t("engine.manager")}
         </button>
 

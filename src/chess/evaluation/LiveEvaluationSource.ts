@@ -2,6 +2,9 @@ import type { EngineEvaluation } from "../types";
 
 export interface LiveEvaluationPosition {
   readonly uciMoves: readonly string[];
+  /** Initial FEN for Chess960. Omitted for classical position 518. */
+  readonly initialFen?: string | null;
+  readonly chess960?: boolean;
 }
 
 export type LiveEvaluationEvent =

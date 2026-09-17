@@ -7,6 +7,7 @@ export function createDefaultGameSettings(): GameSettings {
     incrementForBlackSeconds: 0,
     additionalTimeAfter40MovesSeconds: 0,
     startingColor: "WHITE",
+    startingPositionId: 518,
     version: 0,
   };
 }

@@ -4,14 +4,8 @@ import { UciInfoParser } from "./UciInfoParser";
 
 export interface BrowserUciWorker {
   postMessage(command: string): void;
-  addEventListener(
-    type: "message",
-    listener: (event: MessageEvent<string>) => void,
-  ): void;
-  removeEventListener(
-    type: "message",
-    listener: (event: MessageEvent<string>) => void,
-  ): void;
+  addEventListener(type: "message", listener: (event: MessageEvent<string>) => void): void;
+  removeEventListener(type: "message", listener: (event: MessageEvent<string>) => void): void;
   terminate(): void;
 }
 
@@ -24,9 +18,7 @@ export interface BrowserUciEvaluation {
   lines: readonly EngineLine[];
 }
 
-export type BrowserUciEvaluationListener = (
-  evaluation: BrowserUciEvaluation,
-) => void;
+export type BrowserUciEvaluationListener = (evaluation: BrowserUciEvaluation) => void;
 
 interface BrowserUciEngineOptions {
   handshakeTimeoutMs?: number;
@@ -46,7 +38,6 @@ export class BrowserUciEngine {
 
   private readonly handleMessage = (event: MessageEvent<string>) => {
     if (typeof event.data !== "string") return;
-
     for (const rawLine of event.data.split(/\r?\n/)) {
       const line = rawLine.trim();
       if (!line) continue;
@@ -54,10 +45,7 @@ export class BrowserUciEngine {
     }
   };
 
-  constructor(
-    createWorker: () => BrowserUciWorker,
-    options: BrowserUciEngineOptions = {},
-  ) {
+  constructor(createWorker: () => BrowserUciWorker, options: BrowserUciEngineOptions = {}) {
     this.createWorker = createWorker;
     this.handshakeTimeoutMs = options.handshakeTimeoutMs ?? 5000;
   }
@@ -74,7 +62,6 @@ export class BrowserUciEngine {
     const worker = this.createWorker();
     worker.addEventListener("message", this.handleMessage);
     this.worker = worker;
-
     const initialization = this.performInitialization();
     this.initializePromise = initialization;
 
@@ -84,9 +71,7 @@ export class BrowserUciEngine {
       this.destroyWorker();
       throw error;
     } finally {
-      if (this.initializePromise === initialization) {
-        this.initializePromise = null;
-      }
+      if (this.initializePromise === initialization) this.initializePromise = null;
     }
   }
 
@@ -97,6 +82,7 @@ export class BrowserUciEngine {
   ): Promise<void> {
     this.assertNotDisposed();
     validateMultiPv(options.multiPv);
+    validatePosition(position);
 
     const generation = ++this.searchGeneration;
     return this.enqueueTransition(async () => {
@@ -108,19 +94,18 @@ export class BrowserUciEngine {
 
       const worker = this.requireWorker();
       worker.postMessage("setoption name MultiPV value " + options.multiPv);
+      worker.postMessage(
+        "setoption name UCI_Chess960 value " + (position.chess960 === true ? "true" : "false"),
+      );
 
       const ready = this.waitForLine((line) => line === "readyok", "readyok");
       worker.postMessage("isready");
       await ready;
       if (!this.isCurrentGeneration(generation)) return;
 
-      const sideToMove = position.uciMoves.length % 2 === 0
-        ? "white"
-        : "black";
+      const sideToMove = position.uciMoves.length % 2 === 0 ? "white" : "black";
       const parser = new UciInfoParser(sideToMove, options.multiPv);
-
       this.activeSearch = { generation, parser, listener };
-
       worker.postMessage(positionCommand(position));
       worker.postMessage("go infinite");
     });
@@ -128,7 +113,6 @@ export class BrowserUciEngine {
 
   async stop(): Promise<void> {
     if (this.disposed) return;
-
     this.searchGeneration++;
     return this.enqueueTransition(async () => {
       if (this.disposed) return;
@@ -138,28 +122,20 @@ export class BrowserUciEngine {
 
   dispose(): void {
     if (this.disposed) return;
-
     this.disposed = true;
     this.searchGeneration++;
     this.activeSearch = null;
-
     if (this.worker !== null) {
-      try {
-        this.worker.postMessage("quit");
-      } catch {
-        // Worker termination below is authoritative.
-      }
+      try { this.worker.postMessage("quit"); } catch { /* termination below is authoritative */ }
     }
     this.destroyWorker();
   }
 
   private async performInitialization(): Promise<void> {
     const worker = this.requireWorker();
-
     const uciOk = this.waitForLine((line) => line === "uciok", "uciok");
     worker.postMessage("uci");
     await uciOk;
-
     const readyOk = this.waitForLine((line) => line === "readyok", "readyok");
     worker.postMessage("isready");
     await readyOk;
@@ -169,7 +145,6 @@ export class BrowserUciEngine {
     if (line.startsWith("id name ")) {
       this.engineName = line.substring("id name ".length).trim() || null;
     }
-
     for (const waiter of [...this.lineWaiters]) {
       if (!waiter.matches(line)) continue;
       this.lineWaiters.delete(waiter);
@@ -178,27 +153,13 @@ export class BrowserUciEngine {
     }
 
     const search = this.activeSearch;
-    if (
-      search === null
-      || search.generation !== this.searchGeneration
-      || !line.startsWith("info ")
-    ) {
-      return;
-    }
-
+    if (search === null || search.generation !== this.searchGeneration || !line.startsWith("info ")) return;
     const lines = search.parser.push(line);
     if (lines === null || lines.length === 0) return;
-
-    search.listener({
-      engineName: this.engineName,
-      lines,
-    });
+    search.listener({ engineName: this.engineName, lines });
   }
 
-  private waitForLine(
-    matches: (line: string) => boolean,
-    label: string,
-  ): Promise<string> {
+  private waitForLine(matches: (line: string) => boolean, label: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const waiter: LineWaiter = {
         matches,
@@ -215,15 +176,10 @@ export class BrowserUciEngine {
 
   private async cancelActiveSearch(): Promise<void> {
     if (this.activeSearch === null) return;
-
     this.activeSearch = null;
     const worker = this.requireWorker();
-    const bestMove = this.waitForLine(
-      (line) => line.startsWith("bestmove "),
-      "bestmove",
-    );
+    const bestMove = this.waitForLine((line) => line.startsWith("bestmove "), "bestmove");
     worker.postMessage("stop");
-
     try {
       await bestMove;
     } catch (error) {
@@ -241,13 +197,11 @@ export class BrowserUciEngine {
   private destroyWorker(): void {
     const worker = this.worker;
     this.worker = null;
-
     for (const waiter of this.lineWaiters) {
       clearTimeout(waiter.timeoutId);
       waiter.reject(new Error("UCI worker terminated"));
     }
     this.lineWaiters.clear();
-
     if (worker !== null) {
       worker.removeEventListener("message", this.handleMessage);
       worker.terminate();
@@ -255,9 +209,7 @@ export class BrowserUciEngine {
   }
 
   private requireWorker(): BrowserUciWorker {
-    if (this.worker === null) {
-      throw new Error("UCI worker is not initialized");
-    }
+    if (this.worker === null) throw new Error("UCI worker is not initialized");
     return this.worker;
   }
 
@@ -266,9 +218,7 @@ export class BrowserUciEngine {
   }
 
   private assertNotDisposed(): void {
-    if (this.disposed) {
-      throw new Error("BrowserUciEngine is disposed");
-    }
+    if (this.disposed) throw new Error("BrowserUciEngine is disposed");
   }
 }
 
@@ -286,10 +236,19 @@ interface ActiveSearch {
 }
 
 function positionCommand(position: LiveEvaluationPosition): string {
-  if (position.uciMoves.length === 0) {
-    return "position startpos";
+  const moves = position.uciMoves.length > 0 ? " moves " + position.uciMoves.join(" ") : "";
+  if (position.chess960) {
+    return "position fen " + position.initialFen + moves;
   }
-  return "position startpos moves " + position.uciMoves.join(" ");
+  return position.uciMoves.length === 0
+    ? "position startpos"
+    : "position startpos" + moves;
+}
+
+function validatePosition(position: LiveEvaluationPosition): void {
+  if (position.chess960 && (!position.initialFen || position.initialFen.trim().length === 0)) {
+    throw new Error("Chess960 browser evaluation requires the initial FEN");
+  }
 }
 
 function validateMultiPv(multiPv: number): void {

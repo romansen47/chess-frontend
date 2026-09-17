@@ -27,10 +27,14 @@ export default function NewGameDialog({
 
   const updateNumberField = (key: NumericSettingKey, value: number) => {
     const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0;
-    onSettingsChange({
-      ...settings,
-      [key]: safeValue,
-    });
+    onSettingsChange({ ...settings, [key]: safeValue });
+  };
+
+  const updateStartingPosition = (value: number) => {
+    const safeValue = Number.isFinite(value)
+      ? Math.max(0, Math.min(959, Math.trunc(value)))
+      : 518;
+    onSettingsChange({ ...settings, startingPositionId: safeValue });
   };
 
   return (
@@ -45,12 +49,10 @@ export default function NewGameDialog({
               type="number"
               min={1}
               value={Math.max(1, Math.floor(settings.timeForEachPlayerSeconds / 60))}
-              onChange={(event) =>
-                updateNumberField(
-                  "timeForEachPlayerSeconds",
-                  Number(event.target.value) * 60
-                )
-              }
+              onChange={(event) => updateNumberField(
+                "timeForEachPlayerSeconds",
+                Number(event.target.value) * 60,
+              )}
               disabled={starting}
             />
           </label>
@@ -61,9 +63,10 @@ export default function NewGameDialog({
               type="number"
               min={0}
               value={settings.incrementForWhiteSeconds}
-              onChange={(event) =>
-                updateNumberField("incrementForWhiteSeconds", Number(event.target.value))
-              }
+              onChange={(event) => updateNumberField(
+                "incrementForWhiteSeconds",
+                Number(event.target.value),
+              )}
               disabled={starting}
             />
           </label>
@@ -74,9 +77,22 @@ export default function NewGameDialog({
               type="number"
               min={0}
               value={settings.incrementForBlackSeconds}
-              onChange={(event) =>
-                updateNumberField("incrementForBlackSeconds", Number(event.target.value))
-              }
+              onChange={(event) => updateNumberField(
+                "incrementForBlackSeconds",
+                Number(event.target.value),
+              )}
+              disabled={starting}
+            />
+          </label>
+
+          <label className="game-settings-field">
+            <span>Chess960-Startposition (0–959, Standard 518)</span>
+            <input
+              type="number"
+              min={0}
+              max={959}
+              value={settings.startingPositionId}
+              onChange={(event) => updateStartingPosition(Number(event.target.value))}
               disabled={starting}
             />
           </label>

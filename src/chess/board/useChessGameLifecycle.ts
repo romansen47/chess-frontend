@@ -68,13 +68,22 @@ export function useChessGameLifecycle(options: Options) {
       const snapshot = await fetchGameSnapshot();
       const gameData = snapshot.game;
       const restoredMoves = gameData.moves ?? [];
-      board.liveEvaluationPositionRef.current = createLiveEvaluationPosition(restoredMoves);
+      const startingPositionId = gameData.startingPositionId ?? 518;
+      board.liveEvaluationPositionRef.current = createLiveEvaluationPosition(
+        restoredMoves,
+        gameData.initialFen,
+        startingPositionId,
+      );
       analysis.restoreAnnotations(gameData.annotations);
       board.latestMovePlyRef.current = restoredMoves.reduce(
         (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0), 0,
       );
       board.setMoves(mapImportedUciMovesToRows(restoredMoves));
-      if (gameData.position?.length === 64) board.setPieces(mapPositionStringToLocalPieces(gameData.position));
+      if (gameData.position?.length === 64) {
+        board.setPieces(mapPositionStringToLocalPieces(gameData.position));
+      } else {
+        board.setPieces(createInitialPieces(startingPositionId));
+      }
       const lastMove = restoredMoves[restoredMoves.length - 1];
       board.setLastMove(lastMove?.uci?.length >= 4
         ? { from: lastMove.uci.substring(0, 2), to: lastMove.uci.substring(2, 4) }
@@ -173,7 +182,18 @@ export function useChessGameLifecycle(options: Options) {
       engine.setLiveEvaluationBar(null);
       analysis.resetState();
       const importedMoves = imported.moves ?? [];
-      board.liveEvaluationPositionRef.current = createLiveEvaluationPosition(importedMoves);
+      const startingPositionId = "startingPositionId" in imported
+        && typeof imported.startingPositionId === "number"
+        ? imported.startingPositionId
+        : 518;
+      const initialFen = "initialFen" in imported && typeof imported.initialFen === "string"
+        ? imported.initialFen
+        : null;
+      board.liveEvaluationPositionRef.current = createLiveEvaluationPosition(
+        importedMoves,
+        initialFen,
+        startingPositionId,
+      );
       board.latestMovePlyRef.current = importedMoves.reduce(
         (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0), 0,
       );
@@ -186,10 +206,15 @@ export function useChessGameLifecycle(options: Options) {
         imported.totalPlies ?? importedMoves.length,
       );
       game.setGameEndState(null);
-      board.setPieces(imported.position?.length === 64 ? mapPositionStringToLocalPieces(imported.position) : createInitialPieces());
+      board.setPieces(
+        imported.position?.length === 64
+          ? mapPositionStringToLocalPieces(imported.position)
+          : createInitialPieces(startingPositionId),
+      );
       const lastMove = importedMoves[importedMoves.length - 1];
       board.setLastMove(lastMove?.uci?.length >= 4
-        ? { from: lastMove.uci.substring(0, 2), to: lastMove.uci.substring(2, 4) } : null);
+        ? { from: lastMove.uci.substring(0, 2), to: lastMove.uci.substring(2, 4) }
+        : null);
       analysis.setShowSettingsDialog(true);
     } finally {
       board.setIsLoadingMoves(false);
@@ -227,11 +252,22 @@ export function useChessGameLifecycle(options: Options) {
       analysis.setBlackPlayerName(null);
       analysis.resetAnnotations();
       const applied = await createNewGame(settings);
+      const freshSnapshot = await fetchGameSnapshot();
+      const freshGame = freshSnapshot.game;
+      const startingPositionId = freshGame.startingPositionId ?? applied.startingPositionId ?? 518;
       game.setGameSettings(applied);
       board.setUciAnalysisLoaded(false);
-      board.setPieces(createInitialPieces());
+      board.setPieces(
+        freshGame.position?.length === 64
+          ? mapPositionStringToLocalPieces(freshGame.position)
+          : createInitialPieces(startingPositionId),
+      );
       board.latestMovePlyRef.current = 0;
-      board.liveEvaluationPositionRef.current = { uciMoves: [] };
+      board.liveEvaluationPositionRef.current = createLiveEvaluationPosition(
+        [],
+        freshGame.initialFen,
+        startingPositionId,
+      );
       board.setMoves([]);
       board.setLastMove(null);
       options.resetBoardInteraction();

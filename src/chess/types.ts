@@ -25,9 +25,19 @@ export interface LastMove {
   to: string;
 }
 
+export interface LegalMoveDescriptor {
+  target: string;
+  uci: string;
+  castlingSide: "KING_SIDE" | "QUEEN_SIDE" | null;
+  kingTo: string | null;
+  rookFrom: string | null;
+  rookTo: string | null;
+}
+
 export interface PossibleMovesResponse {
   from: string;
   targets: string[];
+  moves?: LegalMoveDescriptor[];
 }
 
 export interface MoveResult {
@@ -88,6 +98,8 @@ export interface UciGameResponse {
   blackPlayerName: string | null;
   databaseGameId?: number | null;
   annotations?: GameAnnotation[];
+  startingPositionId?: number;
+  initialFen?: string | null;
 }
 
 export interface GameSnapshotResponse {
@@ -180,6 +192,7 @@ export interface GameSettings {
   incrementForBlackSeconds: number;
   additionalTimeAfter40MovesSeconds: number;
   startingColor: string;
+  startingPositionId: number;
   version: number;
 }
 
@@ -190,11 +203,7 @@ export interface AnalysisReplaySettings {
 }
 
 export type MoveAnnotationSymbol = "!" | "!!" | "?" | "??";
-export type MoveAnnotationKind =
-  | "onlyMove"
-  | "extraordinary"
-  | "mistake"
-  | "blunder";
+export type MoveAnnotationKind = "onlyMove" | "extraordinary" | "mistake" | "blunder";
 
 export type ExtraordinaryReason =
   | "deepDiscovery"
