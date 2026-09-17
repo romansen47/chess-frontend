@@ -118,7 +118,6 @@ export function useChessMoveFlow(options: Options) {
     if (position === null) position = await reconcileMoveListFromBackend();
     else board.liveEvaluationPositionRef.current = position;
     if (!position || !engine.engineAutoUpdateRef.current || game.gameEndStateRef.current || result.gameState) return;
-    engine.setLiveEvaluationBar(null);
     try {
       await engine.liveEvaluationControllerRef.current?.updatePosition(position);
     } catch (error) {
@@ -187,7 +186,6 @@ export function useChessMoveFlow(options: Options) {
     await options.loadClock();
     if (position && engine.engineAutoUpdateRef.current && !game.gameEndStateRef.current
       && !sameLiveEvaluationPosition(previousPosition, position)) {
-      engine.setLiveEvaluationBar(null);
       await engine.liveEvaluationControllerRef.current?.updatePosition(position);
     }
   }
