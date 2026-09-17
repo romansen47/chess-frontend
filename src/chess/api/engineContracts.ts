@@ -9,7 +9,8 @@ export type NativeEngineAvailabilityReason =
   | "NOT_CONFIGURED"
   | "EXECUTABLE_NOT_FOUND"
   | "NOT_EXECUTABLE"
-  | "UCI_UNRESPONSIVE";
+  | "UCI_UNRESPONSIVE"
+  | "CHESS960_UNSUPPORTED";
 
 export interface EngineCapability {
   configured: boolean;
