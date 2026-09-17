@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import type { EngineConfigOverview } from "../../engineConfig";
+import type {
+  EngineConfigOverview,
+  EngineRuntimeAssignments,
+} from "../../engineConfig";
 import type { EngineEvaluation } from "../types";
 import { fetchProgramFeatures } from "../api/programApi";
 import { BackendLiveEvaluationSource } from "../evaluation/BackendLiveEvaluationSource";
 import { LiveEvaluationController } from "../evaluation/LiveEvaluationController";
+import { ENGINE_RUNTIME_ASSIGNMENTS_CHANGED_EVENT } from "../engine/engineRuntimeEvents";
 
 export function useChessEngineState() {
   const [engineEval, setEngineEval] = useState<EngineEvaluation | null>(null);
@@ -24,6 +28,7 @@ export function useChessEngineState() {
   }
   const [showEngineConfig, setShowEngineConfig] = useState(false);
   const [engineConfigOverview, setEngineConfigOverview] = useState<EngineConfigOverview | null>(null);
+  const [engineRuntimeAssignments, setEngineRuntimeAssignments] = useState<EngineRuntimeAssignments | null>(null);
   const [engineConfigLoadError, setEngineConfigLoadError] = useState<string | null>(null);
   const [showEngineManager, setShowEngineManager] = useState(false);
   const [showChessDatabaseDialog, setShowChessDatabaseDialog] = useState(false);
@@ -44,11 +49,29 @@ export function useChessEngineState() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    const handleRuntimeAssignmentsChanged = (event: Event) => {
+      const assignments = (event as CustomEvent<EngineRuntimeAssignments>).detail;
+      if (assignments) setEngineRuntimeAssignments(assignments);
+    };
+    window.addEventListener(
+      ENGINE_RUNTIME_ASSIGNMENTS_CHANGED_EVENT,
+      handleRuntimeAssignmentsChanged,
+    );
+    return () => {
+      window.removeEventListener(
+        ENGINE_RUNTIME_ASSIGNMENTS_CHANGED_EVENT,
+        handleRuntimeAssignmentsChanged,
+      );
+    };
+  }, []);
+
   return {
     engineEval, setEngineEval, liveEvaluationBar, setLiveEvaluationBar,
     isLoadingEval, setIsLoadingEval, evalError, setEvalError,
     engineAutoUpdate, setEngineAutoUpdate, engineAutoUpdateRef, liveEvaluationControllerRef,
     showEngineConfig, setShowEngineConfig, engineConfigOverview, setEngineConfigOverview,
+    engineRuntimeAssignments, setEngineRuntimeAssignments,
     engineConfigLoadError, setEngineConfigLoadError,
     showEngineManager, setShowEngineManager, showChessDatabaseDialog, setShowChessDatabaseDialog,
     isTerminatingProgram, setIsTerminatingProgram, debugMode,
