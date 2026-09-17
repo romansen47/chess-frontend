@@ -177,7 +177,7 @@ export function useChessGameLifecycle(options: Options) {
       board.latestMovePlyRef.current = importedMoves.reduce(
         (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0), 0,
       );
-      analysis.restoreAnnotations(imported.annotations);
+      analysis.restoreAnnotations("annotations" in imported ? imported.annotations : undefined);
       board.setUciAnalysisLoaded(true);
       board.setMoves(mapImportedUciMovesToRows(importedMoves));
       analysis.setImportedPlayers(
