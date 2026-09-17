@@ -118,6 +118,8 @@ export function useChessMoveFlow(options: Options) {
     if (position === null) position = await reconcileMoveListFromBackend();
     else board.liveEvaluationPositionRef.current = position;
     if (!position || !engine.engineAutoUpdateRef.current || game.gameEndStateRef.current || result.gameState) return;
+    // Keep the last bar value visible until the first evaluation for the new position arrives.
+    // Resetting it to null here would force a synthetic 50% transition between every move.
     try {
       await engine.liveEvaluationControllerRef.current?.updatePosition(position);
     } catch (error) {
@@ -186,6 +188,8 @@ export function useChessMoveFlow(options: Options) {
     await options.loadClock();
     if (position && engine.engineAutoUpdateRef.current && !game.gameEndStateRef.current
       && !sameLiveEvaluationPosition(previousPosition, position)) {
+      // Preserve the visual value here as well; the next engine update becomes the
+      // transition target instead of taking a detour through the neutral 50% state.
       await engine.liveEvaluationControllerRef.current?.updatePosition(position);
     }
   }
