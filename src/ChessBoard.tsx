@@ -111,72 +111,24 @@ import {
   terminateBackend,
   terminateDevelopmentFrontend,
 } from "./chess/api/programApi";
-function sameLiveEvaluationPosition(
-  left: LiveEvaluationPosition | null,
-  right: LiveEvaluationPosition | null,
-): boolean {
-  if (left === right) return true;
-  if (left === null || right === null) return false;
-  if (left.uciMoves.length !== right.uciMoves.length) return false;
-  return left.uciMoves.every((move, index) => move === right.uciMoves[index]);
-}
 
-function formatEngineScore(evaluation: number): string {
-  if (Math.abs(evaluation) >= 99) {
-    return evaluation > 0 ? "Mate for White" : "Mate for Black";
-  }
-
-  return `Eval ${evaluation.toFixed(2)}`;
-}
-
-function formatEngineLineScore(line: EngineLine): string {
-  if (line.mateDistance !== undefined && line.mateDistance !== null) {
-    const winner = line.eval > 0 ? "White" : "Black";
-    const distance = Math.abs(line.mateDistance);
-    return distance > 0 ? `Mate for ${winner} in ${distance}` : `Mate for ${winner}`;
-  }
-
-  return formatEngineScore(line.eval);
-}
-
-function createDefaultGameSettings(): GameSettings {
-  return {
-    timeForEachPlayerSeconds: 5 * 60,
-    incrementForWhiteSeconds: 0,
-    incrementForBlackSeconds: 0,
-    additionalTimeAfter40MovesSeconds: 0,
-    startingColor: "WHITE",
-    version: 0,
-  };
-}
-
-function createDefaultAnalysisReplaySettings(): AnalysisReplaySettings {
-  return { engineProfileId: null, depth: 0, moveTimeSeconds: 5 };
-}
-
-function gameAnnotationRecord(
-  annotations: GameAnnotation[] | null | undefined
-): Record<number, GameAnnotation> {
-  const result: Record<number, GameAnnotation> = {};
-  for (const annotation of annotations ?? []) {
-    if (!annotation || !Number.isFinite(annotation.ply) || annotation.ply <= 0) {
-      continue;
-    }
-    result[annotation.ply] = {
-      ...annotation,
-      variations: [...(annotation.variations ?? [])],
-    };
-  }
-  return result;
-}
-
-function isEmptyGameAnnotation(annotation: GameAnnotation): boolean {
-  return !annotation.nag
-    && !annotation.comment?.trim()
-    && !annotation.evaluation?.trim()
-    && (annotation.variations?.length ?? 0) === 0;
-}
-
+import { sameLiveEvaluationPosition } from "./chess/evaluation/liveEvaluationUtils";
+import {
+  formatEngineLineScore,
+  formatEngineScore,
+} from "./chess/engine/engineEvaluationUtils";
+import { createDefaultGameSettings } from "./chess/game/gameDefaults";
+import { mergeAuthoritativeMoveRows } from "./chess/game/moveListUtils";
+import {
+  analysisEvaluationKey,
+  createDefaultAnalysisReplaySettings,
+  getDefaultAnalysisLineIndex,
+  splitAnalysisMoveText,
+} from "./chess/analysis/analysisUtils";
+import {
+  gameAnnotationRecord,
+  isEmptyGameAnnotation,
+} from "./chess/analysis/annotationUtils";
 export const ChessBoard: React.FC = () => {
   const { t } = useI18n();
   const getMoveAnnotationTooltip = useMoveAnnotationTooltip();
@@ -468,12 +420,6 @@ export const ChessBoard: React.FC = () => {
     const next = [...value];
     analysisVariationMovesRef.current = next;
     setAnalysisVariationMovesState(next);
-  }
-
-  function analysisEvaluationKey(ply: number, variationMoves: string[]): string {
-    return variationMoves.length > 0
-      ? `variation:${ply}:${variationMoves.join(" ")}`
-      : `ply:${ply}`;
   }
 
   function analysisBoardInteractive(): boolean {
@@ -1449,16 +1395,6 @@ export const ChessBoard: React.FC = () => {
     );
   }
 
-  function mergeAuthoritativeMoveRows(current: MoveRow[], authoritative: MoveRow[]): MoveRow[] {
-    const merged = new Map<number, MoveRow>();
-    for (const row of current) merged.set(row.moveNumber, { ...row });
-    for (const row of authoritative) {
-      const existing = merged.get(row.moveNumber);
-      merged.set(row.moveNumber, existing ? { ...existing, ...row } : { ...row });
-    }
-    return Array.from(merged.values()).sort((a, b) => a.moveNumber - b.moveNumber);
-  }
-
   async function ensureLiveEvaluationPosition(): Promise<LiveEvaluationPosition | null> {
     if (liveEvaluationPositionRef.current) {
       return liveEvaluationPositionRef.current;
@@ -2248,18 +2184,6 @@ export const ChessBoard: React.FC = () => {
     );
   };
 
-  function getDefaultAnalysisLineIndex(point: AnalysisProfilePoint | undefined, lines: EngineLine[]): number {
-    if (!point || lines.length === 0) return 0;
-    const whiteToMove = point.ply % 2 === 0;
-    let bestIndex = 0;
-    let bestEval = lines[0]?.eval ?? 0;
-    for (let index = 1; index < lines.length; index++) {
-      const lineEval = lines[index]?.eval ?? 0;
-      if (whiteToMove ? lineEval > bestEval : lineEval < bestEval) { bestEval = lineEval; bestIndex = index; }
-    }
-    return bestIndex;
-  }
-
   function getEffectiveAnalysisLineIndex(point: AnalysisProfilePoint | undefined, lines: EngineLine[]): number {
     if (lines.length === 0) return 0;
     if (analysisSelectedLineIndex != null && analysisSelectedLineIndex >= 0 && analysisSelectedLineIndex < lines.length) return analysisSelectedLineIndex;
@@ -2269,17 +2193,6 @@ export const ChessBoard: React.FC = () => {
   function getSelectedAnalysisPoint(): AnalysisProfilePoint | undefined {
     if (!analysisSelectedPosition) return undefined;
     return analysisProfile.find((point) => point.ply === analysisSelectedPosition.ply);
-  }
-
-  function splitAnalysisMoveText(movesText: string): string[] {
-    if (!movesText || !movesText.trim()) return [];
-    const tokens = movesText.trim().split(/\s+/);
-    const result: string[] = [];
-    for (const token of tokens) {
-      if (token === "e.p." && result.length > 0) result[result.length - 1] = `${result[result.length - 1]} ${token}`;
-      else result.push(token);
-    }
-    return result;
   }
 
   function getHighlightedAnalysisMoveIndex(line: EngineLine, isSelected: boolean): number {
