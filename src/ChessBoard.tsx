@@ -1,11 +1,8 @@
-import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
-import EngineManager from "./EngineManager";
-import EngineConfigManager from "./EngineConfigManager";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchEngineConfigOverview } from "./engineConfig";
 import type { EngineConfigOverview } from "./engineConfig";
 import { useI18n } from "./i18n/I18nProvider";
-import ChessDatabaseDialog, { type ChessDatabaseLoadedGame } from "./ChessDatabaseDialog";
-import AnalysisDatabasePanel from "./AnalysisDatabasePanel";
+import type { ChessDatabaseLoadedGame } from "./ChessDatabaseDialog";
 import type {
   AnalysisPositionSelection,
   AnalysisProfilePoint,
@@ -15,7 +12,6 @@ import type {
   ClockState,
   DragState,
   EngineEvaluation,
-  EngineLine,
   GameAnnotation,
   GameSettings,
   GameSound,
@@ -25,39 +21,27 @@ import type {
   MoveRow,
   PerformMoveOptions,
   Piece,
-  PieceColor,
   PieceType,
   PromotionContext,
   UciGameResponse,
 } from "./chess/types";
-import ChessHeader from "./chess/header/ChessHeader";
-import NewGameDialog from "./chess/game/NewGameDialog";
-import MovePanel from "./chess/game/MovePanel";
-import AnalysisSettingsDialog from "./chess/analysis/AnalysisSettingsDialog";
-import AnalysisEngineTabs, { type AnalysisEngineView } from "./chess/analysis/AnalysisEngineTabs";
-import LiveEvaluationView from "./chess/analysis/LiveEvaluationView";
-import AnnotationPanel from "./chess/analysis/AnnotationPanel";
+import type { AnalysisEngineView } from "./chess/analysis/AnalysisEngineTabs";
+import AnalysisReplayContent, { type AnalysisDetailsTab } from "./chess/analysis/AnalysisReplayContent";
 import { buildMoveAnnotations } from "./chess/analysis/moveAnnotations";
+import { buildSelectedBoardAnnotations } from "./chess/analysis/analysisBoardAnnotations";
+import { getAnalysisMoveSelectionForPly, getAnalysisSideToMove, getEffectiveAnalysisLineIndex } from "./chess/analysis/analysisSelectionUtils";
 import { useMoveAnnotationTooltip } from "./chess/analysis/useMoveAnnotationTooltip";
 import { buildDiagnosticAnalysisPgn } from "./chess/analysis/analysisPgnExport";
-import Board, { type BoardAnnotation } from "./chess/board/Board";
+import ChessBoardView from "./chess/board/ChessBoardView";
 import { GAME_SOUND_SOURCES } from "./chess/game/gameSounds";
-import {
-  createInitialPieces,
-  getRankFromSquare,
-  getSquareCoords,
-  squareName,
-} from "./chess/board/boardUtils";
+import { createInitialPieces, getRankFromSquare, getSquareCoords, squareName } from "./chess/board/boardUtils";
 import {
   BOARD_ORIENTATION_STORAGE_KEY,
   boardPointToSquare,
   normalizeBoardOrientation,
-  positionIndexForDisplayCell,
   type BoardOrientation,
 } from "./chess/board/boardOrientation";
 import {
-  getPieceSymbolFromPositionChar,
-  isWhitePositionPiece,
   mapBackendPiecesToLocalPieces,
   mapPositionStringToLocalPieces,
 } from "./chess/board/positionUtils";
@@ -68,7 +52,6 @@ import {
   transitionBoardPosition,
 } from "./chess/board/pieceTransitions";
 import {
-  formatClockTime,
   formatPlayerDisplayName,
   formatTimeControlFromSettings,
   getAnalysisBlackPlayerName,
@@ -106,29 +89,13 @@ import {
   stopAnalysisEvaluationRequest,
   submitAnalysisVariationMove,
 } from "./chess/api/analysisApi";
-import {
-  fetchProgramFeatures,
-  terminateBackend,
-  terminateDevelopmentFrontend,
-} from "./chess/api/programApi";
+import { fetchProgramFeatures, terminateBackend, terminateDevelopmentFrontend } from "./chess/api/programApi";
 
 import { sameLiveEvaluationPosition } from "./chess/evaluation/liveEvaluationUtils";
-import {
-  formatEngineLineScore,
-  formatEngineScore,
-} from "./chess/engine/engineEvaluationUtils";
 import { createDefaultGameSettings } from "./chess/game/gameDefaults";
 import { mergeAuthoritativeMoveRows } from "./chess/game/moveListUtils";
-import {
-  analysisEvaluationKey,
-  createDefaultAnalysisReplaySettings,
-  getDefaultAnalysisLineIndex,
-  splitAnalysisMoveText,
-} from "./chess/analysis/analysisUtils";
-import {
-  gameAnnotationRecord,
-  isEmptyGameAnnotation,
-} from "./chess/analysis/annotationUtils";
+import { analysisEvaluationKey, createDefaultAnalysisReplaySettings } from "./chess/analysis/analysisUtils";
+import { gameAnnotationRecord, isEmptyGameAnnotation } from "./chess/analysis/annotationUtils";
 export const ChessBoard: React.FC = () => {
   const { t } = useI18n();
   const getMoveAnnotationTooltip = useMoveAnnotationTooltip();
@@ -139,27 +106,6 @@ export const ChessBoard: React.FC = () => {
     );
   });
 
-  function localizedGameState(gameState: string | null | undefined, currentClock?: ClockState | null): string {
-    if (gameState === "LOST_ON_TIME") {
-      if (currentClock?.whiteTime === 0 && currentClock.blackTime > 0) return t("game.blackWinsWhiteTime");
-      if (currentClock?.blackTime === 0 && currentClock.whiteTime > 0) return t("game.whiteWinsBlackTime");
-      if (currentClock?.sideToMove === "white") return t("game.blackWinsWhiteTime");
-      if (currentClock?.sideToMove === "black") return t("game.whiteWinsBlackTime");
-      return t("game.endedOnTime");
-    }
-
-    switch (gameState) {
-      case "WHITE_MATED": return t("game.blackWinsCheckmate");
-      case "BLACK_MATED": return t("game.whiteWinsCheckmate");
-      case "STALEMATE": return t("game.stalemate");
-      case "WHITE_RESIGNED": return t("game.blackWinsWhiteResigned");
-      case "BLACK_RESIGNED": return t("game.whiteWinsBlackResigned");
-      case "DRAW_BY_50_MOVES_RULE": return t("game.drawFifty");
-      case "DRAW_BY_THREEFOLD_REPETITION": return t("game.drawThreefold");
-      case "DRAW_BY_INSUFFICIENT_MATERIAL": return t("game.drawInsufficient");
-      default: return gameState ? t("game.endedState", { state: gameState }) : t("game.ended");
-    }
-  }
   const [pieces, setPieces] = useState<Piece[]>(() => createInitialPieces());
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [moves, setMoves] = useState<MoveRow[]>([]);
@@ -275,7 +221,7 @@ export const ChessBoard: React.FC = () => {
   const [analysisTotalPlies, setAnalysisTotalPlies] = useState<number>(0);
   const [analysisSelectedPosition, setAnalysisSelectedPosition] = useState<AnalysisPositionSelection | null>(null);
   const analysisSelectedPlyRef = useRef<number | null>(null);
-  const [analysisDetailsTab, setAnalysisDetailsTab] = useState<"engine" | "database" | "annotations">("engine");
+  const [analysisDetailsTab, setAnalysisDetailsTab] = useState<AnalysisDetailsTab>("engine");
   const [gameAnnotations, setGameAnnotations] = useState<Record<number, GameAnnotation>>({});
   const [annotationsDirty, setAnnotationsDirty] = useState<boolean>(false);
   const [annotationsSaving, setAnnotationsSaving] = useState<boolean>(false);
@@ -335,75 +281,27 @@ export const ChessBoard: React.FC = () => {
     [analysisProfile]
   );
 
-  const selectedBoardAnnotations = useMemo<BoardAnnotation[]>(() => {
-    if (
-      !analysisReplayActive
-      || !analysisReplayFinished
-      || !analysisSelectedPosition
-    ) return [];
-
-    if (analysisVariationMoves.length > 0) {
-      if (
-        !analysisEvaluationEnabled
-        || !analysisEvaluation?.moveAnnotationReady
-        || !analysisEvaluation.moveAnnotation
-      ) {
-        return [];
-      }
-
-      const latestVariationMove =
-        analysisVariationMoves[analysisVariationMoves.length - 1];
-      const destination = latestVariationMove?.substring(2, 4);
-      if (!destination || destination.length !== 2) return [];
-
-      return [{
-        square: destination,
-        symbol: analysisEvaluation.moveAnnotation.symbol,
-        kind: analysisEvaluation.moveAnnotation.kind,
-        tooltip: getMoveAnnotationTooltip(analysisEvaluation.moveAnnotation),
-      }];
-    }
-
-    const point = analysisProfile.find(
-      (candidate) => candidate.ply === analysisSelectedPosition.ply
-    );
-    if (!point?.to) return [];
-
-    const annotations: BoardAnnotation[] = [];
-    const savedNag = gameAnnotations[analysisSelectedPosition.ply]?.nag;
-    if (savedNag) {
-      annotations.push({
-        square: point.to,
-        symbol: savedNag,
-        kind: "saved",
-        tooltip: `${savedNag} · ${t("annotations.savedAnnotation")}`,
-      });
-    }
-
-    const annotation = moveAnnotations[analysisSelectedPosition.ply];
-    if (annotation) {
-      annotations.push({
-        square: point.to,
-        symbol: annotation.symbol,
-        kind: annotation.kind,
-        tooltip: getMoveAnnotationTooltip(annotation),
-      });
-    }
-
-    return annotations;
-  }, [
-    analysisReplayActive,
-    analysisReplayFinished,
-    analysisSelectedPosition,
-    analysisProfile,
-    analysisVariationMoves,
-    analysisEvaluationEnabled,
-    analysisEvaluation,
-    moveAnnotations,
-    gameAnnotations,
-    getMoveAnnotationTooltip,
-    t,
-  ]);
+  const selectedBoardAnnotations = useMemo(
+    () => buildSelectedBoardAnnotations({
+      analysisReplayActive,
+      analysisReplayFinished,
+      analysisSelectedPosition,
+      analysisProfile,
+      analysisVariationMoves,
+      analysisEvaluationEnabled,
+      analysisEvaluation,
+      moveAnnotations,
+      gameAnnotations,
+      savedAnnotationLabel: t("annotations.savedAnnotation"),
+      getMoveAnnotationTooltip,
+    }),
+    [
+      analysisReplayActive, analysisReplayFinished, analysisSelectedPosition,
+      analysisProfile, analysisVariationMoves, analysisEvaluationEnabled,
+      analysisEvaluation, moveAnnotations, gameAnnotations,
+      getMoveAnnotationTooltip, t,
+    ]
+  );
 
   const squareToPieceMap = useMemo(() => {
     const map = new Map<string, Piece>();
@@ -432,16 +330,9 @@ export const ChessBoard: React.FC = () => {
     );
   }
 
-  function analysisSideToMove(): PieceColor | null {
-    if (!analysisSelectedPosition) return null;
-    const playedPlies =
-      analysisSelectedPosition.ply + analysisVariationMovesRef.current.length;
-    return playedPlies % 2 === 0 ? "white" : "black";
-  }
-
   function selectablePiece(piece: Piece, analysisInteractive: boolean): boolean {
     const sideToMove = analysisInteractive
-      ? analysisSideToMove()
+      ? getAnalysisSideToMove(analysisSelectedPosition?.ply, analysisVariationMovesRef.current.length)
       : clock?.sideToMove === "white" || clock?.sideToMove === "black"
         ? clock.sideToMove
         : null;
@@ -891,7 +782,7 @@ export const ChessBoard: React.FC = () => {
     const selectedPoint = analysisProfile.find((point) => point.ply === analysisSelectedPosition.ply);
     const lines = selectedPoint?.lines ?? [];
     if (lines.length === 0) return;
-    const lineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines);
+    const lineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines, analysisSelectedLineIndex);
     const positions = lines[lineIndex]?.positions ?? [];
     if (positions.length <= 1) return;
     const intervalId = window.setInterval(() => {
@@ -913,8 +804,6 @@ export const ChessBoard: React.FC = () => {
     const intervalId = window.setInterval(() => { void loadAnalysisEvaluation(ply, variationSnapshot); }, 2000);
     return () => window.clearInterval(intervalId);
   }, [analysisReplayActive, analysisReplayFinished, analysisEvaluationEnabled, analysisSelectedPosition?.ply, analysisVariationMoves]);
-
-
 
   useEffect(() => {
     if (
@@ -1613,36 +1502,8 @@ export const ChessBoard: React.FC = () => {
     setLastMove(null);
   }
 
-  function getAnalysisMoveSelectionForPly(
-    ply: number
-  ): {
-    position: string | undefined;
-    san: string | undefined;
-    uci: string | undefined;
-    ply: number;
-  } | null {
-    if (ply <= 0) return null;
-    const moveNumber = Math.ceil(ply / 2);
-    const row = moves.find((candidate) => candidate.moveNumber === moveNumber);
-    if (!row) return null;
-
-    return ply % 2 === 1
-      ? {
-          position: row.whitePosition,
-          san: row.white,
-          uci: row.whiteUci,
-          ply,
-        }
-      : {
-          position: row.blackPosition,
-          san: row.black,
-          uci: row.blackUci,
-          ply,
-        };
-  }
-
   function selectAnalysisPositionByPly(ply: number) {
-    const selection = getAnalysisMoveSelectionForPly(ply);
+    const selection = getAnalysisMoveSelectionForPly(moves, ply);
     if (selection) {
       selectAnalysisPosition(selection.position, selection.san, selection.ply);
     }
@@ -1689,8 +1550,8 @@ export const ChessBoard: React.FC = () => {
       return;
     }
 
-    const sourceSelection = getAnalysisMoveSelectionForPly(currentPly);
-    const targetSelection = getAnalysisMoveSelectionForPly(targetPly);
+    const sourceSelection = getAnalysisMoveSelectionForPly(moves, currentPly);
+    const targetSelection = getAnalysisMoveSelectionForPly(moves, targetPly);
     if (
       !sourceSelection?.position
       || sourceSelection.position.length !== 64
@@ -2065,520 +1926,72 @@ export const ChessBoard: React.FC = () => {
     setSelectedSquare(null); updatePossibleTargets([]);
   };
 
-  const renderHoverBoard = () => {
-    if (!hoverPreview) return null;
-    const previewSize = 240;
-    const offset = 18;
-    const tooltipGap = 8;
-    const tooltipReserveHeight = hoverAnnotationText ? 72 : 0;
-    const combinedHeight = previewSize
-      + (hoverAnnotationText ? tooltipGap + tooltipReserveHeight : 0);
-    const left = Math.max(
-      offset,
-      Math.min(hoverPreview.x + offset, window.innerWidth - previewSize - offset)
-    );
-    const top = Math.max(
-      offset,
-      Math.min(hoverPreview.y + offset, window.innerHeight - combinedHeight - offset)
-    );
-    const squares: ReactElement[] = [];
-    for (let i = 0; i < 64; i++) {
-      const rankFromTop = Math.floor(i / 8);
-      const fileFromLeft = i % 8;
-      const positionIndex = positionIndexForDisplayCell(
-        rankFromTop,
-        fileFromLeft,
-        boardOrientation
-      );
-      const pieceChar = hoverPreview.position.charAt(positionIndex);
-      const pieceSymbol = getPieceSymbolFromPositionChar(pieceChar);
-      const isLight = (rankFromTop + fileFromLeft) % 2 === 0;
-      squares.push(
-        <div key={i} className={["hover-board-square", isLight ? "hover-board-square-light" : "hover-board-square-dark"].join(" ")}>
-          {pieceSymbol && <span className={["hover-board-piece", isWhitePositionPiece(pieceChar) ? "hover-board-piece-white" : "hover-board-piece-black"].join(" ")}>{pieceSymbol}</span>}
-        </div>
-      );
-    }
-    return (
-      <>
-        <div className="hover-board" style={{ left, top }}>{squares}</div>
-        {hoverAnnotationText && (
-          <div
-            className="hover-annotation-tooltip"
-            style={{ left, top: top + previewSize + tooltipGap }}
-          >
-            {hoverAnnotationText}
-          </div>
-        )}
-      </>
-    );
-  };
-
-  const renderAnalysisProfile = () => {
-    const width = 860;
-    const height = 560;
-    const paddingX = 12;
-    const paddingY = 18;
-    const maxAbsEval = 5;
-    const points = analysisProfile.length > 0 ? analysisProfile : [{ ply: 0, from: null, to: null, san: "Start", evaluation: 0, bar: 0.5, depth: 0 }];
-    const analyzedPoints = points.filter((point) => point.ply > 0);
-    const analyzedPointMap = new Map<number, AnalysisProfilePoint>(analyzedPoints.map((point) => [point.ply, point]));
-    const totalPly = Math.max(1, analysisTotalPlies, analyzedPoints[analyzedPoints.length - 1]?.ply ?? 0);
-    const toY = (evaluation: number) => {
-      const clamped = Math.max(-maxAbsEval, Math.min(maxAbsEval, evaluation));
-      const normalized = (maxAbsEval - clamped) / (maxAbsEval * 2);
-      return paddingY + normalized * (height - paddingY * 2);
-    };
-    const zeroY = toY(0);
-    const latest = analyzedPoints[analyzedPoints.length - 1] ?? points[points.length - 1];
-    const availableWidth = width - paddingX * 2;
-    const slotWidth = availableWidth / totalPly;
-    const barWidth = slotWidth;
-    const chartPoints = Array.from({ length: totalPly }, (_, index) => analyzedPointMap.get(index + 1) ?? {
-      ply: index + 1, from: null, to: null, san: null, evaluation: 0, bar: 0.5, depth: 0,
-    });
-    const formatEvaluation = (point: AnalysisProfilePoint) => {
-      const san = point.san ? `${point.san} · ` : "";
-      const depth = point.depth ? ` · depth ${point.depth}` : "";
-      return `Ply ${point.ply} · ${san}${formatEngineScore(point.evaluation)}${depth}`;
-    };
-    return (
-      <div className="analysis-profile-panel">
-        <div className="analysis-profile-header">
-          <strong>{t("analysis.history")}</strong>
-          <span>{latest?.ply ?? 0} plies · {formatEngineScore(latest?.evaluation ?? 0)}{latest?.depth ? ` · depth ${latest.depth}` : ""}</span>
-        </div>
-        <svg className="analysis-profile-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label="Evaluation history of the analyzed game">
-          <line className="analysis-profile-zero-line" x1={paddingX} y1={zeroY} x2={width - paddingX} y2={zeroY} />
-          {chartPoints.map((point) => {
-            const x = paddingX + (point.ply - 1) * slotWidth;
-            const y = toY(point.evaluation);
-            const top = Math.min(y, zeroY);
-            const barHeight = Math.max(1.5, Math.abs(zeroY - y));
-            const isPositive = point.evaluation > 0;
-            const isLatest = point.ply === latest?.ply;
-            const isSelected = point.ply === analysisSelectedPosition?.ply;
-            const hasMoveSelection = !!getAnalysisMoveSelectionForPly(point.ply)?.position;
-            return (
-              <rect
-                key={point.ply}
-                className={`analysis-profile-bar ${isPositive ? "analysis-profile-bar-positive" : "analysis-profile-bar-negative"}${isLatest ? " analysis-profile-bar-latest" : ""}${isSelected ? " analysis-profile-bar-selected" : ""}${hasMoveSelection ? " analysis-profile-bar-clickable" : ""}`}
-                x={x} y={top} width={barWidth} height={barHeight} rx={0}
-                role={hasMoveSelection ? "button" : undefined}
-                tabIndex={hasMoveSelection ? 0 : undefined}
-                onClick={hasMoveSelection ? () => selectAnalysisPositionByPly(point.ply) : undefined}
-                onKeyDown={hasMoveSelection ? (event) => {
-                  if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectAnalysisPositionByPly(point.ply); }
-                } : undefined}
-              ><title>{formatEvaluation(point)}</title></rect>
-            );
-          })}
-        </svg>
-        <div className="analysis-profile-footer">
-          <span>{analysisReplayStatus ?? t("analysis.mode")}</span>
-          {isAnalysisReplayRunning && <button className="analysis-cancel-button" onClick={cancelAnalysisReplay}>Cancel</button>}
-        </div>
-        {analysisReplayError && <div className="analysis-profile-error">{analysisReplayError}</div>}
-        {analysisEvaluationError && <div className="analysis-profile-error">{analysisEvaluationError}</div>}
-      </div>
-    );
-  };
-
-  function getEffectiveAnalysisLineIndex(point: AnalysisProfilePoint | undefined, lines: EngineLine[]): number {
-    if (lines.length === 0) return 0;
-    if (analysisSelectedLineIndex != null && analysisSelectedLineIndex >= 0 && analysisSelectedLineIndex < lines.length) return analysisSelectedLineIndex;
-    return getDefaultAnalysisLineIndex(point, lines);
-  }
-
-  function getSelectedAnalysisPoint(): AnalysisProfilePoint | undefined {
-    if (!analysisSelectedPosition) return undefined;
-    return analysisProfile.find((point) => point.ply === analysisSelectedPosition.ply);
-  }
-
-  function getHighlightedAnalysisMoveIndex(line: EngineLine, isSelected: boolean): number {
-    if (!isSelected) return -1;
-    const positions = line.positions ?? [];
-    if (positions.length <= 1) return -1;
-    const currentPositionIndex = analysisLineAnimationIndex % positions.length;
-    return currentPositionIndex > 0 ? currentPositionIndex - 1 : -1;
-  }
-
-  function renderAnalysisLineMoves(line: EngineLine, isSelected: boolean): ReactElement | string {
-    const lineMoves = splitAnalysisMoveText(line.moves);
-    if (lineMoves.length === 0) return "—";
-    const highlightedMoveIndex = getHighlightedAnalysisMoveIndex(line, isSelected);
-    return <>{lineMoves.map((move, moveIndex) => (
-      <span key={`${moveIndex}-${move}`} className={moveIndex === highlightedMoveIndex ? "analysis-line-move analysis-line-move-current" : "analysis-line-move"}>{move}</span>
-    ))}</>;
-  }
-
-  function getAnimatedAnalysisPosition(): string | null {
-    const selectedPoint = getSelectedAnalysisPoint();
-    const lines = selectedPoint?.lines ?? [];
-    if (!analysisSelectedPosition) return null;
-    if (analysisDetailsTab === "database" || lines.length === 0) return analysisSelectedPosition.position;
-    const lineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines);
-    const positions = lines[lineIndex]?.positions ?? [];
-    if (positions.length === 0) return analysisSelectedPosition.position;
-    return positions[analysisLineAnimationIndex % positions.length] ?? analysisSelectedPosition.position;
-  }
-
-  const renderAnalysisPositionBoard = () => {
-    const animatedPosition = getAnimatedAnalysisPosition();
-    if (!animatedPosition) return <div className="analysis-detail-placeholder">{t("analysis.clickMoveContinuation")}</div>;
-    const squares: ReactElement[] = [];
-    for (let i = 0; i < 64; i++) {
-      const rankFromTop = Math.floor(i / 8);
-      const fileFromLeft = i % 8;
-      const positionIndex = positionIndexForDisplayCell(
-        rankFromTop,
-        fileFromLeft,
-        boardOrientation
-      );
-      const pieceChar = animatedPosition.charAt(positionIndex);
-      const pieceSymbol = getPieceSymbolFromPositionChar(pieceChar);
-      const isLight = (rankFromTop + fileFromLeft) % 2 === 0;
-      squares.push(
-        <div key={i} className={["analysis-position-square", isLight ? "analysis-position-square-light" : "analysis-position-square-dark"].join(" ")}>
-          {pieceSymbol && <span className={["analysis-position-piece", isWhitePositionPiece(pieceChar) ? "analysis-position-piece-white" : "analysis-position-piece-black"].join(" ")}>{pieceSymbol}</span>}
-        </div>
-      );
-    }
-    return <div className="analysis-position-board">{squares}</div>;
-  };
-
-  const renderAnalysisLinesForSelection = () => {
-    if (!analysisSelectedPosition) return <div className="analysis-detail-placeholder">{t("analysis.selectMoveStoredVariations")}</div>;
-    const selectedPoint = getSelectedAnalysisPoint();
-    if (!selectedPoint) return <div className="analysis-detail-placeholder">{t("analysis.noEvaluationPly")}</div>;
-    const lines = selectedPoint.lines ?? [];
-    if (lines.length === 0) return <div className="analysis-detail-placeholder">{t("analysis.noEngineVariations")}</div>;
-    const effectiveLineIndex = getEffectiveAnalysisLineIndex(selectedPoint, lines);
-    return <>
-      <div className="engine-lines-summary"><span>{engineEval?.engineName || t("analysis.analysisEngine")}</span><span>depth {lines[0].depth}</span></div>
-      <div className="analysis-lines-list">{lines.map((line, index) => {
-        const isSelected = index === effectiveLineIndex;
-        return (
-          <button type="button" className={["analysis-line-card", isSelected ? "analysis-line-card-selected" : ""].filter(Boolean).join(" ")}
-            key={`${index}-${line.moves}`} onClick={() => { setAnalysisSelectedLineIndex(index); setAnalysisLineAnimationIndex(0); }}>
-            <div className="analysis-line-header"><strong>#{index + 1}</strong><span>{formatEngineLineScore(line)}</span></div>
-            <div className="analysis-line-moves">{renderAnalysisLineMoves(line, isSelected)}</div>
-          </button>
-        );
-      })}</div>
-    </>;
-  };
-
-  const renderAnalysisSourceTabs = () => {
-    const engineTabActive = analysisDetailsTab === "engine";
-    const databaseTabActive = analysisDetailsTab === "database";
-    const annotationsTabActive = analysisDetailsTab === "annotations";
-    return (
-      <div className="analysis-detail-tabs" role="tablist" aria-label={t("analysis.source")}>
-        <button type="button" role="tab" aria-selected={engineTabActive} className={["analysis-detail-tab", engineTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("engine")}>{t("analysis.engineSource")}</button>
-        <button type="button" role="tab" aria-selected={databaseTabActive} className={["analysis-detail-tab", databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("database")}>{t("analysis.databaseSource")}</button>
-        <button type="button" role="tab" aria-selected={annotationsTabActive} className={["analysis-detail-tab", annotationsTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")} onClick={() => setAnalysisDetailsTab("annotations")}>{t("annotations.title")}</button>
-      </div>
-    );
-  };
-
-  const renderAnalysisDetails = () => {
-    const databaseTabActive = analysisDetailsTab === "database";
-    return (
-      <div className="analysis-detail-row">
-        {!databaseTabActive && (
-          <div className="analysis-position-panel">
-            <div className="analysis-detail-title">
-              {analysisSelectedPosition
-                ? t("analysis.engineContinuationFrom", { label: analysisSelectedPosition.label })
-                : t("analysis.engineContinuation")}
-            </div>
-            {renderAnalysisPositionBoard()}
-          </div>
-        )}
-        <div className="analysis-lines-panel">
-          <div className="analysis-detail-title">{databaseTabActive ? t("analysis.databaseContinuations") : t("analysis.engineVariations")}</div>
-          {databaseTabActive ? <AnalysisDatabasePanel ply={analysisSelectedPosition?.ply ?? null} /> : renderAnalysisLinesForSelection()}
-        </div>
-      </div>
-    );
-  };
-
-  const renderAnnotationDetails = () => {
-    const ply = analysisSelectedPosition?.ply ?? null;
-    const selectedPoint = ply == null
-      ? null
-      : analysisProfile.find((point) => point.ply === ply) ?? null;
-    const previousPoint = ply == null
-      ? null
-      : analysisProfile.find((point) => point.ply === Math.max(0, ply - 1)) ?? null;
-    const selection = ply == null ? null : getAnalysisMoveSelectionForPly(ply);
-    const currentEvaluation = analysisEvaluationEnabled
-      && analysisVariationMoves.length === 0
-      && analysisEvaluation
-        ? analysisEvaluation.eval
-        : selectedPoint?.evaluation ?? null;
-
-    return (
-      <div className="analysis-annotation-container">
-        <AnnotationPanel
-          selectedPly={ply}
-          selectedSan={selection?.san ?? selectedPoint?.san ?? null}
-          annotation={ply == null ? null : gameAnnotations[ply] ?? null}
-          catAnnotation={ply == null ? null : moveAnnotations[ply] ?? null}
-          currentEvaluation={currentEvaluation}
-          alternatives={previousPoint?.lines ?? []}
-          dirty={annotationsDirty}
-          saving={annotationsSaving}
-          error={annotationSaveError}
-          onChange={updateGameAnnotation}
-          onSave={() => void persistGameAnnotations()}
-        />
-      </div>
-    );
-  };
-
-  const renderAnalysisReplayContent = () => {
-    const variationMode = analysisVariationMoves.length > 0;
-    const liveViewActive = variationMode || analysisEngineView === "live";
-    const evaluationKey = analysisEvaluationKeyRef.current;
-
-    return (
-      <div className="analysis-replay-content">
-        {renderAnalysisProfile()}
-        {!variationMode && renderAnalysisSourceTabs()}
-        {variationMode ? (
-          <>
-            <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={setAnalysisEngineView} />
-            <LiveEvaluationView
-              evaluation={analysisEvaluation}
-              evaluationKey={evaluationKey}
-              activePly={analysisSelectedPosition?.ply ?? null}
-              variationMode
-              deepAnalysisRunning={isAnalysisReplayRunning}
-            />
-          </>
-        ) : analysisDetailsTab === "annotations" ? (
-          renderAnnotationDetails()
-        ) : analysisDetailsTab === "database" ? (
-          renderAnalysisDetails()
-        ) : (
-          <>
-            <AnalysisEngineTabs activeView={analysisEngineView} showDeepAnalysis onChange={setAnalysisEngineView} />
-            {liveViewActive ? (
-              <LiveEvaluationView
-                evaluation={analysisEvaluation}
-                evaluationKey={evaluationKey}
-                activePly={analysisSelectedPosition?.ply ?? null}
-                variationMode={false}
-                deepAnalysisRunning={isAnalysisReplayRunning}
-              />
-            ) : renderAnalysisDetails()}
-          </>
-        )}
-      </div>
-    );
-  };
+  const analysisContent = (
+    <AnalysisReplayContent
+      state={{ boardOrientation, analysisProfile, analysisTotalPlies, analysisSelectedPosition,
+        analysisReplayStatus, isAnalysisReplayRunning, analysisReplayError, analysisEvaluationError,
+        moves, analysisSelectedLineIndex, analysisLineAnimationIndex, analysisDetailsTab, engineEval,
+        analysisEvaluation, analysisEvaluationEnabled, analysisVariationMoves, analysisEngineView,
+        evaluationKey: analysisEvaluationKeyRef.current, gameAnnotations, moveAnnotations,
+        annotationsDirty, annotationsSaving, annotationSaveError }}
+      actions={{ selectPositionByPly: selectAnalysisPositionByPly, cancelAnalysisReplay,
+        selectLine: (index) => { setAnalysisSelectedLineIndex(index); setAnalysisLineAnimationIndex(0); },
+        setDetailsTab: setAnalysisDetailsTab, setEngineView: setAnalysisEngineView,
+        updateGameAnnotation, persistGameAnnotations }}
+    />
+  );
 
   return (
-    <>
-      <ChessHeader
-        analysisReplayActive={analysisReplayActive}
-        analysisReplayRunning={isAnalysisReplayRunning}
-        analysisReplayFinished={analysisReplayFinished}
-        debugMode={debugMode}
-        uciAnalysisLoaded={uciAnalysisLoaded}
-        terminatingProgram={isTerminatingProgram}
-        onCancelAnalysis={() => void cancelAnalysisReplay()}
-        onOpenAnalysis={openAnalysisSettingsDialog}
-        onExportAnalysisPgn={saveAnalysisPgn}
-        onNewGame={openGameSettingsDialog}
-        onExportCurrentGame={() => void saveUciGame()}
-        onImportNewGame={openUciFilePicker}
-        onOpenDatabase={() => setShowChessDatabaseDialog(true)}
-        onTerminateProgram={() => void terminateProgram()}
-        onToggleEngineSettings={() => setShowEngineConfig((prev) => !prev)}
-        onOpenEngineManager={() => setShowEngineManager(true)}
-      />
-
-      {showEngineManager && <EngineManager onClose={() => setShowEngineManager(false)} />}
-      {showChessDatabaseDialog && (
-        <ChessDatabaseDialog onClose={() => setShowChessDatabaseDialog(false)} onGameLoaded={async (game) => { await applyImportedGame(game); }} />
-      )}
-      <input ref={uciFileInputRef} type="file" accept=".pgn,.txt,application/x-chess-pgn,text/plain" style={{ display: "none" }} onChange={handleUciFileSelected} />
-
-      <main className="app-main">
-        <div className="board-layout">
-          <MovePanel
-            state={{
-              moves,
-              whitePlayerName: analysisReplayActive
-                ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName)
-                : uciAnalysisLoaded ? analysisWhitePlayerName || "White" : getDisplayedWhitePlayerName(clock, whiteComputerEnabled),
-              blackPlayerName: analysisReplayActive
-                ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName)
-                : uciAnalysisLoaded ? analysisBlackPlayerName || "Black" : getDisplayedBlackPlayerName(clock, blackComputerEnabled),
-              whiteActive: !uciAnalysisLoaded && clock?.sideToMove === "white",
-              blackActive: !uciAnalysisLoaded && clock?.sideToMove === "black",
-              selectedPly: analysisSelectedPosition?.ply ?? null,
-              loadingMoves: isLoadingMoves,
-              computerThinking: isComputerThinking,
-              error: loadError,
-              annotations: analysisReplayActive ? moveAnnotations : {},
-              storedAnnotations: gameAnnotations,
-            }}
-            actions={{
-              showPreview: showMovePreview,
-              movePreview: moveMovePreview,
-              hidePreview,
-              showAnnotationTooltip,
-              hideAnnotationTooltip,
-              flipBoard: flipBoardOrientation,
-              selectPosition: selectAnalysisPosition,
-            }}
-          />
-
-          <section className="board-column">
-            <div className="board-wrapper">
-              <Board
-                pieces={pieces}
-                selectedSquare={selectedSquare}
-                lastMove={lastMove}
-                possibleTargets={possibleTargets}
-                dragState={dragState}
-                annotations={selectedBoardAnnotations}
-                orientation={boardOrientation}
-                boardContainerRef={boardContainerRef}
-                onSquareClick={handleSquareClick}
-                onPiecePointerDown={handlePiecePointerDown}
-                onPiecePointerMove={handlePiecePointerMove}
-                onPiecePointerUp={handlePiecePointerUp}
-                onPiecePointerCancel={handlePiecePointerCancel}
-              />
-            </div>
-            {!analysisReplayActive && !uciAnalysisLoaded && (
-              <div className="clock-area">
-                <button type="button" className={["clock-box", clock?.sideToMove === "white" ? "clock-active" : "", clock?.whiteRunning ? "clock-running" : "", whiteComputerEnabled ? "clock-computer-enabled" : ""].filter(Boolean).join(" ")}
-                  onClick={() => updateWhiteComputerEnabled(!whiteComputerEnabled)} aria-pressed={whiteComputerEnabled}
-                  title={whiteComputerEnabled ? t("game.disableWhiteEngine") : t("game.enableWhiteEngine")}>
-                  <div className="clock-time">{formatClockTime(clock?.whiteTime)}</div>
-                </button>
-                <button type="button" className={["clock-box", clock?.sideToMove === "black" ? "clock-active" : "", clock?.blackRunning ? "clock-running" : "", blackComputerEnabled ? "clock-computer-enabled" : ""].filter(Boolean).join(" ")}
-                  onClick={() => updateBlackComputerEnabled(!blackComputerEnabled)} aria-pressed={blackComputerEnabled}
-                  title={blackComputerEnabled ? t("game.disableBlackEngine") : t("game.enableBlackEngine")}>
-                  <div className="clock-time">{formatClockTime(clock?.blackTime)}</div>
-                </button>
-                {clockError && <div className="clock-error">{clockError}</div>}
-              </div>
-            )}
-          </section>
-
-          <section className="engine-panel">
-            <div className="engine-panel-main">
-              {!analysisReplayActive && !uciAnalysisLoaded && (
-                <button type="button" className={[
-                    "engine-bar-wrapper",
-                    engineAutoUpdate ? "engine-bar-enabled" : "engine-bar-disabled",
-                    boardOrientation === "black" ? "engine-bar-black-bottom" : "",
-                  ].filter(Boolean).join(" ")}
-                  onClick={toggleEngineAutoUpdate} aria-pressed={engineAutoUpdate}
-                  aria-label={engineAutoUpdate ? t("game.disableEvaluationEngine") : t("game.enableEvaluationEngine")}
-                  title={engineAutoUpdate ? t("game.disableEvaluationEngine") : `${t("game.enableEvaluationEngine")} · 0.0`}>
-                  <div className="engine-bar-white" style={{ height: `${(engineAutoUpdate && liveEvaluationBar != null ? liveEvaluationBar : 0.5) * 100}%` }} />
-                  <div className="engine-bar-black" style={{ height: `${(1 - (engineAutoUpdate && liveEvaluationBar != null ? liveEvaluationBar : 0.5)) * 100}%` }} />
-                </button>
-              )}
-              {analysisReplayActive && analysisReplayFinished && (
-                <button type="button" className={[
-                    "engine-bar-wrapper",
-                    analysisEvaluationEnabled ? "engine-bar-enabled" : "engine-bar-disabled",
-                    boardOrientation === "black" ? "engine-bar-black-bottom" : "",
-                  ].filter(Boolean).join(" ")}
-                  onClick={toggleAnalysisEvaluation} aria-pressed={analysisEvaluationEnabled} disabled={!analysisSelectedPosition}
-                  aria-label={analysisEvaluationEnabled ? t("game.disableAnalysisEvaluation") : t("game.enableAnalysisEvaluation")}
-                  title={!analysisSelectedPosition ? t("game.selectMoveEvaluation")
-                    : analysisEvaluationEnabled ? t("game.disableEvaluationEngine")
-                    : analysisVariationMoves.length > 0 ? t("game.enableEvaluationVariation") : t("game.enableEvaluationSelectedMove")}>
-                  <div className="engine-bar-white" style={{ height: `${(analysisEvaluationEnabled && analysisEvaluation ? analysisEvaluation.bar : 0.5) * 100}%` }} />
-                  <div className="engine-bar-black" style={{ height: `${(1 - (analysisEvaluationEnabled && analysisEvaluation ? analysisEvaluation.bar : 0.5)) * 100}%` }} />
-                </button>
-              )}
-              <div className="engine-content-column">
-                {showEngineConfig && <>
-                  <EngineConfigManager overview={engineConfigOverview} onOverviewChange={handleEngineConfigOverviewChange} onClose={() => setShowEngineConfig(false)} />
-                  {engineConfigLoadError && <div className="engine-error">{engineConfigLoadError}</div>}
-                </>}
-                {analysisReplayActive ? renderAnalysisReplayContent() : uciAnalysisLoaded ? (
-                  <div className="engine-placeholder-text">{t("analysis.analyzeTitle")}</div>
-                ) : <>
-                  {evalError && <div className="engine-error">{t("common.error")}: {evalError}</div>}
-                  {engineAutoUpdate && engineEval && !clock?.gameState && (
-                    <div className="engine-lines">
-                      {engineEval.lines.length > 0 && <div className="engine-lines-summary"><span>{engineEval.engineName || t("analysis.evaluationEngine")}</span><span>{t("analysis.searchDepth", { depth: engineEval.lines[0].depth })}</span></div>}
-                      {engineEval.lines.length === 0 && <div className="engine-empty">{t("analysis.noEngineLines")}</div>}
-                      {engineEval.lines.map((line, idx) => <div key={idx} className="engine-line"><div className="engine-line-header">#{idx + 1} · {formatEngineLineScore(line)}</div><div className="engine-line-moves">{line.moves}</div></div>)}
-                    </div>
-                  )}
-                  {engineAutoUpdate && !engineEval && !isLoadingEval && !evalError && !clock?.gameState && <div className="engine-placeholder-text">{t("analysis.engineOutputPlaceholder")}</div>}
-                </>}
-              </div>
-            </div>
-          </section>
-
-          {renderHoverBoard()}
-
-          {promotionContext && (
-            <div className="promotion-dialog">
-              <div className="promotion-dialog-content">
-                <p>{t("game.promotionPrompt", {
-                  color: promotionContext.color === "white" ? t("common.white") : t("common.black"),
-                  from: promotionContext.from,
-                  to: promotionContext.to,
-                })}</p>
-                <div className="promotion-options">
-                  {(["queen", "rook", "bishop", "knight"] as PieceType[]).map((ptype) => {
-                    const pieceLabel = {
-                      queen: t("game.pieceQueen"),
-                      rook: t("game.pieceRook"),
-                      bishop: t("game.pieceBishop"),
-                      knight: t("game.pieceKnight"),
-                    }[ptype];
-                    return (
-                      <button key={ptype} className={`promotion-button promotion-button-${promotionContext.color}`} onClick={async () => {
-                        const ctx = promotionContext;
-                        if (!ctx) return;
-                        setPromotionContext(null);
-                        await performBoardMove(ctx.from, ctx.to, ptype);
-                      }}>{pieceLabel}</button>
-                    );
-                  })}
-                </div>
-                <button className="promotion-cancel-button" onClick={() => setPromotionContext(null)}>{t("common.cancel")}</button>
-              </div>
-            </div>
-          )}
-
-          {showGameSettingsDialog && <NewGameDialog settings={gameSettings} error={gameSettingsError} starting={isStartingNewGame}
-            onSettingsChange={setGameSettings} onCancel={() => setShowGameSettingsDialog(false)} onStart={(settings) => void startNewGame(settings)} />}
-
-          {showAnalysisSettingsDialog && <AnalysisSettingsDialog settings={analysisSettings} profiles={analysisEngineProfiles}
-            selectedProfile={selectedAnalysisProfile} selectedEngine={selectedAnalysisEngine} error={analysisReplayError}
-            running={isAnalysisReplayRunning} onSettingsChange={setAnalysisSettings} onCancel={() => setShowAnalysisSettingsDialog(false)}
-            onStart={() => void startAnalysisReplay()} />}
-
-          {showGameEndDialog && gameEndState && (
-            <div className="game-end-dialog"><div className="game-end-dialog-content">
-              <h2>{t("game.gameOver")}</h2><p>{localizedGameState(gameEndState, clock)}</p>
-              <div className="game-end-dialog-actions">
-                <button className="game-end-dialog-button" onClick={saveUciGame}>{t("game.savePgn")}</button>
-                <button className="game-end-dialog-button" onClick={openUciFilePicker}>{t("game.loadPgn")}</button>
-                <button className="game-end-dialog-button" onClick={openGameSettingsDialog}>{t("game.newGame")}</button>
-                <button className="game-end-dialog-button" onClick={openAnalysisSettingsDialog}>{t("analysis.analyze")}</button>
-              </div>
-            </div></div>
-          )}
-        </div>
-      </main>
-    </>
+    <ChessBoardView
+      headerProps={{ analysisReplayActive, analysisReplayRunning: isAnalysisReplayRunning,
+        analysisReplayFinished, debugMode, uciAnalysisLoaded, terminatingProgram: isTerminatingProgram,
+        onCancelAnalysis: () => void cancelAnalysisReplay(), onOpenAnalysis: openAnalysisSettingsDialog,
+        onExportAnalysisPgn: saveAnalysisPgn, onNewGame: openGameSettingsDialog,
+        onExportCurrentGame: () => void saveUciGame(), onImportNewGame: openUciFilePicker,
+        onOpenDatabase: () => setShowChessDatabaseDialog(true), onTerminateProgram: () => void terminateProgram(),
+        onToggleEngineSettings: () => setShowEngineConfig((prev) => !prev),
+        onOpenEngineManager: () => setShowEngineManager(true) }}
+      movePanelProps={{ state: { moves,
+        whitePlayerName: analysisReplayActive ? getAnalysisWhitePlayerName(clock, analysisWhitePlayerName)
+          : uciAnalysisLoaded ? analysisWhitePlayerName || "White" : getDisplayedWhitePlayerName(clock, whiteComputerEnabled),
+        blackPlayerName: analysisReplayActive ? getAnalysisBlackPlayerName(clock, analysisBlackPlayerName)
+          : uciAnalysisLoaded ? analysisBlackPlayerName || "Black" : getDisplayedBlackPlayerName(clock, blackComputerEnabled),
+        whiteActive: !uciAnalysisLoaded && clock?.sideToMove === "white",
+        blackActive: !uciAnalysisLoaded && clock?.sideToMove === "black", selectedPly: analysisSelectedPosition?.ply ?? null,
+        loadingMoves: isLoadingMoves, computerThinking: isComputerThinking, error: loadError,
+        annotations: analysisReplayActive ? moveAnnotations : {}, storedAnnotations: gameAnnotations },
+        actions: { showPreview: showMovePreview, movePreview: moveMovePreview, hidePreview,
+          showAnnotationTooltip, hideAnnotationTooltip, flipBoard: flipBoardOrientation,
+          selectPosition: selectAnalysisPosition } }}
+      boardProps={{ pieces, selectedSquare, lastMove, possibleTargets, dragState,
+        annotations: selectedBoardAnnotations, orientation: boardOrientation, boardContainerRef,
+        onSquareClick: handleSquareClick, onPiecePointerDown: handlePiecePointerDown,
+        onPiecePointerMove: handlePiecePointerMove, onPiecePointerUp: handlePiecePointerUp,
+        onPiecePointerCancel: handlePiecePointerCancel }}
+      showEngineManager={showEngineManager} closeEngineManager={() => setShowEngineManager(false)}
+      showChessDatabaseDialog={showChessDatabaseDialog} closeChessDatabaseDialog={() => setShowChessDatabaseDialog(false)}
+      onDatabaseGameLoaded={async (game) => { await applyImportedGame(game); }}
+      uciFileInputRef={uciFileInputRef} onUciFileSelected={handleUciFileSelected}
+      analysisReplayActive={analysisReplayActive} uciAnalysisLoaded={uciAnalysisLoaded} clock={clock} clockError={clockError}
+      whiteComputerEnabled={whiteComputerEnabled} blackComputerEnabled={blackComputerEnabled}
+      toggleWhiteComputer={() => updateWhiteComputerEnabled(!whiteComputerEnabled)}
+      toggleBlackComputer={() => updateBlackComputerEnabled(!blackComputerEnabled)}
+      engine={{ showEngineConfig, engineConfigOverview, engineConfigLoadError, analysisReplayActive,
+        analysisReplayFinished, uciAnalysisLoaded, engineAutoUpdate, liveEvaluationBar,
+        analysisEvaluationEnabled, analysisSelectedPosition, analysisVariationMoves, analysisEvaluation,
+        engineEval, evalError, isLoadingEval, boardOrientation, clock, analysisContent }}
+      engineActions={{ toggleEngineAutoUpdate, toggleAnalysisEvaluation,
+        onEngineConfigOverviewChange: handleEngineConfigOverviewChange,
+        closeEngineConfig: () => setShowEngineConfig(false) }}
+      hoverPreview={hoverPreview} hoverAnnotationText={hoverAnnotationText}
+      dialogs={{ promotionContext, showGameSettingsDialog, gameSettings, gameSettingsError,
+        isStartingNewGame, showAnalysisSettingsDialog, analysisSettings, analysisEngineProfiles,
+        selectedAnalysisProfile, selectedAnalysisEngine, analysisReplayError, isAnalysisReplayRunning,
+        showGameEndDialog, gameEndState, clock }}
+      dialogActions={{ clearPromotion: () => setPromotionContext(null), performPromotion: performBoardMove,
+        setGameSettings, closeGameSettings: () => setShowGameSettingsDialog(false), startNewGame,
+        setAnalysisSettings, closeAnalysisSettings: () => setShowAnalysisSettingsDialog(false), startAnalysisReplay,
+        saveUciGame, openUciFilePicker, openGameSettingsDialog, openAnalysisSettingsDialog }}
+    />
   );
 };
