@@ -7,6 +7,7 @@ import {
   type EngineRuntimeAssignments,
   type EngineRuntimeTarget,
 } from "./engineConfig";
+import { notifyEngineRuntimeAssignmentsChanged } from "./chess/engine/engineRuntimeEvents";
 import { useI18n } from "./i18n/I18nProvider";
 import "./EngineProfileContextMenu.css";
 
@@ -154,6 +155,7 @@ export default function EngineProfileContextMenu() {
       const nextRuntime = await updateEngineRuntimeProfile(menu.target, profileId);
       if (!mountedRef.current) return;
       setRuntime(nextRuntime);
+      notifyEngineRuntimeAssignmentsChanged(nextRuntime);
       setMenu(null);
     } catch (selectionError) {
       if (!mountedRef.current) return;
