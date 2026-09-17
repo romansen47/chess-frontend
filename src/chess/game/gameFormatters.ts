@@ -1,3 +1,7 @@
+import type {
+  EngineConfigOverview,
+  EngineRuntimeAssignments,
+} from "../../engineConfig";
 import type { ClockState, GameSettings, MoveRow, UciGameMove } from "../types";
 
 export function mapImportedUciMovesToRows(importedMoves: UciGameMove[]): MoveRow[] {
@@ -30,15 +34,46 @@ export function formatPlayerDisplayName(name: string | null | undefined, fallbac
   return trimmed;
 }
 
-export function getDisplayedWhitePlayerName(clock: ClockState | null, whiteComputerEnabled: boolean): string {
+function getPlayerProfileName(
+  overview: EngineConfigOverview | null,
+  runtime: EngineRuntimeAssignments | null,
+  side: "white" | "black",
+): string | null {
+  if (!overview) return null;
+  const runtimeProfileId = side === "white"
+    ? runtime?.whitePlayerProfileId ?? null
+    : runtime?.blackPlayerProfileId ?? null;
+  const defaultProfileId = side === "white"
+    ? overview.defaults.whitePlayerProfileId
+    : overview.defaults.blackPlayerProfileId;
+  const effectiveProfileId = runtimeProfileId ?? defaultProfileId;
+  if (!effectiveProfileId) return null;
+  const profile = overview.profiles.find((candidate) => candidate.id === effectiveProfileId);
+  const name = profile?.name?.trim();
+  return name || null;
+}
+
+export function getDisplayedWhitePlayerName(
+  clock: ClockState | null,
+  whiteComputerEnabled: boolean,
+  overview: EngineConfigOverview | null,
+  runtime: EngineRuntimeAssignments | null,
+): string {
   return whiteComputerEnabled
-    ? formatPlayerDisplayName(clock?.whitePlayerEngineName, "White Engine")
+    ? getPlayerProfileName(overview, runtime, "white")
+      ?? formatPlayerDisplayName(clock?.whitePlayerEngineName, "White Engine")
     : formatPlayerDisplayName(clock?.whitePlayerName, "White");
 }
 
-export function getDisplayedBlackPlayerName(clock: ClockState | null, blackComputerEnabled: boolean): string {
+export function getDisplayedBlackPlayerName(
+  clock: ClockState | null,
+  blackComputerEnabled: boolean,
+  overview: EngineConfigOverview | null,
+  runtime: EngineRuntimeAssignments | null,
+): string {
   return blackComputerEnabled
-    ? formatPlayerDisplayName(clock?.blackPlayerEngineName, "Black Engine")
+    ? getPlayerProfileName(overview, runtime, "black")
+      ?? formatPlayerDisplayName(clock?.blackPlayerEngineName, "Black Engine")
     : formatPlayerDisplayName(clock?.blackPlayerName, "Black");
 }
 
