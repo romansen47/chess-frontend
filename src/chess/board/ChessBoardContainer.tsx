@@ -109,11 +109,21 @@ export default function ChessBoardContainer({
         whitePlayerName: analysis.analysisReplayActive
           ? getAnalysisWhitePlayerName(game.clock, analysis.analysisWhitePlayerName)
           : board.uciAnalysisLoaded ? analysis.analysisWhitePlayerName || "White"
-            : getDisplayedWhitePlayerName(game.clock, computer.whiteComputerEnabled),
+            : getDisplayedWhitePlayerName(
+                game.clock,
+                computer.whiteComputerEnabled,
+                engine.engineConfigOverview,
+                engine.engineRuntimeAssignments,
+              ),
         blackPlayerName: analysis.analysisReplayActive
           ? getAnalysisBlackPlayerName(game.clock, analysis.analysisBlackPlayerName)
           : board.uciAnalysisLoaded ? analysis.analysisBlackPlayerName || "Black"
-            : getDisplayedBlackPlayerName(game.clock, computer.blackComputerEnabled),
+            : getDisplayedBlackPlayerName(
+                game.clock,
+                computer.blackComputerEnabled,
+                engine.engineConfigOverview,
+                engine.engineRuntimeAssignments,
+              ),
         whiteActive: !board.uciAnalysisLoaded && game.clock?.sideToMove === "white",
         blackActive: !board.uciAnalysisLoaded && game.clock?.sideToMove === "black",
         selectedPly: analysis.analysisSelectedPosition?.ply ?? null,
