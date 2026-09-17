@@ -1,57 +1,12 @@
-import {
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent,
-} from "react";
-import type {
-  AnalysisPositionSelection,
-  ClockState,
-  DragState,
-  PerformMoveOptions,
-  Piece,
-  PieceColor,
-  PieceType,
-} from "../types";
-import { getRankFromSquare, squareName } from "./boardUtils";
-import { boardPointToSquare, type BoardOrientation } from "./boardOrientation";
+import { useMemo, useRef, useState, type PointerEvent } from "react";
+import type { DragState, Piece, PieceColor } from "../types";
+import { squareName } from "./boardUtils";
+import { boardPointToSquare } from "./boardOrientation";
 import { getAnalysisSideToMove } from "../analysis/analysisSelectionUtils";
+import type { UseBoardInteractionOptions } from "./boardInteractionTypes";
+import { createDragState, isPromotionMove } from "./boardInteractionUtils";
 
-export interface AnalysisInteractionContext {
-  replayActive: boolean;
-  replayActiveCurrent: boolean;
-  replayFinished: boolean;
-  selectedPosition: AnalysisPositionSelection | null;
-  variationMoveCount: number;
-  variationGameState: string | null;
-  replayRunning: boolean;
-}
-
-interface UseBoardInteractionOptions {
-  pieces: Piece[];
-  boardOrientation: BoardOrientation;
-  clock: ClockState | null;
-  uciAnalysisLoaded: boolean;
-  isLoadingMoves: boolean;
-  isComputerThinking: boolean;
-  isSideComputerControlled: (color: PieceColor) => boolean;
-  getAnalysisContext: () => AnalysisInteractionContext;
-  loadPossibleMoves: (from: string) => Promise<string[]>;
-  performBoardMove: (from: string, to: string, promotion?: PieceType) => Promise<void>;
-  performMove: (
-    from: string,
-    to: string,
-    promotion?: PieceType,
-    options?: PerformMoveOptions,
-  ) => Promise<void>;
-  animateMoveLocally: (
-    from: string,
-    to: string,
-    requestedPromotion?: PieceType | null,
-    resultingPosition?: string | null,
-  ) => void;
-  loadBoardFromBackend: () => Promise<void>;
-}
+export type { AnalysisInteractionContext } from "./boardInteractionTypes";
 
 export function useBoardInteraction({
   pieces,
@@ -309,33 +264,4 @@ export function useBoardInteraction({
   };
 }
 
-function isPromotionMove(piece: Piece | undefined, targetSquare: string): boolean {
-  if (!piece || piece.type !== "pawn") return false;
-  const targetRank = getRankFromSquare(targetSquare);
-  return (piece.color === "white" && targetRank === 8)
-    || (piece.color === "black" && targetRank === 1);
-}
-
-function createDragState(
-  event: PointerEvent<HTMLDivElement>,
-  pieceId: string,
-  from: string,
-  boardRect: DOMRect,
-  offsetX: number,
-  offsetY: number,
-) {
-  return {
-    pieceId,
-    from,
-    pointerId: event.pointerId,
-    offsetX,
-    offsetY,
-    boardLeft: boardRect.left,
-    boardTop: boardRect.top,
-    x: event.clientX - boardRect.left - offsetX,
-    y: event.clientY - boardRect.top - offsetY,
-    startClientX: event.clientX,
-    startClientY: event.clientY,
-    hasMoved: false,
-  };
-}
+export type BoardInteraction = ReturnType<typeof useBoardInteraction>;
