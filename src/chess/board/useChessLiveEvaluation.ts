@@ -1,5 +1,9 @@
 import { useEffect } from "react";
-import { fetchEngineConfigOverview, type EngineConfigOverview } from "../../engineConfig";
+import {
+  fetchEngineConfigOverview,
+  fetchEngineRuntimeAssignments,
+  type EngineConfigOverview,
+} from "../../engineConfig";
 import { useI18n } from "../../i18n/I18nProvider";
 import { fetchGameSnapshot } from "../api/gameApi";
 import { createLiveEvaluationPosition } from "../evaluation/liveEvaluationPosition";
@@ -61,6 +65,12 @@ export function useChessLiveEvaluation(options: Options) {
       const data = await fetchEngineConfigOverview();
       engine.setEngineConfigOverview(data);
       engine.setEngineConfigLoadError(null);
+      try {
+        engine.setEngineRuntimeAssignments(await fetchEngineRuntimeAssignments());
+      } catch (error) {
+        console.warn("[loadEngineConfigs] could not load runtime profile assignments", error);
+        engine.setEngineRuntimeAssignments(null);
+      }
       return data;
     } catch (error) {
       console.error("[loadEngineConfigs] error", error);
