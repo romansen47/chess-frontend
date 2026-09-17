@@ -727,7 +727,7 @@ export default function EngineConfigManager({
     description: string
   ) {
     const selectedId = defaultsDraft[key] ?? "";
-    const { profile, engine } = profileAndEngine(selectedId);
+    const { engine } = profileAndEngine(selectedId);
     return (
       <label className="engine-config-default-card" key={key}>
         <div className="engine-config-default-card-heading">

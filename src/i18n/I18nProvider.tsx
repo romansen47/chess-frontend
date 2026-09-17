@@ -7,7 +7,6 @@ import {
   type PropsWithChildren,
 } from "react";
 import {
-  DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
   detectSupportedLanguage,
   getLanguageDefinition,
