@@ -19,7 +19,6 @@ import {
   formatEngineScore,
 } from "../engine/engineEvaluationUtils";
 import {
-  getDefaultAnalysisLineIndex,
   splitAnalysisMoveText,
 } from "./analysisUtils";
 import { getAnalysisMoveSelectionForPly, getEffectiveAnalysisLineIndex } from "./analysisSelectionUtils";
