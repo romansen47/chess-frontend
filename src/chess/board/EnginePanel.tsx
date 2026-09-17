@@ -1,6 +1,6 @@
 import EngineConfigManager from "../../EngineConfigManager";
 import { useI18n } from "../../i18n/I18nProvider";
-import { formatEngineLineScore } from "../engine/engineEvaluationUtils";
+import EngineLineExplorer from "../engine/EngineLineExplorer";
 import type { EnginePanelActions, EnginePanelState } from "./chessBoardViewTypes";
 
 interface EnginePanelProps {
@@ -88,17 +88,19 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
               : <>
                 {engine.evalError && <div className="engine-error">{t("common.error")}: {engine.evalError}</div>}
                 {engine.engineAutoUpdate && engine.engineEval && !engine.clock?.gameState && (
-                  <div className="engine-lines">
-                    {engine.engineEval.lines.length > 0 && <div className="engine-lines-summary">
-                      <span>{engine.engineEval.engineName || t("analysis.evaluationEngine")}</span>
-                      <span>{t("analysis.searchDepth", { depth: engine.engineEval.lines[0].depth })}</span>
-                    </div>}
-                    {engine.engineEval.lines.length === 0 && <div className="engine-empty">{t("analysis.noEngineLines")}</div>}
-                    {engine.engineEval.lines.map((line, index) => <div key={index} className="engine-line">
-                      <div className="engine-line-header">#{index + 1} · {formatEngineLineScore(line)}</div>
-                      <div className="engine-line-moves">{line.moves}</div>
-                    </div>)}
-                  </div>
+                  engine.engineEval.lines.length > 0
+                    ? <EngineLineExplorer
+                        evaluation={engine.engineEval}
+                        resetKey={engine.engineEval.lines[0]?.positions?.[0] ?? null}
+                        variant="game"
+                        orientation={engine.boardOrientation}
+                        boardTitle={t("analysis.evaluationContinuation")}
+                        linesTitle={t("analysis.variationsInfinite")}
+                        engineNameFallback={t("analysis.evaluationEngine")}
+                        depthLabel={(depth) => t("analysis.searchDepth", { depth })}
+                        boardUnavailableText={t("analysis.evaluationBoardUnavailable")}
+                      />
+                    : <div className="engine-empty">{t("analysis.noEngineLines")}</div>
                 )}
                 {engine.engineAutoUpdate && !engine.engineEval && !engine.isLoadingEval && !engine.evalError && !engine.clock?.gameState && (
                   <div className="engine-placeholder-text">{t("analysis.engineOutputPlaceholder")}</div>
