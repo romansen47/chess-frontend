@@ -8,16 +8,17 @@ import type {
 } from "./engineConfig";
 import { fetchEngineConfigOverview, isSystemManagedUciOption } from "./engineConfig";
 import { useI18n } from "./i18n/I18nProvider";
-import "./EngineConfigManager.css";
+import EngineManager from "./EngineManager";
+import "./SettingsManager.css";
 import "./EngineConfigOptionPopup.css";
 
-interface EngineConfigManagerProps {
+interface SettingsManagerProps {
   overview: EngineConfigOverview | null;
   onOverviewChange: (overview: EngineConfigOverview) => void;
   onClose: () => void;
 }
 
-type ManagerMode = "DEFAULTS" | "PROFILES" | "ENGINES";
+type SettingsMode = "DEFAULTS" | "PROFILES" | "ENGINES" | "ENGINE_LOG";
 type AssignmentKey = keyof EngineProfileAssignments;
 
 interface ProfileOptionEditorState {
@@ -103,13 +104,13 @@ function defaultProfileForEngine(engine: EngineDefinition, profileName: string):
   };
 }
 
-export default function EngineConfigManager({
+export default function SettingsManager({
   overview,
   onOverviewChange,
   onClose,
-}: EngineConfigManagerProps) {
+}: SettingsManagerProps) {
   const { t } = useI18n();
-  const [mode, setMode] = useState<ManagerMode>("DEFAULTS");
+  const [mode, setMode] = useState<SettingsMode>("DEFAULTS");
   const [defaultsDraft, setDefaultsDraft] = useState<EngineProfileAssignments>(() =>
     copyAssignments(overview?.defaults)
   );
@@ -192,7 +193,7 @@ export default function EngineConfigManager({
     setProfileDraft(selected ? copyProfile(selected) : null);
   }, [overview, profiles, creatingProfile, mode, selectedProfileId]);
 
-  function changeMode(nextMode: ManagerMode) {
+  function changeMode(nextMode: SettingsMode) {
     setMode(nextMode);
     setCreatingEngine(false);
     setCreatingProfile(false);
@@ -752,33 +753,37 @@ export default function EngineConfigManager({
         className="engine-config-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label={t("engine.settings")}
+        aria-label={t("settings.title")}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="engine-config-dialog-header">
           <div>
-            <h2>{t("engine.settings")}</h2>
+            <h2>{t("settings.title")}</h2>
             <div className="engine-config-dialog-subtitle">
               {t("settings.subtitle")}
               {overview && <span> · {t("settings.version", { version: overview.version })}</span>}
             </div>
           </div>
           <div className="engine-config-header-actions">
-            <button
-              type="button"
-              onClick={beginCreateEngine}
-              disabled={busy}
-            >
-              {t("settings.scanSystem")}
-            </button>
-            <button
-              type="button"
-              className="engine-config-reset"
-              onClick={() => void resetEngineSettings()}
-              disabled={busy}
-            >
-              {t("settings.reset")}
-            </button>
+            {mode !== "ENGINE_LOG" && (
+              <>
+                <button
+                  type="button"
+                  onClick={beginCreateEngine}
+                  disabled={busy}
+                >
+                  {t("settings.scanSystem")}
+                </button>
+                <button
+                  type="button"
+                  className="engine-config-reset"
+                  onClick={() => void resetEngineSettings()}
+                  disabled={busy}
+                >
+                  {t("settings.reset")}
+                </button>
+              </>
+            )}
             <button type="button" onClick={onClose} disabled={busy}>{t("common.close")}</button>
           </div>
         </header>
@@ -820,10 +825,22 @@ export default function EngineConfigManager({
             {t("settings.engines")}
             <span className="engine-config-tab-count">{engines.length}</span>
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "ENGINE_LOG"}
+            className={mode === "ENGINE_LOG" ? "active" : ""}
+            onClick={() => changeMode("ENGINE_LOG")}
+            disabled={busy}
+          >
+            {t("settings.engineLog")}
+          </button>
         </div>
 
-        <div className="engine-config-body">
-          {mode === "DEFAULTS" ? (
+        <div className={`engine-config-body${mode === "ENGINE_LOG" ? " engine-config-body-log" : ""}`}>
+          {mode === "ENGINE_LOG" ? (
+            <EngineManager embedded />
+          ) : mode === "DEFAULTS" ? (
             <>
               <aside className="engine-config-sidebar">
                 <div className="engine-config-sidebar-header">

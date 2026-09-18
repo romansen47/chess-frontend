@@ -25,19 +25,20 @@ interface EngineLogEntry {
 }
 
 interface EngineManagerProps {
-  onClose: () => void;
+  onClose?: () => void;
+  embedded?: boolean;
 }
 
 function formatTimestamp(value: string | null): string {
-  if (!value) {
-    return "–";
-  }
-
+  if (!value) return "–";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
-export default function EngineManager({ onClose }: EngineManagerProps) {
+export default function EngineManager({
+  onClose = () => undefined,
+  embedded = false,
+}: EngineManagerProps) {
   const { t } = useI18n();
   const [instances, setInstances] = useState<EngineProcessInfo[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -50,24 +51,20 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
 
   const currentInstances = useMemo(
     () => instances.filter((instance) => instance.state !== "CLOSED"),
-    [instances]
+    [instances],
   );
-
   const historyInstances = useMemo(
     () => instances.filter((instance) => instance.state === "CLOSED"),
-    [instances]
+    [instances],
   );
-
   const selected = useMemo(
     () => currentInstances.find((instance) => instance.id === selectedId) ?? null,
-    [currentInstances, selectedId]
+    [currentInstances, selectedId],
   );
-
   const historySelected = useMemo(
     () => historyInstances.find((instance) => instance.id === historySelectedId) ?? null,
-    [historyInstances, historySelectedId]
+    [historyInstances, historySelectedId],
   );
-
   const displayedSelectedId = showHistory ? historySelectedId : selectedId;
 
   function localizedState(state: string): string {
@@ -80,9 +77,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
   async function loadInstances() {
     try {
       const response = await fetch("/api/engine-processes");
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = (await response.json()) as EngineProcessInfo[];
       const currentData = data.filter((instance) => instance.state !== "CLOSED");
@@ -91,15 +86,11 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
       setInstances(data);
       setError(null);
       setSelectedId((current) => {
-        if (current && currentData.some((instance) => instance.id === current)) {
-          return current;
-        }
+        if (current && currentData.some((instance) => instance.id === current)) return current;
         return currentData.find((instance) => instance.processAlive)?.id ?? currentData[0]?.id ?? null;
       });
       setHistorySelectedId((current) => {
-        if (current && historyData.some((instance) => instance.id === current)) {
-          return current;
-        }
+        if (current && historyData.some((instance) => instance.id === current)) return current;
         return historyData[0]?.id ?? null;
       });
     } catch (e) {
@@ -110,9 +101,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
   async function loadLog(id: string) {
     try {
       const response = await fetch(`/api/engine-processes/${encodeURIComponent(id)}/log`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       setLogEntries((await response.json()) as EngineLogEntry[]);
     } catch (e) {
       setError(t("engine.loadLogFailed", { message: String(e) }));
@@ -121,17 +110,13 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
 
   async function stopGracefully(instance: EngineProcessInfo) {
     if (!instance.processAlive) return;
-
-    const confirmed = window.confirm(
-      t("engine.terminateConfirm", { pid: instance.pid ?? "?", label: instance.label })
-    );
-    if (!confirmed) return;
+    if (!window.confirm(t("engine.terminateConfirm", { pid: instance.pid ?? "?", label: instance.label }))) return;
 
     setTerminatingId(instance.id);
     try {
       const response = await fetch(
         `/api/engine-processes/${encodeURIComponent(instance.id)}/stop`,
-        { method: "POST" }
+        { method: "POST" },
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       await loadInstances();
@@ -145,17 +130,13 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
 
   async function forceTerminate(instance: EngineProcessInfo) {
     if (!instance.processAlive) return;
-
-    const confirmed = window.confirm(
-      t("engine.forceTerminateConfirm", { pid: instance.pid ?? "?", label: instance.label })
-    );
-    if (!confirmed) return;
+    if (!window.confirm(t("engine.forceTerminateConfirm", { pid: instance.pid ?? "?", label: instance.label }))) return;
 
     setForceTerminatingId(instance.id);
     try {
       const response = await fetch(
         `/api/engine-processes/${encodeURIComponent(instance.id)}/force-terminate`,
-        { method: "POST" }
+        { method: "POST" },
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       await loadInstances();
@@ -178,7 +159,6 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
       setLogEntries([]);
       return;
     }
-
     void loadLog(displayedSelectedId);
     const intervalId = window.setInterval(() => void loadLog(displayedSelectedId), 1500);
     return () => window.clearInterval(intervalId);
@@ -188,27 +168,20 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
     list: EngineProcessInfo[],
     activeId: string | null,
     onSelect: (id: string) => void,
-    emptyText: string
+    emptyText: string,
   ) {
     return (
       <div className="engine-manager-instance-list">
         {list.length === 0 && <div className="engine-manager-empty">{emptyText}</div>}
-
         {list.map((instance) => (
           <button
             type="button"
             key={instance.id}
-            className={`engine-manager-instance${
-              activeId === instance.id ? " engine-manager-instance-selected" : ""
-            }`}
+            className={`engine-manager-instance${activeId === instance.id ? " engine-manager-instance-selected" : ""}`}
             onClick={() => onSelect(instance.id)}
           >
             <span className="engine-manager-instance-title">
-              <span
-                className={`engine-manager-status-dot${
-                  instance.processAlive ? " engine-manager-status-running" : ""
-                }`}
-              />
+              <span className={`engine-manager-status-dot${instance.processAlive ? " engine-manager-status-running" : ""}`} />
               {instance.label}
             </span>
             <span className="engine-manager-instance-meta">
@@ -224,10 +197,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
   function renderDetails(instance: EngineProcessInfo | null, allowTerminate: boolean) {
     return (
       <div className="engine-manager-details">
-        {!instance && (
-          <div className="engine-manager-empty">Select an engine instance.</div>
-        )}
-
+        {!instance && <div className="engine-manager-empty">{t("engine.selectInstance")}</div>}
         {instance && (
           <>
             <div className="engine-manager-details-header">
@@ -236,15 +206,11 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
                 <div className="engine-manager-instance-id">{t("engine.instanceId", { id: instance.id })}</div>
               </div>
               {allowTerminate && (
-                <>
+                <div className="engine-manager-process-actions">
                   <button
                     type="button"
                     className="engine-manager-terminate"
-                    disabled={
-                      !instance.processAlive
-                      || terminatingId === instance.id
-                      || forceTerminatingId === instance.id
-                    }
+                    disabled={!instance.processAlive || terminatingId === instance.id || forceTerminatingId === instance.id}
                     onClick={() => void stopGracefully(instance)}
                   >
                     {terminatingId === instance.id ? t("engine.terminating") : t("engine.terminate")}
@@ -252,18 +218,12 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
                   <button
                     type="button"
                     className="engine-manager-terminate"
-                    disabled={
-                      !instance.processAlive
-                      || terminatingId === instance.id
-                      || forceTerminatingId === instance.id
-                    }
+                    disabled={!instance.processAlive || terminatingId === instance.id || forceTerminatingId === instance.id}
                     onClick={() => void forceTerminate(instance)}
                   >
-                    {forceTerminatingId === instance.id
-                      ? t("engine.forceTerminating")
-                      : t("engine.forceTerminate")}
+                    {forceTerminatingId === instance.id ? t("engine.forceTerminating") : t("engine.forceTerminate")}
                   </button>
-                </>
+                </div>
               )}
             </div>
 
@@ -288,23 +248,15 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
               <span>{t("engine.maxRecentEntries")}</span>
             </div>
             <div className="engine-manager-log">
-              {logEntries.length === 0 && (
-                <div className="engine-manager-empty">{t("engine.noCommunication")}</div>
-              )}
+              {logEntries.length === 0 && <div className="engine-manager-empty">{t("engine.noCommunication")}</div>}
               {logEntries.map((entry) => (
                 <div
                   key={entry.sequence}
                   className={`engine-manager-log-line engine-manager-log-${entry.direction.toLowerCase()}`}
                 >
-                  <span className="engine-manager-log-time">
-                    {new Date(entry.timestamp).toLocaleTimeString()}
-                  </span>
+                  <span className="engine-manager-log-time">{new Date(entry.timestamp).toLocaleTimeString()}</span>
                   <span className="engine-manager-log-direction">
-                    {entry.direction === "COMMAND"
-                      ? "→"
-                      : entry.direction === "RESPONSE"
-                        ? "←"
-                        : "•"}
+                    {entry.direction === "COMMAND" ? "→" : entry.direction === "RESPONSE" ? "←" : "•"}
                   </span>
                   <span className="engine-manager-log-message">{entry.message}</span>
                 </div>
@@ -316,95 +268,85 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
     );
   }
 
+  const currentContent = (
+    <>
+      <div className="engine-manager-toolbar">
+        <div>
+          <strong>{t("settings.engineLog")}</strong>
+          <span>{t("engine.currentSubtitle")}</span>
+        </div>
+        <div className="engine-manager-header-actions">
+          <button type="button" onClick={() => setShowHistory(true)}>
+            {t("engine.history")} ({historyInstances.length})
+          </button>
+          <button type="button" onClick={() => void loadInstances()}>{t("common.refresh")}</button>
+          {!embedded && <button type="button" onClick={onClose}>{t("common.close")}</button>}
+        </div>
+      </div>
+      {error && <div className="engine-manager-error">{error}</div>}
+      <div className="engine-manager-body">
+        {renderInstanceList(currentInstances, selectedId, setSelectedId, t("engine.noActive"))}
+        {renderDetails(selected, true)}
+      </div>
+    </>
+  );
+
+  const historyDialog = showHistory ? (
+    <div
+      className="engine-manager-history-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        event.stopPropagation();
+        setShowHistory(false);
+      }}
+    >
+      <section
+        className="engine-manager-dialog engine-manager-history-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("engine.historyTitle")}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="engine-manager-header">
+          <div>
+            <h2>{t("engine.historyTitle")}</h2>
+            <div className="engine-manager-subtitle">{t("engine.historySubtitle")}</div>
+          </div>
+          <div className="engine-manager-header-actions">
+            <button type="button" onClick={() => void loadInstances()}>{t("common.refresh")}</button>
+            <button type="button" onClick={() => setShowHistory(false)}>{t("common.close")}</button>
+          </div>
+        </header>
+        {error && <div className="engine-manager-error">{error}</div>}
+        <div className="engine-manager-body">
+          {renderInstanceList(historyInstances, historySelectedId, setHistorySelectedId, t("engine.noClosed"))}
+          {renderDetails(historySelected, false)}
+        </div>
+      </section>
+    </div>
+  ) : null;
+
+  if (embedded) {
+    return (
+      <section className="engine-manager-embedded" aria-label={t("settings.engineLog")}>
+        {currentContent}
+        {historyDialog}
+      </section>
+    );
+  }
+
   return (
     <div className="engine-manager-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="engine-manager-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label={t("engine.manager")}
+        aria-label={t("settings.engineLog")}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <header className="engine-manager-header">
-          <div>
-            <h2>{t("engine.manager")}</h2>
-            <div className="engine-manager-subtitle">
-              {t("engine.currentSubtitle")}
-            </div>
-          </div>
-          <div className="engine-manager-header-actions">
-            <button type="button" onClick={() => setShowHistory(true)}>
-              {t("engine.history")} ({historyInstances.length})
-            </button>
-            <button type="button" onClick={() => void loadInstances()}>
-              {t("common.refresh")}
-            </button>
-            <button type="button" onClick={onClose}>
-              {t("common.close")}
-            </button>
-          </div>
-        </header>
-
-        {error && <div className="engine-manager-error">{error}</div>}
-
-        <div className="engine-manager-body">
-          {renderInstanceList(
-            currentInstances,
-            selectedId,
-            setSelectedId,
-            t("engine.noActive")
-          )}
-          {renderDetails(selected, true)}
-        </div>
+        {currentContent}
       </section>
-
-      {showHistory && (
-        <div
-          className="engine-manager-history-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            event.stopPropagation();
-            setShowHistory(false);
-          }}
-        >
-          <section
-            className="engine-manager-dialog engine-manager-history-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("engine.historyTitle")}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <header className="engine-manager-header">
-              <div>
-                <h2>{t("engine.historyTitle")}</h2>
-                <div className="engine-manager-subtitle">
-                  {t("engine.historySubtitle")}
-                </div>
-              </div>
-              <div className="engine-manager-header-actions">
-                <button type="button" onClick={() => void loadInstances()}>
-                  {t("common.refresh")}
-                </button>
-                <button type="button" onClick={() => setShowHistory(false)}>
-                  {t("common.close")}
-                </button>
-              </div>
-            </header>
-
-            {error && <div className="engine-manager-error">{error}</div>}
-
-            <div className="engine-manager-body">
-              {renderInstanceList(
-                historyInstances,
-                historySelectedId,
-                setHistorySelectedId,
-                t("engine.noClosed")
-              )}
-              {renderDetails(historySelected, false)}
-            </div>
-          </section>
-        </div>
-      )}
+      {historyDialog}
     </div>
   );
 }

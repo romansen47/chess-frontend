@@ -131,8 +131,7 @@ export function useAnalysisNavigation(
         || state.analysisTotalPlies <= 0
         || state.showAnalysisSettingsDialog
         || options.showGameSettingsDialog
-        || options.showEngineConfig
-        || options.showEngineManager
+        || options.showSettings
         || options.showChessDatabaseDialog
         || options.promotionContext
       ) return;
@@ -162,7 +161,7 @@ export function useAnalysisNavigation(
     state.analysisTotalPlies,
     state.showAnalysisSettingsDialog,
     options.showGameSettingsDialog,
-    options.showEngineConfig,
+    options.showSettings,
     options.showEngineManager,
     options.showChessDatabaseDialog,
     options.promotionContext,

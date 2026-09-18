@@ -100,8 +100,7 @@ export default function ChessBoardContainer({
       onImportNewGame: lifecycle.openUciFilePicker,
       onOpenDatabase: () => engine.setShowChessDatabaseDialog(true),
       onTerminateProgram: () => void lifecycle.terminateProgram(),
-      onToggleEngineSettings: () => engine.setShowEngineConfig((previous) => !previous),
-      onOpenEngineManager: () => engine.setShowEngineManager(true),
+      onToggleSettings: () => engine.setShowSettings((previous) => !previous),
     }}
     movePanelProps={{
       state: {
@@ -151,7 +150,6 @@ export default function ChessBoardContainer({
       onPiecePointerDown: interaction.handlePiecePointerDown, onPiecePointerMove: interaction.handlePiecePointerMove,
       onPiecePointerUp: interaction.handlePiecePointerUp, onPiecePointerCancel: interaction.handlePiecePointerCancel,
     }}
-    showEngineManager={engine.showEngineManager} closeEngineManager={() => engine.setShowEngineManager(false)}
     showChessDatabaseDialog={engine.showChessDatabaseDialog} closeChessDatabaseDialog={() => engine.setShowChessDatabaseDialog(false)}
     onDatabaseGameLoaded={lifecycle.applyImportedGame}
     uciFileInputRef={game.uciFileInputRef} onUciFileSelected={lifecycle.handleUciFileSelected}
@@ -161,7 +159,7 @@ export default function ChessBoardContainer({
     toggleWhiteComputer={() => computer.updateWhiteComputerEnabled(!computer.whiteComputerEnabled)}
     toggleBlackComputer={() => computer.updateBlackComputerEnabled(!computer.blackComputerEnabled)}
     engine={{
-      showEngineConfig: engine.showEngineConfig, engineConfigOverview: engine.engineConfigOverview,
+      showSettings: engine.showSettings, engineConfigOverview: engine.engineConfigOverview,
       engineConfigLoadError: engine.engineConfigLoadError, analysisReplayActive: analysis.analysisReplayActive,
       analysisReplayFinished: analysis.analysisReplayFinished, uciAnalysisLoaded: board.uciAnalysisLoaded,
       engineAutoUpdate: engine.engineAutoUpdate, liveEvaluationBar: engine.liveEvaluationBar,
@@ -173,7 +171,7 @@ export default function ChessBoardContainer({
     engineActions={{ toggleEngineAutoUpdate: live.toggleEngineAutoUpdate,
       toggleAnalysisEvaluation: analysis.toggleAnalysisEvaluation,
       onEngineConfigOverviewChange: live.handleEngineConfigOverviewChange,
-      closeEngineConfig: () => engine.setShowEngineConfig(false) }}
+      closeSettings: () => engine.setShowSettings(false) }}
     hoverPreview={board.hoverPreview} hoverAnnotationText={board.hoverAnnotationText}
     dialogs={{
       promotionContext: interaction.promotionContext, showGameSettingsDialog: game.showGameSettingsDialog,

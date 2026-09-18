@@ -19,7 +19,7 @@ import type Board from "./Board";
 import type { BoardOrientation } from "./boardOrientation";
 
 export interface EnginePanelState {
-  showEngineConfig: boolean;
+  showSettings: boolean;
   engineConfigOverview: EngineConfigOverview | null;
   engineConfigLoadError: string | null;
   analysisReplayActive: boolean;
@@ -43,7 +43,7 @@ export interface EnginePanelActions {
   toggleEngineAutoUpdate: () => void;
   toggleAnalysisEvaluation: () => void;
   onEngineConfigOverviewChange: (data: EngineConfigOverview) => void;
-  closeEngineConfig: () => void;
+  closeSettings: () => void;
 }
 
 export interface DialogState {
@@ -83,8 +83,6 @@ export interface ChessBoardViewProps {
   headerProps: ComponentProps<typeof ChessHeader>;
   movePanelProps: ComponentProps<typeof MovePanel>;
   boardProps: ComponentProps<typeof Board>;
-  showEngineManager: boolean;
-  closeEngineManager: () => void;
   showChessDatabaseDialog: boolean;
   closeChessDatabaseDialog: () => void;
   onDatabaseGameLoaded: ComponentProps<typeof ChessDatabaseDialog>["onGameLoaded"];

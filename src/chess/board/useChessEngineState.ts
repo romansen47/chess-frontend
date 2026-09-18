@@ -26,11 +26,10 @@ export function useChessEngineState() {
       },
     });
   }
-  const [showEngineConfig, setShowEngineConfig] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [engineConfigOverview, setEngineConfigOverview] = useState<EngineConfigOverview | null>(null);
   const [engineRuntimeAssignments, setEngineRuntimeAssignments] = useState<EngineRuntimeAssignments | null>(null);
   const [engineConfigLoadError, setEngineConfigLoadError] = useState<string | null>(null);
-  const [showEngineManager, setShowEngineManager] = useState(false);
   const [showChessDatabaseDialog, setShowChessDatabaseDialog] = useState(false);
   const [isTerminatingProgram, setIsTerminatingProgram] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
@@ -70,10 +69,10 @@ export function useChessEngineState() {
     engineEval, setEngineEval, liveEvaluationBar, setLiveEvaluationBar,
     isLoadingEval, setIsLoadingEval, evalError, setEvalError,
     engineAutoUpdate, setEngineAutoUpdate, engineAutoUpdateRef, liveEvaluationControllerRef,
-    showEngineConfig, setShowEngineConfig, engineConfigOverview, setEngineConfigOverview,
+    showSettings, setShowSettings, engineConfigOverview, setEngineConfigOverview,
     engineRuntimeAssignments, setEngineRuntimeAssignments,
     engineConfigLoadError, setEngineConfigLoadError,
-    showEngineManager, setShowEngineManager, showChessDatabaseDialog, setShowChessDatabaseDialog,
+    showChessDatabaseDialog, setShowChessDatabaseDialog,
     isTerminatingProgram, setIsTerminatingProgram, debugMode,
   };
 }

@@ -19,8 +19,7 @@ interface ChessHeaderProps {
   onImportNewGame: () => void;
   onOpenDatabase: () => void;
   onTerminateProgram: () => void;
-  onToggleEngineSettings: () => void;
-  onOpenEngineManager: () => void;
+  onToggleSettings: () => void;
 }
 
 export default function ChessHeader({
@@ -38,8 +37,7 @@ export default function ChessHeader({
   onImportNewGame,
   onOpenDatabase,
   onTerminateProgram,
-  onToggleEngineSettings,
-  onOpenEngineManager,
+  onToggleSettings,
 }: ChessHeaderProps) {
   const { language, t } = useI18n();
   const analysisBusy = analysisReplayActive && !analysisReplayFinished;
@@ -139,12 +137,8 @@ export default function ChessHeader({
           onTerminateProgram={onTerminateProgram}
         />
 
-        <button className="top-engine-button engine-settings" onClick={onToggleEngineSettings} title={t("engine.settingsTitle")}>
-          {t("engine.settings")}
-        </button>
-
-        <button className="top-engine-button engine-settings" onClick={onOpenEngineManager} title={t("engine.managerTitle")}>
-          {t("engine.manager")}
+        <button className="top-engine-button engine-settings" onClick={onToggleSettings} title={t("settings.title")}>
+          {t("settings.title")}
         </button>
 
         <LanguageSelector />

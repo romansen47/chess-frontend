@@ -1,4 +1,4 @@
-import EngineConfigManager from "../../EngineConfigManager";
+import SettingsManager from "../../SettingsManager";
 import { useI18n } from "../../i18n/I18nProvider";
 import EngineLineExplorer from "../engine/EngineLineExplorer";
 import type { EnginePanelActions, EnginePanelState } from "./chessBoardViewTypes";
@@ -76,10 +76,10 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
         )}
 
         <div className="engine-content-column">
-          {engine.showEngineConfig && <>
-            <EngineConfigManager overview={engine.engineConfigOverview}
+          {engine.showSettings && <>
+            <SettingsManager overview={engine.engineConfigOverview}
               onOverviewChange={actions.onEngineConfigOverviewChange}
-              onClose={actions.closeEngineConfig} />
+              onClose={actions.closeSettings} />
             {engine.engineConfigLoadError && <div className="engine-error">{engine.engineConfigLoadError}</div>}
           </>}
 

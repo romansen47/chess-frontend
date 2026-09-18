@@ -789,3 +789,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Engine Log is a first-class Settings tab, not a nested modal. */
+.engine-config-body-log {
+  display: block;
+  min-height: 0;
+}
+
+.engine-config-body-log .engine-manager-embedded {
+  height: 100%;
+  min-height: 0;
+}

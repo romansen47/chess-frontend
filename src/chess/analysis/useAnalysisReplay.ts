@@ -150,7 +150,7 @@ export function useAnalysisReplay(
       state.setIsAnalysisReplayRunning(true);
       state.setShowAnalysisSettingsDialog(false);
       options.setShowGameEndDialog(false);
-      options.setShowEngineConfig(false);
+      options.setShowSettings(false);
       options.setSelectedSquare(null);
       options.updatePossibleTargets([]);
       options.setHoverPreview(null);

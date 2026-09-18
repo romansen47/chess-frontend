@@ -1,5 +1,4 @@
 import ChessDatabaseDialog from "../../ChessDatabaseDialog";
-import EngineManager from "../../EngineManager";
 import ChessHeader from "../header/ChessHeader";
 import MovePanel from "../game/MovePanel";
 import Board from "./Board";
@@ -12,7 +11,6 @@ import type { ChessBoardViewProps } from "./chessBoardViewTypes";
 export default function ChessBoardView(props: ChessBoardViewProps) {
   const {
     headerProps, movePanelProps, boardProps,
-    showEngineManager, closeEngineManager,
     showChessDatabaseDialog, closeChessDatabaseDialog, onDatabaseGameLoaded,
     uciFileInputRef, onUciFileSelected,
     analysisReplayActive, uciAnalysisLoaded, clock, clockError,
@@ -22,7 +20,6 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
 
   return <>
     <ChessHeader {...headerProps} />
-    {showEngineManager && <EngineManager onClose={closeEngineManager} />}
     {showChessDatabaseDialog && <ChessDatabaseDialog onClose={closeChessDatabaseDialog} onGameLoaded={onDatabaseGameLoaded} />}
     <input ref={uciFileInputRef} type="file" accept=".pgn,.txt,application/x-chess-pgn,text/plain"
       style={{ display: "none" }} onChange={(event) => void onUciFileSelected(event)} />

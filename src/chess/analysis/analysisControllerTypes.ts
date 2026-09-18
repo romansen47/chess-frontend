@@ -28,10 +28,9 @@ export interface UseAnalysisControllerOptions {
   setEngineAutoUpdate: (value: boolean | ((previous: boolean) => boolean)) => void;
   setLiveEvaluationBar: Dispatch<SetStateAction<number | null>>;
   setShowGameEndDialog: Dispatch<SetStateAction<boolean>>;
-  setShowEngineConfig: Dispatch<SetStateAction<boolean>>;
+  setShowSettings: Dispatch<SetStateAction<boolean>>;
   showGameSettingsDialog: boolean;
-  showEngineConfig: boolean;
-  showEngineManager: boolean;
+  showSettings: boolean;
   showChessDatabaseDialog: boolean;
   setSelectedSquare: Dispatch<SetStateAction<string | null>>;
   updatePossibleTargets: (targets: string[]) => void;
