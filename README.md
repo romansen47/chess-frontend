@@ -18,6 +18,10 @@ Large PGN libraries are processed by the backend database importer rather than i
 
 The optional browser live-evaluation fallback uses the vendored Stockfish.js 19.0.0 lite single-threaded build. Stockfish.js and its WASM binary are licensed separately under GNU GPL v3 and are not covered by this repository's Apache-2.0 license. The exact upstream source, release commit, checksums, and GPL text are documented under `public/third-party/stockfish/19.0.0/`.
 
+## Engine profiles and Chess960
+
+`UCI_Chess960` is an engine capability and runtime protocol switch, not a reusable profile preference. The profile editor therefore omits it completely. The engine-definition view may show the advertised option, but labels it as `supported · runtime-managed` instead of presenting the engine's UCI default `false` as if it were an active user setting. The backend derives the actual value from the current game's Chess960 starting position.
+
 ## Development
 
 The frontend uses React 19, TypeScript, and Vite. During development Vite binds to `127.0.0.1` and proxies `/api` requests to the backend at `127.0.0.1:8080`.

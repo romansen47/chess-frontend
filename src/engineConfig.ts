@@ -1,5 +1,11 @@
 export type UciOptionType = "spin" | "check" | "combo" | "button" | "string";
 
+export const UCI_CHESS960_OPTION_NAME = "UCI_Chess960";
+
+export function isSystemManagedUciOption(name: string): boolean {
+  return name.trim().toLowerCase() === UCI_CHESS960_OPTION_NAME.toLowerCase();
+}
+
 export interface UciOptionConfig {
   type: UciOptionType;
   defaultValue: string | null;

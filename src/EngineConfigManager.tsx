@@ -6,7 +6,7 @@ import type {
   EngineProfileAssignments,
   UciOptionConfig,
 } from "./engineConfig";
-import { fetchEngineConfigOverview } from "./engineConfig";
+import { fetchEngineConfigOverview, isSystemManagedUciOption } from "./engineConfig";
 import { useI18n } from "./i18n/I18nProvider";
 import "./EngineConfigManager.css";
 import "./EngineConfigOptionPopup.css";
@@ -48,7 +48,10 @@ function copyEngine(engine: EngineDefinition): EngineDefinition {
 function copyProfile(profile: EngineProfile): EngineProfile {
   return {
     ...profile,
-    optionValues: { ...profile.optionValues },
+    optionValues: Object.fromEntries(
+      Object.entries(profile.optionValues)
+        .filter(([name]) => !isSystemManagedUciOption(name))
+    ),
   };
 }
 
@@ -92,7 +95,9 @@ function defaultProfileForEngine(engine: EngineDefinition, profileName: string):
     engineId: engine.id ?? "",
     optionValues: Object.fromEntries(
       Object.entries(engine.options)
-        .filter(([, option]) => option.type !== "button")
+        .filter(([name, option]) =>
+          option.type !== "button" && !isSystemManagedUciOption(name)
+        )
         .map(([name, option]) => [name, option.defaultValue ?? ""])
     ),
   };
@@ -612,7 +617,7 @@ export default function EngineConfigManager({
   }
 
   function openProfileOptionEditor(name: string, option: UciOptionConfig, value: string) {
-    if (busy || option.type === "button") {
+    if (busy || option.type === "button" || isSystemManagedUciOption(name)) {
       return;
     }
     setProfileOptionEditor({ name, option, value });
@@ -636,7 +641,9 @@ export default function EngineConfigManager({
           ...current,
           optionValues: Object.fromEntries(
             Object.entries(profileEngine.options)
-              .filter(([, option]) => option.type !== "button")
+              .filter(([name, option]) =>
+                option.type !== "button" && !isSystemManagedUciOption(name)
+              )
               .map(([name, option]) => [name, option.defaultValue ?? ""])
           ),
         }
@@ -655,12 +662,15 @@ export default function EngineConfigManager({
       maxLabel: t("settings.optionMax"),
       emptyLabel: t("settings.optionEmpty"),
     });
-    const displayValue = displayOptionValue(
-      option,
-      value,
-      t("settings.optionAction"),
-      t("settings.optionEmpty"),
-    );
+    const systemManaged = isSystemManagedUciOption(name);
+    const displayValue = systemManaged
+      ? "supported · runtime-managed"
+      : displayOptionValue(
+          option,
+          value,
+          t("settings.optionAction"),
+          t("settings.optionEmpty"),
+        );
     const common = (
       <div className="engine-config-option-meta">
         <span className="engine-config-option-type">{option.type}</span>
@@ -709,7 +719,8 @@ export default function EngineConfigManager({
 
   const visibleProfileOptions = profileEngine
     ? Object.entries(profileEngine.options).filter(([name]) =>
-        name.toLowerCase().includes(optionFilter.trim().toLowerCase())
+        !isSystemManagedUciOption(name)
+        && name.toLowerCase().includes(optionFilter.trim().toLowerCase())
       )
     : [];
 
