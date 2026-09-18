@@ -46,6 +46,7 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
   const [logEntries, setLogEntries] = useState<EngineLogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [terminatingId, setTerminatingId] = useState<string | null>(null);
+  const [forceTerminatingId, setForceTerminatingId] = useState<string | null>(null);
 
   const currentInstances = useMemo(
     () => instances.filter((instance) => instance.state !== "CLOSED"),
@@ -118,33 +119,51 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
     }
   }
 
-  async function terminate(instance: EngineProcessInfo) {
-    if (!instance.processAlive) {
-      return;
-    }
+  async function stopGracefully(instance: EngineProcessInfo) {
+    if (!instance.processAlive) return;
 
     const confirmed = window.confirm(
       t("engine.terminateConfirm", { pid: instance.pid ?? "?", label: instance.label })
     );
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     setTerminatingId(instance.id);
     try {
       const response = await fetch(
-        `/api/engine-processes/${encodeURIComponent(instance.id)}/terminate`,
+        `/api/engine-processes/${encodeURIComponent(instance.id)}/stop`,
         { method: "POST" }
       );
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       await loadInstances();
       await loadLog(instance.id);
     } catch (e) {
       setError(t("engine.terminateFailed", { message: String(e) }));
     } finally {
       setTerminatingId(null);
+    }
+  }
+
+  async function forceTerminate(instance: EngineProcessInfo) {
+    if (!instance.processAlive) return;
+
+    const confirmed = window.confirm(
+      t("engine.forceTerminateConfirm", { pid: instance.pid ?? "?", label: instance.label })
+    );
+    if (!confirmed) return;
+
+    setForceTerminatingId(instance.id);
+    try {
+      const response = await fetch(
+        `/api/engine-processes/${encodeURIComponent(instance.id)}/force-terminate`,
+        { method: "POST" }
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      await loadInstances();
+      await loadLog(instance.id);
+    } catch (e) {
+      setError(t("engine.terminateFailed", { message: String(e) }));
+    } finally {
+      setForceTerminatingId(null);
     }
   }
 
@@ -217,14 +236,34 @@ export default function EngineManager({ onClose }: EngineManagerProps) {
                 <div className="engine-manager-instance-id">{t("engine.instanceId", { id: instance.id })}</div>
               </div>
               {allowTerminate && (
-                <button
-                  type="button"
-                  className="engine-manager-terminate"
-                  disabled={!instance.processAlive || terminatingId === instance.id}
-                  onClick={() => void terminate(instance)}
-                >
-                  {terminatingId === instance.id ? t("engine.terminating") : t("engine.terminate")}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="engine-manager-terminate"
+                    disabled={
+                      !instance.processAlive
+                      || terminatingId === instance.id
+                      || forceTerminatingId === instance.id
+                    }
+                    onClick={() => void stopGracefully(instance)}
+                  >
+                    {terminatingId === instance.id ? t("engine.terminating") : t("engine.terminate")}
+                  </button>
+                  <button
+                    type="button"
+                    className="engine-manager-terminate"
+                    disabled={
+                      !instance.processAlive
+                      || terminatingId === instance.id
+                      || forceTerminatingId === instance.id
+                    }
+                    onClick={() => void forceTerminate(instance)}
+                  >
+                    {forceTerminatingId === instance.id
+                      ? t("engine.forceTerminating")
+                      : t("engine.forceTerminate")}
+                  </button>
+                </>
               )}
             </div>
 

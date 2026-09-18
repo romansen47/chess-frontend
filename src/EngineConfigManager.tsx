@@ -119,6 +119,7 @@ export default function EngineConfigManager({
   const [creatingEngine, setCreatingEngine] = useState(false);
   const [newEnginePath, setNewEnginePath] = useState("");
   const [newEngineName, setNewEngineName] = useState("");
+  const [discoveredEngines, setDiscoveredEngines] = useState<EngineDefinition[]>([]);
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [profileDraft, setProfileDraft] = useState<EngineProfile | null>(null);
@@ -230,10 +231,12 @@ export default function EngineConfigManager({
     setEngineDraft(null);
     setNewEnginePath("");
     setNewEngineName("");
+    setDiscoveredEngines([]);
     setProfileOptionEditor(null);
     setOptionFilter("");
     setMessage(null);
     setError(null);
+    void discoverServerEngines();
   }
 
   function beginCreateProfile() {
@@ -262,41 +265,50 @@ export default function EngineConfigManager({
     setMessage(t("settings.engineSelectedDefaults", { engine: engine.name }));
   }
 
-  async function inspectEngine() {
-    const requestedName = (engineDraft?.id ? "" : engineDraft?.name ?? newEngineName).trim();
-
+  async function discoverServerEngines() {
     try {
       setBusy(true);
       setError(null);
-      setMessage(t("settings.openingFilePicker"));
-      const response = await fetch("/api/engine-configs/engines/select", {
+      setMessage(t("settings.scanningSystem"));
+      const response = await fetch("/api/engine-configs/engines/discover", {
         method: "POST",
       });
-      if (response.status === 204) {
-        setMessage(null);
-        return;
-      }
       if (!response.ok) {
         throw new Error(await response.text() || `HTTP ${response.status}`);
       }
-      const inspected = (await response.json()) as EngineDefinition;
-      if (requestedName) {
-        inspected.name = requestedName;
-      }
-      setEngineDraft(copyEngine(inspected));
-      setNewEngineName(inspected.name);
-      setOptionFilter("");
-      setMessage(t("settings.engineDetected", {
-        engine: inspected.engineName,
-        count: Object.keys(inspected.options).length,
-      }));
+
+      const candidates = (await response.json()) as EngineDefinition[];
+      setDiscoveredEngines(candidates);
+      setMessage(
+        candidates.length === 0
+          ? t("settings.noDiscoveredServerEngines")
+          : t("settings.serverDiscoveryFound", { count: candidates.length }),
+      );
     } catch (e) {
-      setEngineDraft(null);
+      setDiscoveredEngines([]);
       setMessage(null);
-      setError(e instanceof Error ? e.message : t("settings.engineSelectionFailed"));
+      setError(e instanceof Error ? e.message : t("settings.serverDiscoveryFailed"));
     } finally {
       setBusy(false);
     }
+  }
+
+  function selectDiscoveredEngine(enginePath: string) {
+    const candidate = discoveredEngines.find((engine) => engine.engine === enginePath);
+    if (!candidate) return;
+
+    const selected = copyEngine(candidate);
+    const requestedName = newEngineName.trim();
+    if (requestedName) selected.name = requestedName;
+    setEngineDraft(selected);
+    setNewEnginePath(selected.engine);
+    setNewEngineName(selected.name);
+    setOptionFilter("");
+    setError(null);
+    setMessage(t("settings.engineDetected", {
+      engine: selected.engineName,
+      count: Object.keys(selected.options).length,
+    }));
   }
 
   async function inspectEngineByPath() {
@@ -342,41 +354,6 @@ export default function EngineConfigManager({
     const next = await fetchEngineConfigOverview();
     onOverviewChange(next);
     return next;
-  }
-
-  async function scanSystemEngines() {
-    try {
-      setBusy(true);
-      setError(null);
-      setMessage(t("settings.scanningSystem"));
-
-      const previousEngineCount = overview?.engines.length ?? 0;
-      const previousProfileCount = overview?.profiles.length ?? 0;
-      const response = await fetch("/api/engine-configs/discover", { method: "POST" });
-      if (!response.ok) {
-        throw new Error(await response.text() || `HTTP ${response.status}`);
-      }
-
-      const next = (await response.json()) as EngineConfigOverview;
-      onOverviewChange(next);
-      setDefaultsDraft(copyAssignments(next.defaults));
-
-      const addedEngines = Math.max(0, next.engines.length - previousEngineCount);
-      const addedProfiles = Math.max(0, next.profiles.length - previousProfileCount);
-      if (addedEngines === 0) {
-        setMessage(t("settings.scanNoNew"));
-      } else {
-        setMessage(t("settings.scanAdded", {
-          engines: addedEngines,
-          profiles: addedProfiles,
-        }));
-      }
-    } catch (e) {
-      setMessage(null);
-      setError(e instanceof Error ? e.message : t("settings.scanFailed"));
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function resetEngineSettings() {
@@ -789,7 +766,7 @@ export default function EngineConfigManager({
           <div className="engine-config-header-actions">
             <button
               type="button"
-              onClick={() => void scanSystemEngines()}
+              onClick={beginCreateEngine}
               disabled={busy}
             >
               {t("settings.scanSystem")}
@@ -1031,11 +1008,30 @@ export default function EngineConfigManager({
                             />
                           </label>
                           <label>
+                            <span>{t("settings.discoveredServerEngines")}</span>
+                            <select
+                              value=""
+                              onChange={(event) => selectDiscoveredEngine(event.target.value)}
+                              disabled={busy || discoveredEngines.length === 0}
+                            >
+                              <option value="">
+                                {discoveredEngines.length === 0
+                                  ? t("settings.noDiscoveredServerEngines")
+                                  : t("settings.chooseDiscoveredEngine")}
+                              </option>
+                              {discoveredEngines.map((candidate) => (
+                                <option key={candidate.engine} value={candidate.engine}>
+                                  {candidate.name} · {candidate.engine}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
                             <span>{t("settings.enginePathFallback")}</span>
                             <input
                               value={newEnginePath}
                               onChange={(event) => setNewEnginePath(event.target.value)}
-                              placeholder="C:\\Engines\\stockfish.exe or /usr/games/stockfish"
+                              placeholder="/usr/games/stockfish"
                             />
                           </label>
                         </div>
@@ -1045,10 +1041,10 @@ export default function EngineConfigManager({
                         <div className="engine-config-actions">
                           <button
                             type="button"
-                            onClick={() => void inspectEngine()}
-                            disabled={busy || !newEngineName.trim()}
+                            onClick={() => void discoverServerEngines()}
+                            disabled={busy}
                           >
-                            {busy ? t("settings.filePickerOpen") : t("settings.selectEngineFile")}
+                            {busy ? t("settings.scanningSystem") : t("settings.scanSystem")}
                           </button>
                           <button
                             type="button"
