@@ -37,3 +37,17 @@ Available package scripts are `npm run dev`, `npm run build`, `npm run lint`, an
 ## Architecture
 
 `ChessBoard.tsx` is currently being refactored incrementally into smaller modules grouped by responsibility (board, game lifecycle, analysis, header/data actions, PGN, and shared types). Refactoring is intended to remain behavior-preserving and must not change board geometry or API contracts merely for structural reasons.
+
+
+## Engine ownership and process controls
+
+Engine executables are server-owned resources. The browser never asks the backend
+to open a native file chooser. Engine Settings discovers UCI candidates in the
+configured backend directory and lets the user choose which one to register; an
+explicit server path remains available for advanced setups.
+
+The Engine Manager distinguishes normal lifecycle control from emergency recovery:
+**Stop gracefully** delegates to the owning UCI adapter, while **Force kill** bypasses
+UCI shutdown and terminates the operating-system process. Starting a new game is
+a backend-owned lifecycle transition; frontend cleanup is not relied upon to stop
+native engine processes.
