@@ -246,6 +246,7 @@ export function useChessGameLifecycle(options: Options) {
       board.setLoadError(null);
       game.setGameSettingsError(null);
       await options.disablePlayerEngines();
+      await options.stopLiveEvaluation();
       await analysis.stopEvaluation();
       analysis.resetState();
       analysis.setWhitePlayerName(null);
