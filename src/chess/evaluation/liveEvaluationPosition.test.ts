@@ -11,15 +11,16 @@ function move(ply: number, uci: string): UciGameMove {
 }
 
 describe("createLiveEvaluationPosition", () => {
-  it("creates the classical start position from an empty authoritative history", () => {
+  it("creates position 518 with the same explicit Chess960 metadata as every other start", () => {
     expect(createLiveEvaluationPosition([])).toEqual({
       uciMoves: [],
-      chess960: false,
-      initialFen: null,
+      chess960: true,
+      initialFen:
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w HAha - 0 1",
     });
   });
 
-  it("carries Chess960 FEN metadata", () => {
+  it("carries authoritative Chess960 FEN metadata", () => {
     const fen = "bbqnnrkr/pppppppp/8/8/8/8/PPPPPPPP/BBQNNRKR w HFhf - 0 1";
     expect(createLiveEvaluationPosition([], fen, 0)).toEqual({
       uciMoves: [],

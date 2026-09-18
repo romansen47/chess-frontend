@@ -6,6 +6,13 @@ import {
   type BrowserUciWorker,
 } from "./BrowserUciEngine";
 
+const POSITION_518_FEN =
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w HAha - 0 1";
+
+function position518(uciMoves: string[]) {
+  return { uciMoves, initialFen: POSITION_518_FEN, chess960: true };
+}
+
 class FakeWorker implements BrowserUciWorker {
   readonly commands: string[] = [];
   readonly listeners = new Set<(event: MessageEvent<string>) => void>();
@@ -47,13 +54,13 @@ describe("BrowserUciEngine", () => {
     vi.useRealTimers();
   });
 
-  it("performs UCI handshake lazily and starts standard infinite analysis", async () => {
+  it("performs UCI handshake lazily and starts position-518 infinite analysis", async () => {
     const worker = new FakeWorker();
     const engine = new BrowserUciEngine(() => worker);
     const updates: BrowserUciEvaluation[] = [];
 
     await engine.startInfinite(
-      { uciMoves: ["e2e4", "e7e5", "g1f3"] },
+      position518(["e2e4", "e7e5", "g1f3"]),
       { multiPv: 2 },
       (evaluation) => updates.push(evaluation),
     );
@@ -63,9 +70,9 @@ describe("BrowserUciEngine", () => {
       "uci",
       "isready",
       "setoption name MultiPV value 2",
-      "setoption name UCI_Chess960 value false",
+      "setoption name UCI_Chess960 value true",
       "isready",
-      "position startpos moves e2e4 e7e5 g1f3",
+      `position fen ${POSITION_518_FEN} moves e2e4 e7e5 g1f3`,
       "go infinite",
     ]);
 
@@ -96,27 +103,28 @@ describe("BrowserUciEngine", () => {
     expect(worker.commands).toContain(`position fen ${fen} moves a2a4`);
   });
 
-  it("requires FEN for Chess960", async () => {
+  it("requires an explicit FEN for every browser evaluation", async () => {
     const engine = new BrowserUciEngine(() => new FakeWorker());
     await expect(engine.startInfinite(
       { uciMoves: [], chess960: true },
       { multiPv: 1 },
       () => undefined,
-    )).rejects.toThrow("Chess960 browser evaluation requires the initial FEN");
+    )).rejects.toThrow("Browser evaluation requires the explicit initial FEN");
   });
 
-  it("uses startpos without moves for a new standard game", async () => {
+  it("uses explicit FEN without moves for a new position-518 game", async () => {
     const worker = new FakeWorker();
     const engine = new BrowserUciEngine(() => worker);
-    await engine.startInfinite({ uciMoves: [] }, { multiPv: 1 }, () => undefined);
-    expect(worker.commands).toContain("position startpos");
+    await engine.startInfinite(position518([]), { multiPv: 1 }, () => undefined);
+    expect(worker.commands).toContain(`position fen ${POSITION_518_FEN}`);
+    expect(worker.commands).not.toContain("position startpos");
   });
 
   it("ignores stale info after stop", async () => {
     const worker = new FakeWorker();
     const engine = new BrowserUciEngine(() => worker);
     const listener = vi.fn();
-    await engine.startInfinite({ uciMoves: ["e2e4"] }, { multiPv: 1 }, listener);
+    await engine.startInfinite(position518(["e2e4"]), { multiPv: 1 }, listener);
     await engine.stop();
     worker.emit("info depth 12 score cp 80 pv e7e5");
     expect(worker.commands.at(-1)).toBe("stop");
@@ -126,9 +134,11 @@ describe("BrowserUciEngine", () => {
   it("stops the previous search before starting a replacement", async () => {
     const worker = new FakeWorker();
     const engine = new BrowserUciEngine(() => worker);
-    await engine.startInfinite({ uciMoves: ["e2e4"] }, { multiPv: 1 }, () => undefined);
-    await engine.startInfinite({ uciMoves: ["d2d4"] }, { multiPv: 1 }, () => undefined);
-    const secondPositionIndex = worker.commands.lastIndexOf("position startpos moves d2d4");
+    await engine.startInfinite(position518(["e2e4"]), { multiPv: 1 }, () => undefined);
+    await engine.startInfinite(position518(["d2d4"]), { multiPv: 1 }, () => undefined);
+    const secondPositionIndex = worker.commands.lastIndexOf(
+      `position fen ${POSITION_518_FEN} moves d2d4`,
+    );
     expect(secondPositionIndex).toBeGreaterThan(0);
     expect(worker.commands.slice(0, secondPositionIndex)).toContain("stop");
   });
@@ -136,12 +146,16 @@ describe("BrowserUciEngine", () => {
   it("serializes rapid replacement searches", async () => {
     const worker = new FakeWorker();
     const engine = new BrowserUciEngine(() => worker);
-    await engine.startInfinite({ uciMoves: ["e2e4"] }, { multiPv: 1 }, () => undefined);
-    const second = engine.startInfinite({ uciMoves: ["d2d4"] }, { multiPv: 1 }, () => undefined);
-    const third = engine.startInfinite({ uciMoves: ["c2c4"] }, { multiPv: 1 }, () => undefined);
+    await engine.startInfinite(position518(["e2e4"]), { multiPv: 1 }, () => undefined);
+    const second = engine.startInfinite(position518(["d2d4"]), { multiPv: 1 }, () => undefined);
+    const third = engine.startInfinite(position518(["c2c4"]), { multiPv: 1 }, () => undefined);
     await Promise.all([second, third]);
-    expect(worker.commands).not.toContain("position startpos moves d2d4");
-    expect(worker.commands.at(-2)).toBe("position startpos moves c2c4");
+    expect(worker.commands).not.toContain(
+      `position fen ${POSITION_518_FEN} moves d2d4`,
+    );
+    expect(worker.commands.at(-2)).toBe(
+      `position fen ${POSITION_518_FEN} moves c2c4`,
+    );
     expect(worker.commands.at(-1)).toBe("go infinite");
   });
 

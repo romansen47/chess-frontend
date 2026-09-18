@@ -113,6 +113,8 @@ export const spanishTranslations: Record<string, string> = {
   "analysis.starting": "Iniciando…",
 
   "game.newGame": "Nueva partida",
+  "game.startingPosition": "Posición inicial Chess960 (0–959; posición clásica: 518)",
+  "game.startingPositionPreview": "Vista previa de la posición inicial",
   "game.timeEachPlayerMinutes": "Tiempo para cada jugador (minutos)",
   "game.incrementWhiteSeconds": "Incremento para las Blancas (segundos)",
   "game.incrementBlackSeconds": "Incremento para las Negras (segundos)",

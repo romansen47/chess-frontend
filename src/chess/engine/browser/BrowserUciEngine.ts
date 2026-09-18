@@ -94,9 +94,7 @@ export class BrowserUciEngine {
 
       const worker = this.requireWorker();
       worker.postMessage("setoption name MultiPV value " + options.multiPv);
-      worker.postMessage(
-        "setoption name UCI_Chess960 value " + (position.chess960 === true ? "true" : "false"),
-      );
+      worker.postMessage("setoption name UCI_Chess960 value true");
 
       const ready = this.waitForLine((line) => line === "readyok", "readyok");
       worker.postMessage("isready");
@@ -236,18 +234,15 @@ interface ActiveSearch {
 }
 
 function positionCommand(position: LiveEvaluationPosition): string {
-  const moves = position.uciMoves.length > 0 ? " moves " + position.uciMoves.join(" ") : "";
-  if (position.chess960) {
-    return "position fen " + position.initialFen + moves;
-  }
-  return position.uciMoves.length === 0
-    ? "position startpos"
-    : "position startpos" + moves;
+  const moves = position.uciMoves.length > 0
+    ? " moves " + position.uciMoves.join(" ")
+    : "";
+  return "position fen " + position.initialFen + moves;
 }
 
 function validatePosition(position: LiveEvaluationPosition): void {
-  if (position.chess960 && (!position.initialFen || position.initialFen.trim().length === 0)) {
-    throw new Error("Chess960 browser evaluation requires the initial FEN");
+  if (!position.initialFen || position.initialFen.trim().length === 0) {
+    throw new Error("Browser evaluation requires the explicit initial FEN");
   }
 }
 

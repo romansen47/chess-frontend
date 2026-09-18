@@ -1,3 +1,4 @@
+import { createChess960InitialFen } from "../board/boardUtils";
 import type { UciGameMove } from "../types";
 import type { LiveEvaluationPosition } from "./LiveEvaluationSource";
 
@@ -24,11 +25,13 @@ export function createLiveEvaluationPosition(
     return move.uci;
   });
 
-  const chess960 = startingPositionId !== STANDARD_POSITION_ID;
+  const resolvedFen = initialFen?.trim()
+    ? initialFen.trim()
+    : createChess960InitialFen(startingPositionId);
   return {
     uciMoves: Object.freeze(uciMoves),
-    chess960,
-    initialFen: chess960 ? initialFen ?? null : null,
+    chess960: true,
+    initialFen: resolvedFen,
   };
 }
 

@@ -47,6 +47,31 @@ export function createInitialPieces(
   return pieces;
 }
 
+/**
+ * Returns the explicit initial FEN for any Scharnagl position.
+ *
+ * <p>All 960 positions use file-based Shredder-FEN castling rights, including
+ * position 518. This mirrors the backend's unified Chess960 representation.</p>
+ */
+export function createChess960InitialFen(positionId: number): string {
+  const backRank = decodeChess960BackRank(positionId);
+  const whiteBackRank = backRank.map((type) => pieceFenLetter(type).toUpperCase()).join("");
+  const blackBackRank = whiteBackRank.toLowerCase();
+  const kingFile = backRank.findIndex((type) => type === "king") + 1;
+  const rookFiles = backRank
+    .map((type, index) => type === "rook" ? index + 1 : -1)
+    .filter((file) => file > 0);
+  const queenSideRookFile = Math.max(...rookFiles.filter((file) => file < kingFile));
+  const kingSideRookFile = Math.min(...rookFiles.filter((file) => file > kingFile));
+  const castlingRights =
+    fileLetter(kingSideRookFile, true)
+    + fileLetter(queenSideRookFile, true)
+    + fileLetter(kingSideRookFile, false)
+    + fileLetter(queenSideRookFile, false);
+
+  return `${blackBackRank}/pppppppp/8/8/8/8/PPPPPPPP/${whiteBackRank} w ${castlingRights} - 0 1`;
+}
+
 export function decodeChess960BackRank(positionId: number): PieceType[] {
   if (!Number.isInteger(positionId) || positionId < 0 || positionId > 959) {
     throw new Error(`Chess960 position id must be between 0 and 959: ${positionId}`);
@@ -80,6 +105,22 @@ export function decodeChess960BackRank(positionId: number): PieceType[] {
   return rank as PieceType[];
 }
 
+function pieceFenLetter(type: PieceType): string {
+  switch (type) {
+    case "rook": return "r";
+    case "knight": return "n";
+    case "bishop": return "b";
+    case "queen": return "q";
+    case "king": return "k";
+    case "pawn": return "p";
+  }
+}
+
+function fileLetter(file: number, white: boolean): string {
+  const lower = String.fromCharCode("a".charCodeAt(0) + file - 1);
+  return white ? lower.toUpperCase() : lower;
+}
+
 function remainingFiles(rank: Array<PieceType | null>): number[] {
   const files: number[] = [];
   for (let file = 1; file <= 8; file++) {
@@ -108,9 +149,10 @@ export function getSquareCoords(square: string): { file: number; rank: number } 
 }
 
 /**
- * Resolves both classical UCI castling (king -> c/g) and Chess960 UCI
- * castling (king -> original rook square). The optional piece snapshot makes
- * Chess960 detection unambiguous.
+ * Resolves unified Chess960 UCI castling (king -> original rook square).
+ *
+ * <p>Position 518 follows the same representation as every other Scharnagl
+ * position, so there is deliberately no king-to-c/g compatibility branch.</p>
  */
 export function getCastlingSquares(
   movingPiece: Piece | undefined,
@@ -137,16 +179,6 @@ export function getCastlingSquares(
     return {
       kingTo: squareName(kingSide ? 7 : 3, toCoords.rank),
       rookFrom: to,
-      rookTo: squareName(kingSide ? 6 : 4, toCoords.rank),
-    };
-  }
-
-  // Classical UCI notation remains supported for position 518 and imported games.
-  if (fromCoords.file === 5 && (toCoords.file === 7 || toCoords.file === 3)) {
-    const kingSide = toCoords.file === 7;
-    return {
-      kingTo: squareName(kingSide ? 7 : 3, toCoords.rank),
-      rookFrom: squareName(kingSide ? 8 : 1, toCoords.rank),
       rookTo: squareName(kingSide ? 6 : 4, toCoords.rank),
     };
   }

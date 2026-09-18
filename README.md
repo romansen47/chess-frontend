@@ -22,6 +22,12 @@ The optional browser live-evaluation fallback uses the vendored Stockfish.js 19.
 
 `UCI_Chess960` is an engine capability and runtime protocol switch, not a reusable profile preference. The profile editor therefore omits it completely. The engine-definition view may show the advertised option, but labels it as `supported · runtime-managed` instead of presenting the engine's UCI default `false` as if it were an active user setting. The backend derives the actual value from the current game's Chess960 starting position.
 
+## Unified Chess960 position model
+
+All 960 Scharnagl positions use the same frontend runtime contract. Position 518 is the classical piece layout, but it is not a separate engine mode: browser evaluation uses `UCI_Chess960=true` and an explicit initial FEN for 518 exactly as it does for every other position. Authoritative move histories therefore always stay attached to an initial FEN.
+
+The New Game dialog shows a live preview of the selected Scharnagl position. The preview and browser-evaluation fallback both use the same frontend Chess960 decoder, so changing the numeric id immediately shows the board that will actually be started.
+
 ## Development
 
 The frontend uses React 19, TypeScript, and Vite. During development Vite binds to `127.0.0.1` and proxies `/api` requests to the backend at `127.0.0.1:8080`.

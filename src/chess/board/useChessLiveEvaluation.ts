@@ -30,7 +30,11 @@ export function useChessLiveEvaluation(options: Options) {
     if (board.liveEvaluationPositionRef.current) return board.liveEvaluationPositionRef.current;
     try {
       const snapshot = await fetchGameSnapshot();
-      const position = createLiveEvaluationPosition(snapshot.game.moves ?? []);
+      const position = createLiveEvaluationPosition(
+        snapshot.game.moves ?? [],
+        snapshot.game.initialFen,
+        snapshot.game.startingPositionId ?? 518,
+      );
       board.liveEvaluationPositionRef.current = position;
       return snapshot.importedAnalysisGame ? null : position;
     } catch (error) {

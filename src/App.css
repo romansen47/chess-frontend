@@ -997,8 +997,16 @@
   color: #f5f5f5;
   border-radius: 10px;
   padding: 18px;
-  min-width: 380px;
+  width: min(760px, calc(100vw - 40px));
+  box-sizing: border-box;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+}
+
+.game-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 260px;
+  gap: 18px;
+  align-items: start;
 }
 
 .game-settings-dialog-content h2 {
@@ -1032,6 +1040,88 @@
   background: #1f1f1f;
   color: #f5f5f5;
   font-size: calc(0.85rem - 2px);
+}
+
+.new-game-preview {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #454545;
+  border-radius: 7px;
+  background: #242424;
+  box-sizing: border-box;
+}
+
+.new-game-preview-title {
+  font-size: calc(0.82rem - 2px);
+  font-weight: 600;
+  color: #f5f5f5;
+  text-align: center;
+}
+
+.new-game-preview-id {
+  margin: 2px 0 8px;
+  font-size: calc(0.75rem - 2px);
+  color: #bdbdbd;
+  text-align: center;
+}
+
+.new-game-preview-board {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  border: 2px solid #181818;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.new-game-preview-square {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  user-select: none;
+}
+
+.new-game-preview-square-light {
+  background: #f0d9b5;
+}
+
+.new-game-preview-square-dark {
+  background: #769656;
+}
+
+.new-game-preview-piece {
+  font-size: clamp(18px, 2vw, 29px);
+  line-height: 1;
+}
+
+.new-game-preview-piece-white {
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+}
+
+.new-game-preview-piece-black {
+  color: #000000;
+}
+
+@media (max-width: 720px) {
+  .game-settings-dialog-content {
+    width: min(430px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+  }
+
+  .game-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .new-game-preview {
+    width: min(260px, 100%);
+    justify-self: center;
+  }
 }
 
 .game-settings-error {

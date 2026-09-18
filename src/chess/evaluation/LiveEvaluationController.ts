@@ -324,5 +324,5 @@ export class LiveEvaluationController {
 }
 
 function copyPosition(position: LiveEvaluationPosition): LiveEvaluationPosition {
-  return { uciMoves: [...position.uciMoves] };
+  return { ...position, uciMoves: [...position.uciMoves] };
 }

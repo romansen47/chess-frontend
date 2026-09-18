@@ -251,6 +251,16 @@ const translations = {
     de: "Inkrement für Schwarz (Sekunden)",
     fr: "Incrément pour les Noirs (secondes)",
   },
+  "game.startingPosition": {
+    en: "Chess960 starting position (0–959; classical layout: 518)",
+    de: "Chess960-Startposition (0–959; klassische Stellung: 518)",
+    fr: "Position initiale Chess960 (0–959 ; position classique : 518)",
+  },
+  "game.startingPositionPreview": {
+    en: "Starting position preview",
+    de: "Vorschau der Anfangsstellung",
+    fr: "Aperçu de la position initiale",
+  },
   "game.cpuProfileNote": {
     en: "CPU profile assignments are configured globally under Engine Settings → Defaults.",
     de: "CPU-Profilzuweisungen werden global unter Engine-Einstellungen → Standards konfiguriert.",

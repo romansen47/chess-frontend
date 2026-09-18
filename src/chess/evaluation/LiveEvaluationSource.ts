@@ -2,8 +2,12 @@ import type { EngineEvaluation } from "../types";
 
 export interface LiveEvaluationPosition {
   readonly uciMoves: readonly string[];
-  /** Initial FEN for Chess960. Omitted for classical position 518. */
+  /** Explicit initial FEN. Production positions carry this for every Scharnagl id. */
   readonly initialFen?: string | null;
+  /**
+   * Transitional compatibility marker. New production positions are always
+   * Chess960 protocol positions, including Scharnagl 518.
+   */
   readonly chess960?: boolean;
 }
 

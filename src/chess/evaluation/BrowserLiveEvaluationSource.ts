@@ -167,7 +167,7 @@ function browserEngineName(name: string | null): string {
 }
 
 function copyPosition(position: LiveEvaluationPosition): LiveEvaluationPosition {
-  return { uciMoves: [...position.uciMoves] };
+  return { ...position, uciMoves: [...position.uciMoves] };
 }
 
 function copyEngineLine(line: EngineLine): EngineLine {

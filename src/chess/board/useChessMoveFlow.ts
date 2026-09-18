@@ -91,7 +91,11 @@ export function useChessMoveFlow(options: Options) {
         const snapshot = await fetchGameSnapshot();
         if (snapshot.importedAnalysisGame) return null;
         const authoritativeMoves = snapshot.game.moves ?? [];
-        const position = createLiveEvaluationPosition(authoritativeMoves);
+        const position = createLiveEvaluationPosition(
+          authoritativeMoves,
+          snapshot.game.initialFen,
+          snapshot.game.startingPositionId ?? 518,
+        );
         board.liveEvaluationPositionRef.current = position;
         const authoritativeRows = mapImportedUciMovesToRows(authoritativeMoves);
         const authoritativePly = authoritativeMoves.reduce(
