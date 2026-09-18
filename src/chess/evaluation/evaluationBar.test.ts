@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { evaluationToBar } from "./evaluationBar";
+import { activeEvaluationBarValue, evaluationToBar } from "./evaluationBar";
 
 describe("evaluationToBar", () => {
   it("matches the backend neutral and mate limits", () => {
@@ -24,5 +24,22 @@ describe("evaluationToBar", () => {
     expect(() => evaluationToBar(Number.NaN)).toThrow(
       "Evaluation must be finite",
     );
+  });
+});
+
+
+describe("activeEvaluationBarValue", () => {
+  it("keeps the bar inactive until an enabled engine has a result", () => {
+    expect(activeEvaluationBarValue(false, 0.75)).toBeNull();
+    expect(activeEvaluationBarValue(true, null)).toBeNull();
+    expect(activeEvaluationBarValue(true, undefined)).toBeNull();
+    expect(activeEvaluationBarValue(true, Number.NaN)).toBeNull();
+  });
+
+  it("preserves neutral and non-neutral engine results", () => {
+    expect(activeEvaluationBarValue(true, 0.5)).toBe(0.5);
+    expect(activeEvaluationBarValue(true, 0.73)).toBe(0.73);
+    expect(activeEvaluationBarValue(true, 0)).toBe(0);
+    expect(activeEvaluationBarValue(true, 1)).toBe(1);
   });
 });

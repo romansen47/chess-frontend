@@ -1,6 +1,7 @@
 import SettingsManager from "../../SettingsManager";
 import { useI18n } from "../../i18n/I18nProvider";
 import EngineLineExplorer from "../engine/EngineLineExplorer";
+import { activeEvaluationBarValue } from "../evaluation/evaluationBar";
 import type { EnginePanelActions, EnginePanelState } from "./chessBoardViewTypes";
 
 interface EnginePanelProps {
@@ -10,6 +11,14 @@ interface EnginePanelProps {
 
 export default function EnginePanel({ engine, actions }: EnginePanelProps) {
   const { t } = useI18n();
+  const liveBarValue = activeEvaluationBarValue(
+    engine.engineAutoUpdate,
+    engine.liveEvaluationBar,
+  );
+  const analysisBarValue = activeEvaluationBarValue(
+    engine.analysisEvaluationEnabled,
+    engine.analysisEvaluation?.bar,
+  );
 
   return (
     <section className="engine-panel">
@@ -20,6 +29,7 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
             className={[
               "engine-bar-wrapper",
               engine.engineAutoUpdate ? "engine-bar-enabled" : "engine-bar-disabled",
+              liveBarValue == null ? "engine-bar-no-result" : "engine-bar-has-result",
               engine.boardOrientation === "black" ? "engine-bar-black-bottom" : "",
             ].filter(Boolean).join(" ")}
             onClick={actions.toggleEngineAutoUpdate}
@@ -31,14 +41,12 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
               ? t("game.disableEvaluationEngine")
               : `${t("game.enableEvaluationEngine")} · 0.0`}
           >
-            <div className="engine-bar-white" style={{
-              height: `${(engine.engineAutoUpdate && engine.liveEvaluationBar != null
-                ? engine.liveEvaluationBar : 0.5) * 100}%`,
-            }} />
-            <div className="engine-bar-black" style={{
-              height: `${(1 - (engine.engineAutoUpdate && engine.liveEvaluationBar != null
-                ? engine.liveEvaluationBar : 0.5)) * 100}%`,
-            }} />
+            {liveBarValue != null && (
+              <>
+                <div className="engine-bar-white" style={{ height: `${liveBarValue * 100}%` }} />
+                <div className="engine-bar-black" style={{ height: `${(1 - liveBarValue) * 100}%` }} />
+              </>
+            )}
           </button>
         )}
 
@@ -48,6 +56,7 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
             className={[
               "engine-bar-wrapper",
               engine.analysisEvaluationEnabled ? "engine-bar-enabled" : "engine-bar-disabled",
+              analysisBarValue == null ? "engine-bar-no-result" : "engine-bar-has-result",
               engine.boardOrientation === "black" ? "engine-bar-black-bottom" : "",
             ].filter(Boolean).join(" ")}
             onClick={actions.toggleAnalysisEvaluation}
@@ -64,14 +73,12 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
                   ? t("game.enableEvaluationVariation")
                   : t("game.enableEvaluationSelectedMove")}
           >
-            <div className="engine-bar-white" style={{
-              height: `${(engine.analysisEvaluationEnabled && engine.analysisEvaluation
-                ? engine.analysisEvaluation.bar : 0.5) * 100}%`,
-            }} />
-            <div className="engine-bar-black" style={{
-              height: `${(1 - (engine.analysisEvaluationEnabled && engine.analysisEvaluation
-                ? engine.analysisEvaluation.bar : 0.5)) * 100}%`,
-            }} />
+            {analysisBarValue != null && (
+              <>
+                <div className="engine-bar-white" style={{ height: `${analysisBarValue * 100}%` }} />
+                <div className="engine-bar-black" style={{ height: `${(1 - analysisBarValue) * 100}%` }} />
+              </>
+            )}
           </button>
         )}
 

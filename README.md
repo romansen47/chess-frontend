@@ -51,3 +51,17 @@ The Engine Manager distinguishes normal lifecycle control from emergency recover
 UCI shutdown and terminates the operating-system process. Starting a new game is
 a backend-owned lifecycle transition; frontend cleanup is not relied upon to stop
 native engine processes.
+
+
+## Unified Settings workspace
+
+The top-level UI exposes one **Settings** entry. Engine defaults, reusable profiles,
+engine definitions, and runtime diagnostics live in one Settings workspace. Runtime
+process/UCI diagnostics are available through the **Engine Log** tab; the former
+standalone Engine Manager is embedded there rather than opened as a second top-level
+dialog.
+
+The vertical evaluation bar has an explicit no-result state. Disabled evaluation and
+an enabled evaluator that has not produced a result yet are rendered fully gray.
+Only a real engine result activates the normal black/white split, so a synthetic
+50/50 bar is never mistaken for an actual 0.00 evaluation.

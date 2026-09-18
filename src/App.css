@@ -692,6 +692,14 @@
   opacity: 0.78;
 }
 
+.engine-bar-wrapper.engine-bar-no-result {
+  background: #777777;
+}
+
+.engine-bar-wrapper.engine-bar-has-result {
+  background: #111111;
+}
+
 .engine-bar-white,
 .engine-bar-black {
   width: 100%;
