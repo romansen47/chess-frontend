@@ -248,23 +248,96 @@
 }
 
 .chess-database-search-dialog {
-  width: min(1100px, calc(100vw - 48px));
+  width: min(1080px, calc(100vw - 48px));
+  max-height: min(820px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #4b4b4b;
+  border-radius: 10px;
+  background: #202020;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.chess-database-search-header {
+  flex: 0 0 auto;
+  padding: 14px 16px;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.chess-database-search-header h2 {
+  margin: 0;
+  font-size: calc(1.1rem - 2px);
+}
+
+.chess-database-search-header p {
+  margin: 4px 0 0;
+  color: #a9a9a9;
+  font-size: calc(0.74rem - 2px);
+  line-height: 1.4;
+}
+
+.chess-database-search-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 14px 16px;
+}
+
+.chess-database-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chess-database-filter-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chess-database-filter-panel {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  background: #242424;
+}
+
+.chess-database-filter-panel-title {
+  min-height: 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 9px;
+}
+
+.chess-database-filter-panel-title strong {
+  font-size: calc(0.82rem - 2px);
+}
+
+.chess-database-filter-panel-title span {
+  color: #929292;
+  font-size: calc(0.68rem - 2px);
+  line-height: 1.35;
 }
 
 .chess-database-search-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
 }
 
 .chess-database-search-grid label {
+  min-width: 0;
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .chess-database-search-grid label > span {
-  font-size: calc(0.86rem - 2px);
-  opacity: 0.74;
+  color: #b7b7b7;
+  font-size: calc(0.76rem - 2px);
 }
 
 .chess-database-search-grid input,
@@ -273,30 +346,86 @@
   width: 100%;
   min-height: 34px;
   padding: 5px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid #4b4b4b;
   border-radius: 5px;
-  background: #111318;
-  color: inherit;
+  outline: none;
+  background: #191919;
+  color: #f2f2f2;
+  font: inherit;
+  font-size: calc(0.82rem - 2px);
+}
+
+.chess-database-search-grid input:focus,
+.chess-database-search-grid select:focus {
+  border-color: #737373;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.chess-database-search-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.chess-database-search-actions button {
+  min-width: 112px;
+}
+
+.chess-database-primary-button {
+  border-color: #6d6d6d !important;
+  background: #3a3a3a !important;
+  font-weight: 600;
+}
+
+.chess-database-primary-button:hover:not(:disabled) {
+  background: #474747 !important;
+}
+
+.chess-database-secondary-button {
+  background: #2b2b2b !important;
+}
+
+.chess-database-results-section {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  background: #1b1b1b;
+}
+
+.chess-database-results-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-bottom: 1px solid #3a3a3a;
+  background: #242424;
+  font-size: calc(0.78rem - 2px);
+}
+
+.chess-database-results-toolbar span {
+  color: #a9a9a9;
 }
 
 .chess-database-results-wrap {
-  max-height: 430px;
-  margin-top: 16px;
+  max-height: 390px;
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 7px;
 }
 
 .chess-database-results {
   width: 100%;
   border-collapse: collapse;
-  font-size: calc(0.86rem - 2px);
+  font-size: calc(0.8rem - 2px);
 }
 
 .chess-database-results th,
 .chess-database-results td {
-  padding: 8px 9px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  padding: 8px 10px;
+  border-bottom: 1px solid #303030;
   text-align: left;
   white-space: nowrap;
 }
@@ -305,7 +434,13 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #25282e;
+  background: #202020;
+  color: #d8d8d8;
+  font-weight: 600;
+}
+
+.chess-database-results tbody tr:hover:not(:has(.chess-database-empty)) {
+  background: #252525;
 }
 
 .chess-database-results td:nth-child(6) {
@@ -314,17 +449,36 @@
   text-overflow: ellipsis;
 }
 
+.chess-database-row-action {
+  min-height: 28px !important;
+  padding: 4px 9px !important;
+  font-size: calc(0.74rem - 2px);
+}
+
 .chess-database-empty {
+  height: 92px;
   padding: 24px !important;
+  color: #9d9d9d;
   text-align: center !important;
-  opacity: 0.6;
+  white-space: normal !important;
 }
 
 .chess-database-search-footer {
+  flex: 0 0 auto;
   justify-content: space-between;
+  margin-top: 0;
+  padding: 12px 16px;
+  border-top: 1px solid #3a3a3a;
+  background: #1b1b1b;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
+  .chess-database-filter-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
   .chess-database-search-grid {
     grid-template-columns: 1fr;
   }

@@ -63,6 +63,7 @@ interface DatabaseGameSummary {
 
 interface SearchForm {
   player: string;
+  player2: string;
   white: string;
   black: string;
   fromYear: string;
@@ -80,6 +81,7 @@ type DialogView = "overview" | "search" | "import";
 
 const EMPTY_SEARCH: SearchForm = {
   player: "",
+  player2: "",
   white: "",
   black: "",
   fromYear: "",
@@ -185,6 +187,7 @@ export default function ChessDatabaseDialog({
 
   const [searchForm, setSearchForm] = useState<SearchForm>(EMPTY_SEARCH);
   const [searchResults, setSearchResults] = useState<DatabaseGameSummary[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [loadingGameId, setLoadingGameId] = useState<number | null>(null);
@@ -325,15 +328,25 @@ export default function ChessDatabaseDialog({
     setSearchForm((previous) => ({ ...previous, [key]: value }));
   }
 
+  function resetSearch() {
+    setSearchForm({ ...EMPTY_SEARCH });
+    setSearchResults([]);
+    setSearchError(null);
+    setHasSearched(false);
+  }
+
   async function searchGames() {
     setIsSearching(true);
     setSearchError(null);
+    setSearchResults([]);
+    setHasSearched(true);
     try {
       const response = await fetch("/api/chess-database/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           player: searchForm.player.trim() || null,
+          player2: searchForm.player2.trim() || null,
           white: searchForm.white.trim() || null,
           black: searchForm.black.trim() || null,
           fromYear: optionalNumber(searchForm.fromYear),
@@ -539,74 +552,204 @@ export default function ChessDatabaseDialog({
 
       {view === "search" && (
         <div className="chess-database-overlay" role="presentation">
-          <section className="chess-database-dialog chess-database-search-dialog" role="dialog" aria-modal="true" aria-labelledby="chess-database-search-title">
-            <h2 id="chess-database-search-title">{t("database.searchTitle")}</h2>
-
-            <div className="chess-database-search-grid">
-              <label><span>{t("common.player")}</span><input value={searchForm.player} onChange={(event) => updateSearchField("player", event.target.value)} /></label>
-              <label><span>{t("common.white")}</span><input value={searchForm.white} onChange={(event) => updateSearchField("white", event.target.value)} /></label>
-              <label><span>{t("common.black")}</span><input value={searchForm.black} onChange={(event) => updateSearchField("black", event.target.value)} /></label>
-              <label><span>{t("database.fromYear")}</span><input type="number" min="1000" max="9999" value={searchForm.fromYear} onChange={(event) => updateSearchField("fromYear", event.target.value)} /></label>
-              <label><span>{t("database.toYear")}</span><input type="number" min="1000" max="9999" value={searchForm.toYear} onChange={(event) => updateSearchField("toYear", event.target.value)} /></label>
-              <label>
-                <span>{t("common.result")}</span>
-                <select value={searchForm.result} onChange={(event) => updateSearchField("result", event.target.value)}>
-                  <option value="">{t("common.any")}</option>
-                  <option value="1-0">1-0</option>
-                  <option value="0-1">0-1</option>
-                  <option value="1/2-1/2">½-½</option>
-                </select>
-              </label>
-              <label><span>{t("database.minimumElo")}</span><input type="number" min="0" value={searchForm.minElo} onChange={(event) => updateSearchField("minElo", event.target.value)} /></label>
+          <section
+            className="chess-database-dialog chess-database-search-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chess-database-search-title"
+          >
+            <div className="chess-database-search-header">
+              <div>
+                <h2 id="chess-database-search-title">{t("database.searchTitle")}</h2>
+                <p>{t("database.searchStartHint")}</p>
+              </div>
             </div>
 
-            <div className="chess-database-search-actions">
-              <button type="button" onClick={() => void searchGames()} disabled={isSearching}>
-                {isSearching ? "Searching…" : "Search"}
-              </button>
-            </div>
+            <div className="chess-database-search-body">
+              <form
+                className="chess-database-search-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void searchGames();
+                }}
+              >
+                <div className="chess-database-filter-panels">
+                  <section className="chess-database-filter-panel">
+                    <div className="chess-database-filter-panel-title">
+                      <strong>{t("common.player")}</strong>
+                      <span>{t("database.playerPairHint")}</span>
+                    </div>
+                    <div className="chess-database-search-grid">
+                      <label>
+                        <span>{t("common.player")} 1</span>
+                        <input
+                          value={searchForm.player}
+                          onChange={(event) => updateSearchField("player", event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("common.player")} 2</span>
+                        <input
+                          value={searchForm.player2}
+                          onChange={(event) => updateSearchField("player2", event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("common.white")}</span>
+                        <input
+                          value={searchForm.white}
+                          onChange={(event) => updateSearchField("white", event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("common.black")}</span>
+                        <input
+                          value={searchForm.black}
+                          onChange={(event) => updateSearchField("black", event.target.value)}
+                        />
+                      </label>
+                    </div>
+                  </section>
 
-            {searchError && <div className="chess-database-error">{searchError}</div>}
+                  <section className="chess-database-filter-panel">
+                    <div className="chess-database-filter-panel-title">
+                      <strong>{t("common.games")}</strong>
+                    </div>
+                    <div className="chess-database-search-grid">
+                      <label>
+                        <span>{t("database.fromYear")}</span>
+                        <input
+                          type="number"
+                          min="1000"
+                          max="9999"
+                          value={searchForm.fromYear}
+                          onChange={(event) => updateSearchField("fromYear", event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("database.toYear")}</span>
+                        <input
+                          type="number"
+                          min="1000"
+                          max="9999"
+                          value={searchForm.toYear}
+                          onChange={(event) => updateSearchField("toYear", event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        <span>{t("common.result")}</span>
+                        <select
+                          value={searchForm.result}
+                          onChange={(event) => updateSearchField("result", event.target.value)}
+                        >
+                          <option value="">{t("common.any")}</option>
+                          <option value="1-0">1-0</option>
+                          <option value="0-1">0-1</option>
+                          <option value="1/2-1/2">½-½</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>{t("database.minimumElo")}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={searchForm.minElo}
+                          onChange={(event) => updateSearchField("minElo", event.target.value)}
+                        />
+                      </label>
+                    </div>
+                  </section>
+                </div>
 
-            <div className="chess-database-results-wrap">
-              <table className="chess-database-results">
-                <thead>
-                  <tr>
-                    <th>{t("common.date")}</th>
-                    <th>{t("common.white")}</th>
-                    <th>{t("common.black")}</th>
-                    <th>{t("common.result")}</th>
-                    <th>{t("database.eco")}</th>
-                    <th>{t("common.event")}</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {searchResults.length === 0 && (
-                    <tr><td colSpan={7} className="chess-database-empty">No search results.</td></tr>
+                <div className="chess-database-search-actions">
+                  <button
+                    type="button"
+                    className="chess-database-secondary-button"
+                    onClick={resetSearch}
+                    disabled={isSearching || loadingGameId !== null}
+                  >
+                    {t("database.resetFilters")}
+                  </button>
+                  <button
+                    type="submit"
+                    className="chess-database-primary-button"
+                    disabled={isSearching || loadingGameId !== null}
+                  >
+                    {isSearching ? t("database.querying") : t("database.searchGames")}
+                  </button>
+                </div>
+              </form>
+
+              {searchError && <div className="chess-database-error">{searchError}</div>}
+
+              <div className="chess-database-results-section">
+                <div className="chess-database-results-toolbar">
+                  <strong>{t("database.searchResults")}</strong>
+                  {hasSearched && (
+                    <span>{searchResults.length.toLocaleString()} {t("common.games")}</span>
                   )}
-                  {searchResults.map((game) => (
-                    <tr key={game.id}>
-                      <td>{game.date || "?"}</td>
-                      <td>{game.white}{game.whiteElo != null ? ` (${game.whiteElo})` : ""}</td>
-                      <td>{game.black}{game.blackElo != null ? ` (${game.blackElo})` : ""}</td>
-                      <td>{game.result === "1/2-1/2" ? "½-½" : game.result || "*"}</td>
-                      <td>{game.eco || "—"}</td>
-                      <td title={game.event || ""}>{game.event || "—"}</td>
-                      <td>
-                        <button type="button" onClick={() => void loadGame(game.id)} disabled={loadingGameId !== null}>
-                          {loadingGameId === game.id ? "Loading…" : "Load"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                </div>
+
+                <div className="chess-database-results-wrap">
+                  <table className="chess-database-results">
+                    <thead>
+                      <tr>
+                        <th>{t("common.date")}</th>
+                        <th>{t("common.white")}</th>
+                        <th>{t("common.black")}</th>
+                        <th>{t("common.result")}</th>
+                        <th>{t("database.eco")}</th>
+                        <th>{t("common.event")}</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {searchResults.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="chess-database-empty">
+                            {hasSearched ? t("database.noSearchResults") : t("database.searchStartHint")}
+                          </td>
+                        </tr>
+                      )}
+                      {searchResults.map((game) => (
+                        <tr key={game.id}>
+                          <td>{game.date || "?"}</td>
+                          <td>{game.white}{game.whiteElo != null ? ` (${game.whiteElo})` : ""}</td>
+                          <td>{game.black}{game.blackElo != null ? ` (${game.blackElo})` : ""}</td>
+                          <td>{game.result === "1/2-1/2" ? "½-½" : game.result || "*"}</td>
+                          <td>{game.eco || "—"}</td>
+                          <td title={game.event || ""}>{game.event || "—"}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="chess-database-row-action"
+                              onClick={() => void loadGame(game.id)}
+                              disabled={loadingGameId !== null}
+                            >
+                              {loadingGameId === game.id
+                                ? t("database.loadingGameAction")
+                                : t("database.loadGameAction")}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             <div className="chess-database-footer chess-database-search-footer">
-              <button type="button" onClick={() => setView("overview")} disabled={loadingGameId !== null}>{t("common.back")}</button>
-              <button type="button" onClick={onClose} disabled={loadingGameId !== null}>{t("common.close")}</button>
+              <button
+                type="button"
+                onClick={() => setView("overview")}
+                disabled={loadingGameId !== null}
+              >
+                {t("common.back")}
+              </button>
+              <button type="button" onClick={onClose} disabled={loadingGameId !== null}>
+                {t("common.close")}
+              </button>
             </div>
           </section>
         </div>
