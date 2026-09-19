@@ -90,6 +90,7 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
             {engine.engineConfigLoadError && <div className="engine-error">{engine.engineConfigLoadError}</div>}
           </>}
 
+          <div className="engine-primary-content">
           {engine.analysisReplayActive ? engine.analysisContent
             : engine.uciAnalysisLoaded ? <div className="engine-placeholder-text">{t("analysis.analyzeTitle")}</div>
               : <>
@@ -113,6 +114,7 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
                   <div className="engine-placeholder-text">{t("analysis.engineOutputPlaceholder")}</div>
                 )}
               </>}
+          </div>
         </div>
       </div>
     </section>

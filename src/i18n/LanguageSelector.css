@@ -33,3 +33,26 @@
     min-width: 114px;
   }
 }
+
+
+@media (max-width: 820px) {
+  .language-selector {
+    height: 28px;
+    padding: 0;
+  }
+
+  .language-selector select {
+    width: 76px;
+    min-width: 76px;
+    height: 28px;
+    padding: 0 18px 0 5px;
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .language-selector select {
+    width: 68px;
+    min-width: 68px;
+  }
+}

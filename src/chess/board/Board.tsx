@@ -1,4 +1,4 @@
-import type { PointerEvent, RefObject } from "react";
+import { useEffect, useState, type CSSProperties, type PointerEvent, type RefObject } from "react";
 import type {
   DragState,
   LastMove,
@@ -13,6 +13,9 @@ import {
   squareToBoardOffset,
   type BoardOrientation,
 } from "./boardOrientation";
+
+const DEFAULT_BOARD_SIZE = 704;
+const DEFAULT_SQUARE_SIZE = DEFAULT_BOARD_SIZE / 8;
 
 export interface BoardAnnotation {
   square: string;
@@ -52,6 +55,38 @@ export default function Board({
   onPiecePointerUp,
   onPiecePointerCancel,
 }: BoardProps) {
+  const [boardSize, setBoardSize] = useState(DEFAULT_BOARD_SIZE);
+
+  useEffect(() => {
+    const element = boardContainerRef.current;
+    if (!element) return;
+
+    const updateSize = () => {
+      const nextSize = element.getBoundingClientRect().width;
+      if (!Number.isFinite(nextSize) || nextSize <= 0) return;
+      setBoardSize((previous) => Math.abs(previous - nextSize) < 0.5 ? previous : nextSize);
+    };
+
+    updateSize();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateSize);
+      return () => window.removeEventListener("resize", updateSize);
+    }
+
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [boardContainerRef]);
+
+  const squareSize = boardSize > 0 ? boardSize / 8 : DEFAULT_SQUARE_SIZE;
+  const targetMarkerSize = Math.max(14, Math.min(30, squareSize * (30 / DEFAULT_SQUARE_SIZE)));
+  const annotationSize = Math.max(9, Math.min(14, squareSize * (14 / DEFAULT_SQUARE_SIZE)));
+  const annotationGap = Math.max(10, Math.min(16, squareSize * (16 / DEFAULT_SQUARE_SIZE)));
+  const boardStyle = {
+    "--board-square-size": `${squareSize}px`,
+  } as CSSProperties;
+
   const squares = [];
   for (let row = 0; row < 8; row++) {
     for (let column = 0; column < 8; column++) {
@@ -76,7 +111,7 @@ export default function Board({
     const pieceOffset = squareToBoardOffset(
       squareName(piece.file, piece.rank),
       orientation,
-      88
+      squareSize
     );
     const x = pieceOffset?.x ?? 0;
     const y = pieceOffset?.y ?? 0;
@@ -105,7 +140,7 @@ export default function Board({
   });
 
   const renderedPossibleTargets = possibleTargets.map((square) => {
-    const targetOffset = squareToBoardOffset(square, orientation, 88);
+    const targetOffset = squareToBoardOffset(square, orientation, squareSize);
     if (!targetOffset) return null;
 
     return (
@@ -116,15 +151,17 @@ export default function Board({
           selectedSquare === square ? "possible-target-marker-selected" : "",
         ].filter(Boolean).join(" ")}
         style={{
-          left: targetOffset.x + 29,
-          top: targetOffset.y + 29,
+          width: targetMarkerSize,
+          height: targetMarkerSize,
+          left: targetOffset.x + (squareSize - targetMarkerSize) / 2,
+          top: targetOffset.y + (squareSize - targetMarkerSize) / 2,
         }}
       />
     );
   });
 
   return (
-    <div className="board-container" ref={boardContainerRef}>
+    <div className="board-container" ref={boardContainerRef} style={boardStyle}>
       <div className="board">{squares}</div>
       <div className="pieces-layer">{renderedPieces}</div>
       <div className="possible-targets-layer">{renderedPossibleTargets}</div>
@@ -132,7 +169,7 @@ export default function Board({
         const annotationCoords = squareToBoardOffset(
           annotation.square,
           orientation,
-          88
+          squareSize
         );
         if (!annotationCoords) return null;
 
@@ -143,8 +180,10 @@ export default function Board({
             data-tooltip={annotation.tooltip ?? undefined}
             aria-label={annotation.tooltip ?? undefined}
             style={{
-              left: annotationCoords.x + 71 - index * 16,
-              top: annotationCoords.y + 2,
+              width: annotationSize,
+              height: annotationSize,
+              left: annotationCoords.x + squareSize - annotationSize - 3 - index * annotationGap,
+              top: annotationCoords.y + Math.max(1, squareSize * 0.02),
             }}
           >
             {annotation.symbol}
