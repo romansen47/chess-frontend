@@ -335,13 +335,55 @@
   gap: 4px;
 }
 
-.chess-database-search-grid label > span {
+.chess-database-search-grid label > span,
+.chess-database-color-assignment > span {
   color: #b7b7b7;
   font-size: calc(0.76rem - 2px);
 }
 
+.chess-database-player-label-row {
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chess-database-color-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 1px 6px;
+  border: 1px solid #595959;
+  border-radius: 999px;
+  font-size: calc(0.64rem - 2px);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.chess-database-color-badge.is-white {
+  border-color: #d0d0d0;
+  background: #e7e7e7;
+  color: #171717;
+}
+
+.chess-database-color-badge.is-black {
+  border-color: #5c5c5c;
+  background: #111;
+  color: #e7e7e7;
+}
+
+.chess-database-color-assignment {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+
 .chess-database-search-grid input,
-.chess-database-search-grid select {
+.chess-database-search-grid select,
+.chess-database-color-assignment select {
   box-sizing: border-box;
   width: 100%;
   min-height: 34px;
@@ -356,7 +398,8 @@
 }
 
 .chess-database-search-grid input:focus,
-.chess-database-search-grid select:focus {
+.chess-database-search-grid select:focus,
+.chess-database-color-assignment select:focus {
   border-color: #737373;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }

@@ -61,11 +61,12 @@ interface DatabaseGameSummary {
   plyCount: number;
 }
 
+type PlayerColorAssignment = "any" | "player1White" | "player1Black";
+
 interface SearchForm {
   player: string;
   player2: string;
-  white: string;
-  black: string;
+  colorAssignment: PlayerColorAssignment;
   fromYear: string;
   toYear: string;
   result: string;
@@ -82,8 +83,7 @@ type DialogView = "overview" | "search" | "import";
 const EMPTY_SEARCH: SearchForm = {
   player: "",
   player2: "",
-  white: "",
-  black: "",
+  colorAssignment: "any",
   fromYear: "",
   toYear: "",
   result: "",
@@ -124,6 +124,36 @@ function optionalNumber(value: string): number | null {
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function playerSearchCriteria(searchForm: SearchForm) {
+  const player1 = searchForm.player.trim() || null;
+  const player2 = searchForm.player2.trim() || null;
+
+  if (searchForm.colorAssignment === "player1White") {
+    return {
+      player: null,
+      player2: null,
+      white: player1,
+      black: player2,
+    };
+  }
+
+  if (searchForm.colorAssignment === "player1Black") {
+    return {
+      player: null,
+      player2: null,
+      white: player2,
+      black: player1,
+    };
+  }
+
+  return {
+    player: player1,
+    player2,
+    white: null,
+    black: null,
+  };
 }
 
 function importProgressPercent(job: DatabaseImportJob | null): number {
@@ -324,7 +354,7 @@ export default function ChessDatabaseDialog({
     setCancelRequested(false);
   }
 
-  function updateSearchField(key: keyof SearchForm, value: string) {
+  function updateSearchField<K extends keyof SearchForm>(key: K, value: SearchForm[K]) {
     setSearchForm((previous) => ({ ...previous, [key]: value }));
   }
 
@@ -341,14 +371,12 @@ export default function ChessDatabaseDialog({
     setSearchResults([]);
     setHasSearched(true);
     try {
+      const playerCriteria = playerSearchCriteria(searchForm);
       const response = await fetch("/api/chess-database/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          player: searchForm.player.trim() || null,
-          player2: searchForm.player2.trim() || null,
-          white: searchForm.white.trim() || null,
-          black: searchForm.black.trim() || null,
+          ...playerCriteria,
           fromYear: optionalNumber(searchForm.fromYear),
           toYear: optionalNumber(searchForm.toYear),
           result: searchForm.result || null,
@@ -579,36 +607,73 @@ export default function ChessDatabaseDialog({
                       <strong>{t("common.player")}</strong>
                       <span>{t("database.playerPairHint")}</span>
                     </div>
-                    <div className="chess-database-search-grid">
+                    <div className="chess-database-search-grid chess-database-player-grid">
                       <label>
-                        <span>{t("common.player")} 1</span>
+                        <span className="chess-database-player-label-row">
+                          <span>{t("common.player")} 1</span>
+                          {searchForm.colorAssignment !== "any" && (
+                            <span
+                              className={`chess-database-color-badge ${
+                                searchForm.colorAssignment === "player1White"
+                                  ? "is-white"
+                                  : "is-black"
+                              }`}
+                            >
+                              {searchForm.colorAssignment === "player1White"
+                                ? t("common.white")
+                                : t("common.black")}
+                            </span>
+                          )}
+                        </span>
                         <input
                           value={searchForm.player}
                           onChange={(event) => updateSearchField("player", event.target.value)}
                         />
                       </label>
                       <label>
-                        <span>{t("common.player")} 2</span>
+                        <span className="chess-database-player-label-row">
+                          <span>{t("common.player")} 2</span>
+                          {searchForm.colorAssignment !== "any" && (
+                            <span
+                              className={`chess-database-color-badge ${
+                                searchForm.colorAssignment === "player1White"
+                                  ? "is-black"
+                                  : "is-white"
+                              }`}
+                            >
+                              {searchForm.colorAssignment === "player1White"
+                                ? t("common.black")
+                                : t("common.white")}
+                            </span>
+                          )}
+                        </span>
                         <input
                           value={searchForm.player2}
                           onChange={(event) => updateSearchField("player2", event.target.value)}
                         />
                       </label>
-                      <label>
-                        <span>{t("common.white")}</span>
-                        <input
-                          value={searchForm.white}
-                          onChange={(event) => updateSearchField("white", event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        <span>{t("common.black")}</span>
-                        <input
-                          value={searchForm.black}
-                          onChange={(event) => updateSearchField("black", event.target.value)}
-                        />
-                      </label>
                     </div>
+
+                    <label className="chess-database-color-assignment">
+                      <span>{t("database.colorAssignment")}</span>
+                      <select
+                        value={searchForm.colorAssignment}
+                        onChange={(event) =>
+                          updateSearchField(
+                            "colorAssignment",
+                            event.target.value as PlayerColorAssignment,
+                          )
+                        }
+                      >
+                        <option value="any">{t("common.any")}</option>
+                        <option value="player1White">
+                          {t("common.player")} 1 = {t("common.white")} · {t("common.player")} 2 = {t("common.black")}
+                        </option>
+                        <option value="player1Black">
+                          {t("common.player")} 1 = {t("common.black")} · {t("common.player")} 2 = {t("common.white")}
+                        </option>
+                      </select>
+                    </label>
                   </section>
 
                   <section className="chess-database-filter-panel">
