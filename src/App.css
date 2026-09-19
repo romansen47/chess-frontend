@@ -1815,10 +1815,6 @@
     aspect-ratio: 1 / 1;
   }
 
-  .board {
-    box-sizing: border-box;
-  }
-
   .square-label {
     right: max(1px, calc(var(--board-square-size, 88px) * 0.045));
     bottom: max(1px, calc(var(--board-square-size, 88px) * 0.045));
