@@ -132,6 +132,8 @@ export default function SettingsManager({
   const [optionFilter, setOptionFilter] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mobileHeaderMenuOpen, setMobileHeaderMenuOpen] = useState(false);
+  const [mobileAdvancedOpen, setMobileAdvancedOpen] = useState(false);
 
   const engines = overview?.engines ?? [];
   const profiles = overview?.profiles ?? [];
@@ -199,12 +201,15 @@ export default function SettingsManager({
     setCreatingProfile(false);
     setProfileOptionEditor(null);
     setOptionFilter("");
+    setMobileAdvancedOpen(false);
+    setMobileHeaderMenuOpen(false);
     setMessage(null);
     setError(null);
   }
 
   function selectExistingEngine(id: string) {
     setCreatingEngine(false);
+    setMobileAdvancedOpen(false);
     setSelectedEngineId(id);
     const selected = engines.find((engine) => engine.id === id);
     setEngineDraft(selected ? copyEngine(selected) : null);
@@ -216,6 +221,7 @@ export default function SettingsManager({
 
   function selectExistingProfile(id: string) {
     setCreatingProfile(false);
+    setMobileAdvancedOpen(false);
     setSelectedProfileId(id);
     const selected = profiles.find((profile) => profile.id === id);
     setProfileDraft(selected ? copyProfile(selected) : null);
@@ -228,6 +234,8 @@ export default function SettingsManager({
   function beginCreateEngine() {
     setMode("ENGINES");
     setCreatingEngine(true);
+    setMobileAdvancedOpen(false);
+    setMobileHeaderMenuOpen(false);
     setSelectedEngineId(null);
     setEngineDraft(null);
     setNewEnginePath("");
@@ -243,6 +251,8 @@ export default function SettingsManager({
   function beginCreateProfile() {
     setMode("PROFILES");
     setCreatingProfile(true);
+    setMobileAdvancedOpen(false);
+    setMobileHeaderMenuOpen(false);
     setSelectedProfileId(null);
     setProfileDraft(null);
     setNewProfileEngineId("");
@@ -764,7 +774,7 @@ export default function SettingsManager({
               {overview && <span> · {t("settings.version", { version: overview.version })}</span>}
             </div>
           </div>
-          <div className="engine-config-header-actions">
+          <div className="engine-config-header-actions engine-config-header-actions-desktop">
             {mode !== "ENGINE_LOG" && (
               <>
                 <button
@@ -785,6 +795,50 @@ export default function SettingsManager({
               </>
             )}
             <button type="button" onClick={onClose} disabled={busy}>{t("common.close")}</button>
+          </div>
+
+          <div className="engine-config-mobile-header-actions">
+            <details
+              className="engine-config-mobile-header-menu"
+              open={mobileHeaderMenuOpen}
+              onToggle={(event) => setMobileHeaderMenuOpen(event.currentTarget.open)}
+            >
+              <summary aria-label={t("settings.mobileMoreActions")} title={t("settings.mobileMoreActions")}>⋮</summary>
+              <div className="engine-config-mobile-header-menu-popup">
+                {mode !== "ENGINE_LOG" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={beginCreateEngine}
+                      disabled={busy}
+                    >
+                      {t("settings.scanSystem")}
+                    </button>
+                    <button
+                      type="button"
+                      className="engine-config-reset"
+                      onClick={() => {
+                        setMobileHeaderMenuOpen(false);
+                        void resetEngineSettings();
+                      }}
+                      disabled={busy}
+                    >
+                      {t("settings.reset")}
+                    </button>
+                  </>
+                )}
+              </div>
+            </details>
+            <button
+              type="button"
+              className="engine-config-mobile-close"
+              onClick={onClose}
+              disabled={busy}
+              aria-label={t("common.close")}
+              title={t("common.close")}
+            >
+              ×
+            </button>
           </div>
         </header>
 
@@ -837,7 +891,21 @@ export default function SettingsManager({
           </button>
         </div>
 
-        <div className={`engine-config-body${mode === "ENGINE_LOG" ? " engine-config-body-log" : ""}`}>
+        <label className="engine-config-mobile-mode-picker">
+          <span>{t("settings.area")}</span>
+          <select
+            value={mode}
+            onChange={(event) => changeMode(event.target.value as SettingsMode)}
+            disabled={busy}
+          >
+            <option value="DEFAULTS">{t("settings.defaults")}</option>
+            <option value="PROFILES">{t("settings.profiles")} (${profiles.length})</option>
+            <option value="ENGINES">{t("settings.engines")} (${engines.length})</option>
+            <option value="ENGINE_LOG">{t("settings.engineLog")}</option>
+          </select>
+        </label>
+
+        <div className={`engine-config-body engine-config-body-${mode.toLowerCase().replace("_", "-")}${mode === "ENGINE_LOG" ? " engine-config-body-log" : ""}`}>
           {mode === "ENGINE_LOG" ? (
             <EngineManager embedded />
           ) : mode === "DEFAULTS" ? (
@@ -944,6 +1012,54 @@ export default function SettingsManager({
                   </button>
                 </div>
 
+                <div className="engine-config-mobile-item-picker">
+                  <label>
+                    <span>
+                      {mode === "ENGINES" ? t("settings.definedEngines") : t("settings.engineProfiles")}
+                    </span>
+                    <select
+                      value={
+                        mode === "ENGINES"
+                          ? creatingEngine ? "" : selectedEngineId ?? ""
+                          : creatingProfile ? "" : selectedProfileId ?? ""
+                      }
+                      onChange={(event) => {
+                        if (!event.target.value) return;
+                        if (mode === "ENGINES") {
+                          selectExistingEngine(event.target.value);
+                        } else {
+                          selectExistingProfile(event.target.value);
+                        }
+                      }}
+                      disabled={busy}
+                    >
+                      <option value="">
+                        {mode === "ENGINES" ? t("settings.noEngineSelected") : t("settings.noProfileSelected")}
+                      </option>
+                      {mode === "ENGINES"
+                        ? engines.map((engine) => (
+                            <option key={engine.id ?? engine.name} value={engine.id ?? ""}>
+                              {engine.name}
+                            </option>
+                          ))
+                        : profiles.map((profile) => (
+                            <option key={profile.id ?? profile.name} value={profile.id ?? ""}>
+                              {profile.name}
+                            </option>
+                          ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={mode === "ENGINES" ? beginCreateEngine : beginCreateProfile}
+                    disabled={busy}
+                    aria-label={mode === "ENGINES" ? t("settings.newEngine") : t("settings.newProfile")}
+                    title={mode === "ENGINES" ? t("settings.newEngine") : t("settings.newProfile")}
+                  >
+                    ＋
+                  </button>
+                </div>
+
                 <div className="engine-config-nav-list">
                   {mode === "ENGINES" && engines.length === 0 && (
                     <div className="engine-config-empty">{t("settings.noEngineDefined")}</div>
@@ -1016,7 +1132,7 @@ export default function SettingsManager({
                           </div>
                         </div>
                         <div className="engine-config-form-grid">
-                          <label>
+                          <label className="engine-config-manual-engine-field">
                             <span>{t("settings.engineNameOptional")}</span>
                             <input
                               value={newEngineName}
@@ -1043,7 +1159,7 @@ export default function SettingsManager({
                               ))}
                             </select>
                           </label>
-                          <label>
+                          <label className="engine-config-manual-engine-field">
                             <span>{t("settings.enginePathFallback")}</span>
                             <input
                               value={newEnginePath}
@@ -1052,6 +1168,36 @@ export default function SettingsManager({
                             />
                           </label>
                         </div>
+
+                        <details className="engine-config-mobile-manual-engine">
+                          <summary>{t("settings.manualEngineSetup")}</summary>
+                          <div className="engine-config-mobile-manual-engine-fields">
+                            <label>
+                              <span>{t("settings.engineNameOptional")}</span>
+                              <input
+                                value={newEngineName}
+                                onChange={(event) => setNewEngineName(event.target.value)}
+                                placeholder={t("settings.engineNamePlaceholder")}
+                              />
+                            </label>
+                            <label>
+                              <span>{t("settings.enginePathFallback")}</span>
+                              <input
+                                value={newEnginePath}
+                                onChange={(event) => setNewEnginePath(event.target.value)}
+                                placeholder="/usr/games/stockfish"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => void inspectEngineByPath()}
+                              disabled={busy || !newEnginePath.trim()}
+                            >
+                              {busy ? t("settings.inspecting") : t("settings.useEnteredPath")}
+                            </button>
+                          </div>
+                        </details>
+
                         <div className="engine-config-default-info">
                           {t("settings.engineFileDialogInfo")}
                         </div>
@@ -1065,6 +1211,7 @@ export default function SettingsManager({
                           </button>
                           <button
                             type="button"
+                            className="engine-config-manual-engine-action"
                             onClick={() => void inspectEngineByPath()}
                             disabled={busy || !newEnginePath.trim()}
                           >
@@ -1082,7 +1229,7 @@ export default function SettingsManager({
                     )}
 
                     {engineDraft && (
-                      <div className="engine-config-editor">
+                      <div className={`engine-config-editor${mobileAdvancedOpen ? " engine-config-mobile-advanced-open" : ""}`}>
                         <div className="engine-config-details-heading">
                           <div>
                             <strong>{engineDraft.id ? engineDraft.name : t("settings.reviewEngineDefinition")}</strong>
@@ -1098,14 +1245,14 @@ export default function SettingsManager({
                         </div>
 
                         <div className="engine-config-form-grid">
-                          <label>
+                          <label className="engine-config-mobile-hidden-identity">
                             <span>{t("settings.engineName")}</span>
                             <input
                               value={engineDraft.name}
                               onChange={(event) => setEngineDraft({ ...engineDraft, name: event.target.value })}
                             />
                           </label>
-                          <label>
+                          <label className="engine-config-mobile-hidden-identity">
                             <span>{t("engine.executable")}</span>
                             <input value={engineDraft.engine} readOnly />
                           </label>
@@ -1125,6 +1272,16 @@ export default function SettingsManager({
                             <strong>{Object.keys(engineDraft.options).length}</strong>
                           </div>
                         </div>
+
+                        <button
+                          type="button"
+                          className="engine-config-mobile-advanced-toggle"
+                          onClick={() => setMobileAdvancedOpen((previous) => !previous)}
+                        >
+                          {mobileAdvancedOpen
+                            ? t("settings.hideAdvancedOptions")
+                            : t("settings.showAdvancedOptions", { count: Object.keys(engineDraft.options).length })}
+                        </button>
 
                         <div className="engine-config-options-header">
                           <div>
@@ -1246,7 +1403,7 @@ export default function SettingsManager({
                     )}
 
                     {profileDraft && profileEngine && (
-                      <div className="engine-config-editor">
+                      <div className={`engine-config-editor${mobileAdvancedOpen ? " engine-config-mobile-advanced-open" : ""}`}>
                         <div className="engine-config-details-heading">
                           <div>
                             <strong>{profileDraft.id ? profileDraft.name : t("settings.configureProfile")}</strong>
@@ -1271,18 +1428,28 @@ export default function SettingsManager({
                         )}
 
                         <div className="engine-config-form-grid">
-                          <label>
+                          <label className="engine-config-mobile-hidden-identity">
                             <span>{t("settings.profileName")}</span>
                             <input
                               value={profileDraft.name}
                               onChange={(event) => setProfileDraft({ ...profileDraft, name: event.target.value })}
                             />
                           </label>
-                          <label>
+                          <label className="engine-config-mobile-hidden-identity">
                             <span>{t("settings.engineLabel")}</span>
                             <input value={profileEngine.name} readOnly />
                           </label>
                         </div>
+
+                        <button
+                          type="button"
+                          className="engine-config-mobile-advanced-toggle"
+                          onClick={() => setMobileAdvancedOpen((previous) => !previous)}
+                        >
+                          {mobileAdvancedOpen
+                            ? t("settings.hideAdvancedOptions")
+                            : t("settings.showAdvancedOptions", { count: Object.keys(profileDraft.optionValues).length })}
+                        </button>
 
                         <div className="engine-config-options-header">
                           <div>
@@ -1438,18 +1605,36 @@ export default function SettingsManager({
                     ))}
                   </select>
                 ) : profileOptionEditor.option.type === "spin" ? (
-                  <input
-                    type="number"
-                    min={profileOptionEditor.option.min ?? undefined}
-                    max={profileOptionEditor.option.max ?? undefined}
-                    value={profileOptionEditor.value}
-                    onChange={(event) => setProfileOptionEditor({
-                      ...profileOptionEditor,
-                      value: event.target.value,
-                    })}
-                    required
-                    autoFocus
-                  />
+                  <div className="engine-config-option-popup-spin">
+                    <input
+                      className="engine-config-option-popup-spin-range"
+                      type="range"
+                      min={profileOptionEditor.option.min ?? 0}
+                      max={profileOptionEditor.option.max ?? 100}
+                      step={1}
+                      value={profileOptionEditor.value}
+                      onChange={(event) => setProfileOptionEditor({
+                        ...profileOptionEditor,
+                        value: event.target.value,
+                      })}
+                    />
+                    <span className="engine-config-option-popup-spin-value">
+                      {profileOptionEditor.value}
+                    </span>
+                    <input
+                      className="engine-config-option-popup-spin-number"
+                      type="number"
+                      min={profileOptionEditor.option.min ?? undefined}
+                      max={profileOptionEditor.option.max ?? undefined}
+                      value={profileOptionEditor.value}
+                      onChange={(event) => setProfileOptionEditor({
+                        ...profileOptionEditor,
+                        value: event.target.value,
+                      })}
+                      required
+                      autoFocus
+                    />
+                  </div>
                 ) : (
                   <input
                     type="text"

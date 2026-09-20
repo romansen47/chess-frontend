@@ -801,3 +801,409 @@
   height: 100%;
   min-height: 0;
 }
+
+
+/* Mobile settings are intentionally task-focused instead of a compressed desktop layout. */
+.engine-config-mobile-header-actions,
+.engine-config-mobile-mode-picker,
+.engine-config-mobile-item-picker,
+.engine-config-mobile-advanced-toggle,
+.engine-config-mobile-manual-engine {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .engine-config-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .engine-config-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .engine-config-dialog-header {
+    min-height: 54px;
+    align-items: center;
+    padding: 9px 12px;
+  }
+
+  .engine-config-dialog-header h2 {
+    font-size: 1rem;
+  }
+
+  .engine-config-dialog-subtitle,
+  .engine-config-header-actions-desktop {
+    display: none;
+  }
+
+  .engine-config-mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .engine-config-mobile-header-menu {
+    position: relative;
+  }
+
+  .engine-config-mobile-header-menu summary,
+  .engine-config-mobile-close {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    padding: 0 !important;
+    border: 1px solid #4b4b4b;
+    border-radius: 7px;
+    background: #2b2b2b;
+    color: #f2f2f2;
+    list-style: none;
+    cursor: pointer;
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  .engine-config-mobile-header-menu summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .engine-config-mobile-header-menu-popup {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    width: min(260px, calc(100vw - 24px));
+    display: grid;
+    gap: 6px;
+    padding: 7px;
+    border: 1px solid #4b4b4b;
+    border-radius: 8px;
+    background: #242424;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  }
+
+  .engine-config-mobile-header-menu-popup button {
+    min-height: 42px;
+    text-align: left;
+  }
+
+  .engine-config-tabs {
+    display: none;
+  }
+
+  .engine-config-mobile-mode-picker {
+    display: grid;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #343434;
+    background: #1b1b1b;
+  }
+
+  .engine-config-mobile-mode-picker > span {
+    color: #8f8f8f;
+    font-size: 0.68rem;
+  }
+
+  .engine-config-mobile-mode-picker select {
+    height: 42px;
+    font-size: 0.86rem;
+    background: #252525;
+  }
+
+  .engine-config-error-banner,
+  .engine-config-message-banner {
+    padding: 7px 12px;
+    font-size: 0.72rem;
+  }
+
+  .engine-config-body {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .engine-config-body-defaults {
+    display: block;
+    overflow: auto;
+  }
+
+  .engine-config-body-defaults .engine-config-sidebar {
+    display: none;
+  }
+
+  .engine-config-sidebar {
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 1px solid #343434;
+    background: #202020;
+  }
+
+  .engine-config-body-profiles .engine-config-sidebar,
+  .engine-config-body-engines .engine-config-sidebar {
+    flex: 0 0 auto;
+  }
+
+  .engine-config-body-profiles .engine-config-sidebar-header,
+  .engine-config-body-engines .engine-config-sidebar-header,
+  .engine-config-body-profiles .engine-config-nav-list,
+  .engine-config-body-engines .engine-config-nav-list {
+    display: none;
+  }
+
+  .engine-config-mobile-item-picker {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 7px;
+    padding: 8px 10px;
+  }
+
+  .engine-config-mobile-item-picker label {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+  }
+
+  .engine-config-mobile-item-picker label > span {
+    color: #8f8f8f;
+    font-size: 0.68rem;
+  }
+
+  .engine-config-mobile-item-picker select,
+  .engine-config-mobile-item-picker button {
+    height: 42px;
+  }
+
+  .engine-config-mobile-item-picker button {
+    align-self: end;
+    padding: 0;
+    font-size: 1.2rem;
+  }
+
+  .engine-config-details {
+    padding: 10px;
+  }
+
+  .engine-config-editor,
+  .engine-config-create-card {
+    min-height: 0;
+    gap: 10px;
+  }
+
+  .engine-config-details-heading {
+    align-items: center;
+    gap: 8px;
+  }
+
+  .engine-config-details-heading strong {
+    font-size: 0.9rem;
+  }
+
+  .engine-config-details-heading > div:first-child > span {
+    display: none;
+  }
+
+  .engine-config-heading-badges {
+    max-width: 48%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .engine-config-chip {
+    padding: 2px 6px;
+    font-size: 0.62rem !important;
+  }
+
+  .engine-config-body-defaults .engine-config-details {
+    padding: 10px;
+    overflow: visible;
+  }
+
+  .engine-config-body-defaults .engine-config-editor {
+    gap: 8px;
+  }
+
+  .engine-config-body-defaults .engine-config-default-info {
+    display: none;
+  }
+
+  .engine-config-default-grid {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .engine-config-default-card {
+    gap: 6px;
+    padding: 9px 10px;
+  }
+
+  .engine-config-default-card-heading span:not(.engine-config-chip),
+  .engine-config-default-card-path {
+    display: none;
+  }
+
+  .engine-config-default-card-heading strong {
+    font-size: 0.8rem;
+  }
+
+  .engine-config-default-card-meta {
+    gap: 0;
+    font-size: 0.68rem;
+  }
+
+  .engine-config-default-card select {
+    height: 42px;
+    font-size: 0.82rem;
+  }
+
+  .engine-config-actions-footer {
+    position: sticky;
+    bottom: -10px;
+    z-index: 5;
+    margin: 2px -10px -10px;
+    padding: 9px 10px 10px;
+    border-top: 1px solid #343434;
+    background: rgba(32, 32, 32, 0.97);
+  }
+
+  .engine-config-actions-footer button {
+    min-height: 42px;
+  }
+
+  .engine-config-form-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .engine-config-mobile-hidden-identity {
+    display: none !important;
+  }
+
+  .engine-config-manual-engine-field,
+  .engine-config-manual-engine-action {
+    display: none !important;
+  }
+
+  .engine-config-mobile-manual-engine {
+    display: block;
+    border: 1px solid #3c3c3c;
+    border-radius: 7px;
+    background: #242424;
+  }
+
+  .engine-config-mobile-manual-engine summary {
+    padding: 10px 11px;
+    color: #bdbdbd;
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+
+  .engine-config-mobile-manual-engine-fields {
+    display: grid;
+    gap: 8px;
+    padding: 0 10px 10px;
+  }
+
+  .engine-config-mobile-manual-engine-fields label {
+    display: grid;
+    gap: 4px;
+  }
+
+  .engine-config-mobile-manual-engine-fields label > span {
+    color: #999;
+    font-size: 0.68rem;
+  }
+
+  .engine-config-mobile-manual-engine-fields input,
+  .engine-config-mobile-manual-engine-fields button {
+    min-height: 42px;
+  }
+
+  .engine-config-create-card > .engine-config-default-info {
+    display: none;
+  }
+
+  .engine-config-engine-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .engine-config-engine-summary > div {
+    padding: 6px;
+  }
+
+  .engine-config-engine-summary span {
+    font-size: 0.62rem;
+  }
+
+  .engine-config-engine-summary strong {
+    font-size: 0.68rem;
+  }
+
+  .engine-config-mobile-advanced-toggle {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    border-color: #454545 !important;
+    background: #292929 !important;
+    text-align: left;
+  }
+
+  .engine-config-options-header,
+  .engine-config-options {
+    display: none;
+  }
+
+  .engine-config-mobile-advanced-open .engine-config-options-header {
+    display: flex;
+    align-items: center;
+    padding-top: 0;
+  }
+
+  .engine-config-mobile-advanced-open .engine-config-options {
+    display: grid;
+    max-height: none;
+    overflow: visible;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .engine-config-mobile-advanced-open .engine-config-options-header > div:first-child {
+    display: none;
+  }
+
+  .engine-config-mobile-advanced-open .engine-config-option-tools {
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .engine-config-mobile-advanced-open .engine-config-option-tools input {
+    display: none;
+  }
+
+  .engine-config-option {
+    min-height: 50px;
+    grid-template-columns: minmax(0, 1fr) minmax(82px, 120px);
+    gap: 8px;
+    padding: 7px 8px;
+  }
+
+  .engine-config-option-value-button {
+    min-height: 38px;
+  }
+
+  .engine-config-option-meta {
+    display: none;
+  }
+
+  .engine-config-body-log {
+    display: block;
+    overflow: hidden;
+  }
+}

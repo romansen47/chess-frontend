@@ -368,3 +368,85 @@
   display: flex;
   gap: 8px;
 }
+
+
+@media (max-width: 700px) {
+  .engine-manager-toolbar {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 10px;
+  }
+
+  .engine-manager-toolbar > div:first-child > span {
+    display: none;
+  }
+
+  .engine-manager-header-actions {
+    gap: 5px;
+  }
+
+  .engine-manager-toolbar button {
+    padding: 5px 7px;
+    font-size: 0.68rem;
+  }
+
+  .engine-manager-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(90px, 22vh) minmax(0, 1fr);
+  }
+
+  .engine-manager-instance-list {
+    border-right: 0;
+    border-bottom: 1px solid #3a3a3a;
+    padding: 6px;
+  }
+
+  .engine-manager-instance {
+    margin-bottom: 4px;
+    padding: 7px;
+  }
+
+  .engine-manager-instance-path,
+  .engine-manager-instance-id,
+  .engine-manager-path-row {
+    display: none;
+  }
+
+  .engine-manager-details {
+    padding: 9px;
+  }
+
+  .engine-manager-details-header {
+    align-items: flex-start;
+  }
+
+  .engine-manager-process-actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .engine-manager-process-actions button {
+    padding: 5px 7px;
+    font-size: 0.68rem;
+  }
+
+  .engine-manager-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    margin: 8px 0;
+  }
+
+  .engine-manager-facts div {
+    padding: 5px 6px;
+  }
+
+  .engine-manager-log-header span {
+    display: none;
+  }
+
+  .engine-manager-log-line {
+    grid-template-columns: 54px 14px minmax(0, 1fr);
+    padding: 2px 5px;
+    font-size: 0.64rem;
+  }
+}
