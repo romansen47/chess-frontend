@@ -1983,3 +1983,212 @@
     height: min(300px, 40vh);
   }
 }
+
+
+/* Mobile-first configuration controls for New Game and Deep Analysis dialogs. */
+.game-settings-mobile-controls,
+.analysis-settings-mobile-search {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .game-settings-dialog,
+  .analysis-settings-dialog {
+    align-items: flex-end;
+  }
+
+  .game-settings-dialog-content,
+  .analysis-settings-dialog-content {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    max-height: min(88dvh, 760px);
+    overflow: auto;
+    padding: 16px 16px calc(14px + env(safe-area-inset-bottom));
+    border-radius: 14px 14px 0 0;
+    box-sizing: border-box;
+  }
+
+  .game-settings-dialog-content h2,
+  .analysis-settings-dialog-content h2 {
+    margin-bottom: 14px;
+    font-size: 1.05rem;
+  }
+
+  .game-settings-layout {
+    display: block;
+  }
+
+  .game-settings-desktop-field,
+  .game-settings-engine-note,
+  .new-game-preview {
+    display: none;
+  }
+
+  .game-settings-mobile-controls {
+    display: grid;
+    gap: 12px;
+  }
+
+  .game-settings-mobile-controls .game-settings-field {
+    gap: 6px;
+  }
+
+  .game-settings-mobile-controls select {
+    min-height: 46px;
+    font-size: 0.9rem;
+  }
+
+  .game-settings-mobile-increments {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .game-settings-mobile-position {
+    display: grid;
+    gap: 9px;
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #242424;
+  }
+
+  .game-settings-mobile-position-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #ddd;
+    font-size: 0.78rem;
+  }
+
+  .game-settings-mobile-position-header strong {
+    color: #f4f4f4;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.86rem;
+  }
+
+  .game-settings-mobile-position input[type="range"] {
+    width: 100%;
+    min-height: 34px;
+    accent-color: #8f8f8f;
+  }
+
+  .game-settings-mobile-position-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+  }
+
+  .game-settings-mobile-position-actions button {
+    min-height: 42px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: #333;
+    color: #f5f5f5;
+    font: inherit;
+  }
+
+  .game-settings-mobile-position-actions button.active {
+    border-color: #9a8f5e;
+    background: #45402e;
+  }
+
+  .game-settings-dialog-actions,
+  .analysis-settings-dialog-actions {
+    position: sticky;
+    bottom: calc(-14px - env(safe-area-inset-bottom));
+    z-index: 4;
+    margin: 14px -16px calc(-14px - env(safe-area-inset-bottom));
+    padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid #3d3d3d;
+    background: rgba(43, 43, 43, 0.97);
+  }
+
+  .game-settings-dialog-button,
+  .analysis-settings-dialog-button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 46px;
+  }
+
+  .analysis-settings-description {
+    display: none;
+  }
+
+  .analysis-settings-form {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .analysis-settings-field-wide {
+    grid-column: auto;
+  }
+
+  .analysis-settings-field select {
+    min-height: 46px;
+    font-size: 0.88rem;
+  }
+
+  .analysis-settings-desktop-search-field {
+    display: none;
+  }
+
+  .analysis-settings-mobile-search {
+    display: grid;
+    gap: 9px;
+  }
+
+  .analysis-settings-mobile-search-mode {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .analysis-settings-mobile-search-mode button {
+    min-height: 42px;
+    padding: 7px 8px;
+    border: 1px solid #4f4f4f;
+    border-radius: 6px;
+    background: #242424;
+    color: #bbb;
+    font: inherit;
+    font-size: 0.76rem;
+  }
+
+  .analysis-settings-mobile-search-mode button.active {
+    border-color: #777;
+    background: #3b3b3b;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .analysis-settings-config-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding: 8px 9px;
+  }
+
+  .analysis-settings-summary-profile,
+  .analysis-settings-config-path {
+    display: none !important;
+  }
+
+  .analysis-settings-config-summary > div {
+    padding: 0;
+  }
+
+  .analysis-settings-config-summary span {
+    font-size: 0.66rem;
+  }
+
+  .analysis-settings-config-summary strong {
+    font-size: 0.76rem;
+  }
+
+  .analysis-settings-error {
+    margin-top: 8px;
+    font-size: 0.72rem;
+  }
+}

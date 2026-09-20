@@ -16,6 +16,13 @@ type NumericSettingKey =
   | "incrementForWhiteSeconds"
   | "incrementForBlackSeconds";
 
+const MOBILE_TIME_PRESETS_MINUTES = [1, 3, 5, 10, 15, 30, 60, 90];
+const MOBILE_INCREMENT_PRESETS_SECONDS = [0, 1, 2, 3, 5, 10, 15, 30];
+
+function presetValues(values: number[], current: number): number[] {
+  return Array.from(new Set([...values, current])).sort((left, right) => left - right);
+}
+
 function StartingPositionPreview({
   positionId,
   title,
@@ -85,6 +92,16 @@ export default function NewGameDialog({
   };
 
   const startingPositionId = settings.startingPositionId ?? 518;
+  const timeMinutes = Math.max(1, Math.floor(settings.timeForEachPlayerSeconds / 60));
+  const mobileTimeValues = presetValues(MOBILE_TIME_PRESETS_MINUTES, timeMinutes);
+  const mobileWhiteIncrementValues = presetValues(
+    MOBILE_INCREMENT_PRESETS_SECONDS,
+    settings.incrementForWhiteSeconds,
+  );
+  const mobileBlackIncrementValues = presetValues(
+    MOBILE_INCREMENT_PRESETS_SECONDS,
+    settings.incrementForBlackSeconds,
+  );
 
   return (
     <div className="game-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="new-game-title">
@@ -93,7 +110,7 @@ export default function NewGameDialog({
 
         <div className="game-settings-layout">
           <div className="game-settings-form">
-            <label className="game-settings-field">
+            <label className="game-settings-field game-settings-desktop-field">
               <span>{t("game.timeEachPlayerMinutes")}</span>
               <input
                 type="number"
@@ -107,7 +124,7 @@ export default function NewGameDialog({
               />
             </label>
 
-            <label className="game-settings-field">
+            <label className="game-settings-field game-settings-desktop-field">
               <span>{t("game.incrementWhiteSeconds")}</span>
               <input
                 type="number"
@@ -121,7 +138,7 @@ export default function NewGameDialog({
               />
             </label>
 
-            <label className="game-settings-field">
+            <label className="game-settings-field game-settings-desktop-field">
               <span>{t("game.incrementBlackSeconds")}</span>
               <input
                 type="number"
@@ -135,7 +152,7 @@ export default function NewGameDialog({
               />
             </label>
 
-            <label className="game-settings-field">
+            <label className="game-settings-field game-settings-desktop-field">
               <span>{t("game.startingPosition")}</span>
               <input
                 type="number"
@@ -146,6 +163,101 @@ export default function NewGameDialog({
                 disabled={starting}
               />
             </label>
+
+            <div className="game-settings-mobile-controls">
+              <label className="game-settings-field">
+                <span>{t("game.timeEachPlayerMinutes")}</span>
+                <select
+                  value={timeMinutes}
+                  onChange={(event) => updateNumberField(
+                    "timeForEachPlayerSeconds",
+                    Number(event.target.value) * 60,
+                  )}
+                  disabled={starting}
+                >
+                  {mobileTimeValues.map((minutes) => (
+                    <option key={minutes} value={minutes}>{minutes}</option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="game-settings-mobile-increments">
+                <label className="game-settings-field">
+                  <span>{t("game.incrementWhiteSeconds")}</span>
+                  <select
+                    value={settings.incrementForWhiteSeconds}
+                    onChange={(event) => updateNumberField(
+                      "incrementForWhiteSeconds",
+                      Number(event.target.value),
+                    )}
+                    disabled={starting}
+                  >
+                    {mobileWhiteIncrementValues.map((seconds) => (
+                      <option key={seconds} value={seconds}>{seconds}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="game-settings-field">
+                  <span>{t("game.incrementBlackSeconds")}</span>
+                  <select
+                    value={settings.incrementForBlackSeconds}
+                    onChange={(event) => updateNumberField(
+                      "incrementForBlackSeconds",
+                      Number(event.target.value),
+                    )}
+                    disabled={starting}
+                  >
+                    {mobileBlackIncrementValues.map((seconds) => (
+                      <option key={seconds} value={seconds}>{seconds}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="game-settings-mobile-position">
+                <div className="game-settings-mobile-position-header">
+                  <span>{t("game.startingPosition")}</span>
+                  <strong>#{startingPositionId}</strong>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={959}
+                  step={1}
+                  value={startingPositionId}
+                  onChange={(event) => updateStartingPosition(Number(event.target.value))}
+                  disabled={starting}
+                  aria-label={t("game.startingPosition")}
+                />
+                <div className="game-settings-mobile-position-actions">
+                  <button
+                    type="button"
+                    onClick={() => updateStartingPosition(startingPositionId - 1)}
+                    disabled={starting || startingPositionId <= 0}
+                    aria-label="-1"
+                  >
+                    −1
+                  </button>
+                  <button
+                    type="button"
+                    className={startingPositionId === 518 ? "active" : ""}
+                    onClick={() => updateStartingPosition(518)}
+                    disabled={starting}
+                  >
+                    518
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateStartingPosition(startingPositionId + 1)}
+                    disabled={starting || startingPositionId >= 959}
+                    aria-label="+1"
+                  >
+                    +1
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <div className="game-settings-engine-note">
               {t("game.cpuProfileNote")}

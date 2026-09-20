@@ -4,6 +4,13 @@ import type { EngineDefinition, EngineProfile } from "../../engineConfig";
 import { fetchEngineCapabilities } from "../api/engineCapabilitiesApi";
 import type { AnalysisReplaySettings } from "../types";
 
+const MOBILE_ANALYSIS_TIME_PRESETS = [1, 2, 3, 5, 10, 15, 30, 60];
+const MOBILE_ANALYSIS_DEPTH_PRESETS = [8, 10, 12, 14, 16, 18, 20, 24, 30];
+
+function analysisPresetValues(values: number[], current: number): number[] {
+  return Array.from(new Set([...values, current])).sort((left, right) => left - right);
+}
+
 interface AnalysisSettingsDialogProps {
   settings: AnalysisReplaySettings;
   profiles: EngineProfile[];
@@ -43,6 +50,23 @@ export default function AnalysisSettingsDialog({
   }, [profiles, selectedProfile?.id]);
 
   const unavailable = deepAnalysisAvailable === false;
+  const timeSearch = settings.depth <= 0;
+  const mobileTimeValues = analysisPresetValues(
+    MOBILE_ANALYSIS_TIME_PRESETS,
+    Math.max(1, settings.moveTimeSeconds),
+  );
+  const mobileDepthValues = analysisPresetValues(
+    MOBILE_ANALYSIS_DEPTH_PRESETS,
+    settings.depth > 0 ? settings.depth : 12,
+  );
+
+  const selectTimeSearch = () => {
+    onSettingsChange({ ...settings, depth: 0 });
+  };
+
+  const selectDepthSearch = () => {
+    onSettingsChange({ ...settings, depth: settings.depth > 0 ? settings.depth : 12 });
+  };
 
   return (
     <div
@@ -74,7 +98,7 @@ export default function AnalysisSettingsDialog({
             </select>
           </label>
 
-          <label className="analysis-settings-field">
+          <label className="analysis-settings-field analysis-settings-desktop-search-field">
             <span>{t("analysis.depth")}</span>
             <input
               type="number"
@@ -88,7 +112,7 @@ export default function AnalysisSettingsDialog({
             />
           </label>
 
-          <label className="analysis-settings-field">
+          <label className="analysis-settings-field analysis-settings-desktop-search-field">
             <span>{t("analysis.timePerPosition")}</span>
             <input
               type="number"
@@ -102,11 +126,67 @@ export default function AnalysisSettingsDialog({
             />
           </label>
 
+          <div className="analysis-settings-mobile-search">
+            <div className="analysis-settings-mobile-search-mode" role="group">
+              <button
+                type="button"
+                className={timeSearch ? "active" : ""}
+                onClick={selectTimeSearch}
+                disabled={running}
+              >
+                {t("analysis.timePerPosition")}
+              </button>
+              <button
+                type="button"
+                className={!timeSearch ? "active" : ""}
+                onClick={selectDepthSearch}
+                disabled={running}
+              >
+                {t("analysis.depth")}
+              </button>
+            </div>
+
+            {timeSearch ? (
+              <label className="analysis-settings-field">
+                <span>{t("analysis.timePerPosition")}</span>
+                <select
+                  value={Math.max(1, settings.moveTimeSeconds)}
+                  onChange={(event) => onSettingsChange({
+                    ...settings,
+                    depth: 0,
+                    moveTimeSeconds: Number(event.target.value),
+                  })}
+                  disabled={running}
+                >
+                  {mobileTimeValues.map((seconds) => (
+                    <option key={seconds} value={seconds}>{seconds} s</option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label className="analysis-settings-field">
+                <span>{t("analysis.depth")}</span>
+                <select
+                  value={settings.depth > 0 ? settings.depth : 12}
+                  onChange={(event) => onSettingsChange({
+                    ...settings,
+                    depth: Number(event.target.value),
+                  })}
+                  disabled={running}
+                >
+                  {mobileDepthValues.map((depth) => (
+                    <option key={depth} value={depth}>{depth}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+
           {selectedProfile && selectedEngine ? (
             <div className="analysis-settings-config-summary">
-              <div><span>{t("analysis.profile")}</span><strong>{selectedProfile.name}</strong></div>
-              <div><span>{t("analysis.engine")}</span><strong>{selectedEngine.engineName || selectedEngine.name}</strong></div>
-              <div>
+              <div className="analysis-settings-summary-profile"><span>{t("analysis.profile")}</span><strong>{selectedProfile.name}</strong></div>
+              <div className="analysis-settings-summary-engine"><span>{t("analysis.engine")}</span><strong>{selectedEngine.engineName || selectedEngine.name}</strong></div>
+              <div className="analysis-settings-summary-search">
                 <span>{t("analysis.search")}</span>
                 <strong>
                   {settings.depth > 0
