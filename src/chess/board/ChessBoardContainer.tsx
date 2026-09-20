@@ -1,6 +1,8 @@
 import type { MouseEvent } from "react";
+import AnalysisEngineDetails from "../analysis/AnalysisEngineDetails";
 import AnalysisProfilePanel from "../analysis/AnalysisProfilePanel";
 import AnalysisReplayContent from "../analysis/AnalysisReplayContent";
+import LiveEvaluationView from "../analysis/LiveEvaluationView";
 import type { AnalysisController } from "../analysis/useAnalysisController";
 import {
   getAnalysisBlackPlayerName,
@@ -87,15 +89,37 @@ export default function ChessBoardContainer({
     />
   );
 
-  const mobileAnalysisProfileContent =
-    analysis.analysisReplayActive && analysis.analysisReplayFinished
-      ? (
+  const mobileDeepAnalysisState = {
+    ...analysisViewState,
+    analysisDetailsTab: "engine" as const,
+  };
+
+  const mobileDeepAnalysisContent = analysis.analysisReplayActive
+    ? (
+        <>
           <AnalysisProfilePanel
             state={analysisViewState}
             actions={analysisViewActions}
           />
-        )
-      : null;
+          <AnalysisEngineDetails
+            state={mobileDeepAnalysisState}
+            actions={analysisViewActions}
+          />
+        </>
+      )
+    : null;
+
+  const mobileEvalEngineContent = analysis.analysisReplayActive
+    ? (
+        <LiveEvaluationView
+          evaluation={analysis.analysisEvaluationEnabled ? analysis.analysisEvaluation : null}
+          evaluationKey={analysis.analysisEvaluationKeyRef.current}
+          activePly={analysis.analysisSelectedPosition?.ply ?? null}
+          variationMode={analysis.analysisVariationMoves.length > 0}
+          deepAnalysisRunning={analysis.isAnalysisReplayRunning}
+        />
+      )
+    : null;
 
   function showMovePreview(event: MouseEvent<HTMLElement>, position: string | undefined) {
     if (position?.length === 64) board.setHoverPreview({ position, x: event.clientX, y: event.clientY });
@@ -189,7 +213,8 @@ export default function ChessBoardContainer({
       toggleAnalysisEvaluation: analysis.toggleAnalysisEvaluation,
       onEngineConfigOverviewChange: live.handleEngineConfigOverviewChange,
       closeSettings: () => engine.setShowSettings(false) }}
-    mobileAnalysisProfileContent={mobileAnalysisProfileContent}
+    mobileDeepAnalysisContent={mobileDeepAnalysisContent}
+    mobileEvalEngineContent={mobileEvalEngineContent}
     hoverPreview={board.hoverPreview} hoverAnnotationText={board.hoverAnnotationText}
     dialogs={{
       promotionContext: interaction.promotionContext, showGameSettingsDialog: game.showGameSettingsDialog,

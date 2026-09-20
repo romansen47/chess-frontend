@@ -16,7 +16,7 @@ type NumericSettingKey =
   | "incrementForWhiteSeconds"
   | "incrementForBlackSeconds";
 
-const MOBILE_TIME_PRESETS_MINUTES = [1, 3, 5, 10, 15, 30, 60, 90];
+const MOBILE_TIME_PRESETS_MINUTES = [1, 2, 3, 5, 10, 15, 30, 60, 90];
 const MOBILE_INCREMENT_PRESETS_SECONDS = [0, 1, 2, 3, 5, 10, 15, 30];
 
 function presetValues(values: number[], current: number): number[] {

@@ -98,7 +98,8 @@ export interface ChessBoardViewProps {
   toggleBlackComputer: () => void;
   engine: EnginePanelState;
   engineActions: EnginePanelActions;
-  mobileAnalysisProfileContent: ReactNode;
+  mobileDeepAnalysisContent: ReactNode;
+  mobileEvalEngineContent: ReactNode;
   hoverPreview: HoverPreview | null;
   hoverAnnotationText: string | null;
   dialogs: DialogState;
