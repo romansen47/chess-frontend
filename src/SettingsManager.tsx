@@ -899,8 +899,8 @@ export default function SettingsManager({
             disabled={busy}
           >
             <option value="DEFAULTS">{t("settings.defaults")}</option>
-            <option value="PROFILES">{t("settings.profiles")} (${profiles.length})</option>
-            <option value="ENGINES">{t("settings.engines")} (${engines.length})</option>
+            <option value="PROFILES">{t("settings.profiles")} ({profiles.length})</option>
+            <option value="ENGINES">{t("settings.engines")} ({engines.length})</option>
             <option value="ENGINE_LOG">{t("settings.engineLog")}</option>
           </select>
         </label>
