@@ -15,7 +15,8 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
     uciFileInputRef, onUciFileSelected,
     analysisReplayActive, uciAnalysisLoaded, clock, clockError,
     whiteComputerEnabled, blackComputerEnabled, toggleWhiteComputer, toggleBlackComputer,
-    engine, engineActions, hoverPreview, hoverAnnotationText, dialogs, dialogActions,
+    engine, engineActions, mobileAnalysisProfileContent,
+    hoverPreview, hoverAnnotationText, dialogs, dialogActions,
   } = props;
 
   return <>
@@ -36,6 +37,11 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
           )}
         </section>
         <EnginePanel engine={engine} actions={engineActions} />
+        {mobileAnalysisProfileContent && (
+          <section className="mobile-analysis-profile">
+            {mobileAnalysisProfileContent}
+          </section>
+        )}
         <HoverBoard preview={hoverPreview} annotationText={hoverAnnotationText} orientation={engine.boardOrientation} />
         <ChessBoardDialogs dialogs={dialogs} actions={dialogActions} />
       </div>

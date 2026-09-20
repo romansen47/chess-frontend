@@ -19,6 +19,8 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
     engine.analysisEvaluationEnabled,
     engine.analysisEvaluation?.bar,
   );
+  const liveDisplayBarValue = liveBarValue ?? 0.5;
+  const analysisDisplayBarValue = analysisBarValue ?? 0.5;
 
   return (
     <section className="engine-panel">
@@ -41,12 +43,10 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
               ? t("game.disableEvaluationEngine")
               : `${t("game.enableEvaluationEngine")} · 0.0`}
           >
-            {liveBarValue != null && (
-              <>
-                <div className="engine-bar-white" style={{ height: `${liveBarValue * 100}%` }} />
-                <div className="engine-bar-black" style={{ height: `${(1 - liveBarValue) * 100}%` }} />
-              </>
-            )}
+            <>
+              <div className="engine-bar-white" style={{ height: `${liveDisplayBarValue * 100}%` }} />
+              <div className="engine-bar-black" style={{ height: `${(1 - liveDisplayBarValue) * 100}%` }} />
+            </>
           </button>
         )}
 
@@ -73,12 +73,10 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
                   ? t("game.enableEvaluationVariation")
                   : t("game.enableEvaluationSelectedMove")}
           >
-            {analysisBarValue != null && (
-              <>
-                <div className="engine-bar-white" style={{ height: `${analysisBarValue * 100}%` }} />
-                <div className="engine-bar-black" style={{ height: `${(1 - analysisBarValue) * 100}%` }} />
-              </>
-            )}
+            <>
+              <div className="engine-bar-white" style={{ height: `${analysisDisplayBarValue * 100}%` }} />
+              <div className="engine-bar-black" style={{ height: `${(1 - analysisDisplayBarValue) * 100}%` }} />
+            </>
           </button>
         )}
 

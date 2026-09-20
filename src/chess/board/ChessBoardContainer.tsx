@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import AnalysisProfilePanel from "../analysis/AnalysisProfilePanel";
 import AnalysisReplayContent from "../analysis/AnalysisReplayContent";
 import type { AnalysisController } from "../analysis/useAnalysisController";
 import {
@@ -40,45 +41,61 @@ interface Props {
 export default function ChessBoardContainer({
   board, engine, game, analysis, interaction, live, move, lifecycle, computer, flipBoardOrientation,
 }: Props) {
-  const analysisContent = <AnalysisReplayContent
-    state={{
-      boardOrientation: board.boardOrientation,
-      analysisProfile: analysis.analysisProfile,
-      analysisTotalPlies: analysis.analysisTotalPlies,
-      analysisSelectedPosition: analysis.analysisSelectedPosition,
-      analysisReplayStatus: analysis.analysisReplayStatus,
-      isAnalysisReplayRunning: analysis.isAnalysisReplayRunning,
-      analysisReplayError: analysis.analysisReplayError,
-      analysisEvaluationError: analysis.analysisEvaluationError,
-      moves: board.moves,
-      analysisSelectedLineIndex: analysis.analysisSelectedLineIndex,
-      analysisLineAnimationIndex: analysis.analysisLineAnimationIndex,
-      analysisDetailsTab: analysis.analysisDetailsTab,
-      engineEval: engine.engineEval,
-      analysisEvaluation: analysis.analysisEvaluation,
-      analysisEvaluationEnabled: analysis.analysisEvaluationEnabled,
-      analysisVariationMoves: analysis.analysisVariationMoves,
-      analysisEngineView: analysis.analysisEngineView,
-      evaluationKey: analysis.analysisEvaluationKeyRef.current,
-      gameAnnotations: analysis.gameAnnotations,
-      moveAnnotations: analysis.moveAnnotations,
-      annotationsDirty: analysis.annotationsDirty,
-      annotationsSaving: analysis.annotationsSaving,
-      annotationSaveError: analysis.annotationSaveError,
-    }}
-    actions={{
-      selectPositionByPly: analysis.selectAnalysisPositionByPly,
-      cancelAnalysisReplay: analysis.cancelAnalysisReplay,
-      selectLine: (index) => {
-        analysis.setAnalysisSelectedLineIndex(index);
-        analysis.setAnalysisLineAnimationIndex(0);
-      },
-      setDetailsTab: analysis.setAnalysisDetailsTab,
-      setEngineView: analysis.setAnalysisEngineView,
-      updateGameAnnotation: analysis.updateGameAnnotation,
-      persistGameAnnotations: analysis.persistGameAnnotations,
-    }}
-  />;
+  const analysisViewState = {
+    boardOrientation: board.boardOrientation,
+    analysisProfile: analysis.analysisProfile,
+    analysisTotalPlies: analysis.analysisTotalPlies,
+    analysisSelectedPosition: analysis.analysisSelectedPosition,
+    analysisReplayStatus: analysis.analysisReplayStatus,
+    isAnalysisReplayRunning: analysis.isAnalysisReplayRunning,
+    analysisReplayError: analysis.analysisReplayError,
+    analysisEvaluationError: analysis.analysisEvaluationError,
+    moves: board.moves,
+    analysisSelectedLineIndex: analysis.analysisSelectedLineIndex,
+    analysisLineAnimationIndex: analysis.analysisLineAnimationIndex,
+    analysisDetailsTab: analysis.analysisDetailsTab,
+    engineEval: engine.engineEval,
+    analysisEvaluation: analysis.analysisEvaluation,
+    analysisEvaluationEnabled: analysis.analysisEvaluationEnabled,
+    analysisVariationMoves: analysis.analysisVariationMoves,
+    analysisEngineView: analysis.analysisEngineView,
+    evaluationKey: analysis.analysisEvaluationKeyRef.current,
+    gameAnnotations: analysis.gameAnnotations,
+    moveAnnotations: analysis.moveAnnotations,
+    annotationsDirty: analysis.annotationsDirty,
+    annotationsSaving: analysis.annotationsSaving,
+    annotationSaveError: analysis.annotationSaveError,
+  };
+
+  const analysisViewActions = {
+    selectPositionByPly: analysis.selectAnalysisPositionByPly,
+    cancelAnalysisReplay: analysis.cancelAnalysisReplay,
+    selectLine: (index: number) => {
+      analysis.setAnalysisSelectedLineIndex(index);
+      analysis.setAnalysisLineAnimationIndex(0);
+    },
+    setDetailsTab: analysis.setAnalysisDetailsTab,
+    setEngineView: analysis.setAnalysisEngineView,
+    updateGameAnnotation: analysis.updateGameAnnotation,
+    persistGameAnnotations: analysis.persistGameAnnotations,
+  };
+
+  const analysisContent = (
+    <AnalysisReplayContent
+      state={analysisViewState}
+      actions={analysisViewActions}
+    />
+  );
+
+  const mobileAnalysisProfileContent =
+    analysis.analysisReplayActive && analysis.analysisReplayFinished
+      ? (
+          <AnalysisProfilePanel
+            state={analysisViewState}
+            actions={analysisViewActions}
+          />
+        )
+      : null;
 
   function showMovePreview(event: MouseEvent<HTMLElement>, position: string | undefined) {
     if (position?.length === 64) board.setHoverPreview({ position, x: event.clientX, y: event.clientY });
@@ -172,6 +189,7 @@ export default function ChessBoardContainer({
       toggleAnalysisEvaluation: analysis.toggleAnalysisEvaluation,
       onEngineConfigOverviewChange: live.handleEngineConfigOverviewChange,
       closeSettings: () => engine.setShowSettings(false) }}
+    mobileAnalysisProfileContent={mobileAnalysisProfileContent}
     hoverPreview={board.hoverPreview} hoverAnnotationText={board.hoverAnnotationText}
     dialogs={{
       promotionContext: interaction.promotionContext, showGameSettingsDialog: game.showGameSettingsDialog,
