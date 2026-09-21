@@ -408,7 +408,8 @@
   min-height: 180px;
 }
 
-.engine-profile-mobile-selector {
+.engine-profile-mobile-selector,
+.engine-profile-mobile-back {
   display: none;
 }
 
@@ -452,6 +453,20 @@
     align-self: end;
     padding: 0;
     font-size: 1.2rem;
+  }
+
+  .engine-profile-mobile-back {
+    display: block;
+    width: 100%;
+    min-height: 38px;
+    padding: 6px 8px;
+    border: 1px solid #414141;
+    border-radius: 6px;
+    background: #272727;
+    color: #bbb;
+    text-align: left;
+    font: inherit;
+    font-size: 0.7rem;
   }
 
   .engine-profile-mobile-profile-list {

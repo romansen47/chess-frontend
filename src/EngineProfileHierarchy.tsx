@@ -526,9 +526,13 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
 
   function resetProfileOptionsToDefaults() {
     if (!profileDraft || !profileEngine) return;
-    setProfileDraft(
-      defaultProfileForEngine(profileEngine, profileDraft.name),
-    );
+    const defaults = defaultProfileForEngine(profileEngine, profileDraft.name);
+    setProfileDraft({
+      ...defaults,
+      id: profileDraft.id,
+      engineId: profileDraft.engineId,
+      name: profileDraft.name,
+    });
   }
 
   function openProfileOptionEditor(name: string, option: UciOptionConfig) {
@@ -843,6 +847,15 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
               advancedOpen ? "engine-profile-advanced-open" : "",
             ].filter(Boolean).join(" ")}
           >
+            <button
+              type="button"
+              className="engine-profile-mobile-back"
+              onClick={() => profileEngine.id && selectEngine(profileEngine.id)}
+              disabled={busy || !profileEngine.id}
+            >
+              ← {t("common.back")} · {profileEngine.name}
+            </button>
+
             <div className="engine-config-details-heading">
               <div>
                 <strong>
