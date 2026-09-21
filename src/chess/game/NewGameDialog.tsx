@@ -145,8 +145,21 @@ export default function NewGameDialog({
 
               <div className="game-settings-stepper">
                 <span className="game-settings-stepper-label">{t("game.startingPosition")}</span>
-                <div className="game-settings-stepper-main">
-                  <strong>#{startingPositionId}</strong>
+                <div className="game-settings-stepper-main game-settings-position-value">
+                  <span className="game-settings-position-prefix">#</span>
+                  <input
+                    className="game-settings-position-input"
+                    type="number"
+                    min={0}
+                    max={959}
+                    step={1}
+                    inputMode="numeric"
+                    value={startingPositionId}
+                    onFocus={(event) => event.currentTarget.select()}
+                    onChange={(event) => updateStartingPosition(Number(event.target.value))}
+                    disabled={starting}
+                    aria-label={t("game.startingPosition")}
+                  />
                 </div>
                 <div className="game-settings-stepper-buttons">
                   <button
