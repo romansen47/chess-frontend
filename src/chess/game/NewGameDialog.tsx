@@ -147,7 +147,28 @@ export default function NewGameDialog({
                 <span className="game-settings-stepper-label">{t("game.startingPosition")}</span>
                 <div className="game-settings-stepper-main">
                   <strong>#{startingPositionId}</strong>
-                </div>              <div className="game-settings-stepper">
+                </div>
+                <div className="game-settings-stepper-buttons">
+                  <button
+                    type="button"
+                    onClick={() => updateStartingPosition(startingPositionId + 1)}
+                    disabled={starting || startingPositionId >= 959}
+                    aria-label={`${t("game.startingPosition")} +1`}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateStartingPosition(startingPositionId - 1)}
+                    disabled={starting || startingPositionId <= 0}
+                    aria-label={`${t("game.startingPosition")} -1`}
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
+
+              <div className="game-settings-stepper">
                 <span className="game-settings-stepper-label">{t("game.incrementWhiteSeconds")}</span>
                 <div className="game-settings-stepper-main">
                   <strong>{settings.incrementForWhiteSeconds}</strong>
@@ -205,27 +226,6 @@ export default function NewGameDialog({
                     )}
                     disabled={starting || settings.incrementForBlackSeconds <= 0}
                     aria-label={`${t("game.incrementBlackSeconds")} -1`}
-                  >
-                    ▼
-                  </button>
-                </div>
-              </div>
-
-
-                <div className="game-settings-stepper-buttons">
-                  <button
-                    type="button"
-                    onClick={() => updateStartingPosition(startingPositionId + 1)}
-                    disabled={starting || startingPositionId >= 959}
-                    aria-label={`${t("game.startingPosition")} +1`}
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateStartingPosition(startingPositionId - 1)}
-                    disabled={starting || startingPositionId <= 0}
-                    aria-label={`${t("game.startingPosition")} -1`}
                   >
                     ▼
                   </button>
