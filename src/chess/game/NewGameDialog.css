@@ -1,0 +1,309 @@
+/* New Game dialog styles. Mobile breakpoint: 820px. */
+.game-settings-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 130;
+}
+
+.game-settings-dialog-content {
+  background: #2b2b2b;
+  color: #f5f5f5;
+  border-radius: 10px;
+  padding: 18px;
+  width: min(760px, calc(100vw - 40px));
+  box-sizing: border-box;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+}
+
+.game-settings-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+.game-settings-dialog-content h2 {
+  margin: 0 0 14px 0;
+  font-size: calc(1.15rem - 2px);
+  font-weight: 700;
+  text-align: center;
+}
+
+.game-settings-form {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-settings-desktop-options {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  background: #4a4a4a;
+  box-sizing: border-box;
+}
+
+.game-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: calc(0.82rem - 2px);
+  color: #dddddd;
+}
+
+.game-settings-field input,
+.game-settings-field select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 5px 7px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #1f1f1f;
+  color: #f5f5f5;
+  font-size: calc(0.85rem - 2px);
+}
+
+.new-game-preview {
+  min-width: 0;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #454545;
+  border-radius: 8px;
+  background: #242424;
+  box-sizing: border-box;
+}
+
+.new-game-preview-title,
+.new-game-preview-id {
+  display: none;
+}
+
+.new-game-preview-board {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  border: 2px solid #181818;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.new-game-preview-square {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  user-select: none;
+}
+
+.new-game-preview-square-light {
+  background: #f0d9b5;
+}
+
+.new-game-preview-square-dark {
+  background: #769656;
+}
+
+.new-game-preview-piece {
+  font-size: clamp(18px, 2vw, 29px);
+  line-height: 1;
+}
+
+.new-game-preview-piece-white {
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+}
+
+.new-game-preview-piece-black {
+  color: #000000;
+}
+
+
+.game-settings-error {
+  margin-top: 10px;
+  color: #ff8080;
+  font-size: calc(0.8rem - 2px);
+}
+
+.game-settings-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.game-settings-dialog-button {
+  min-width: 120px;
+  padding: 6px 12px;
+  font-size: calc(0.85rem - 2px);
+  border-radius: 5px;
+  border: 1px solid #555;
+  background: #f5f5f5;
+  color: #111111;
+  cursor: pointer;
+}
+
+.game-settings-dialog-button:hover {
+  background: #ffffff;
+}
+
+.game-settings-dialog-button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.game-settings-engine-note {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid #474747;
+  border-radius: 5px;
+  background: #242424;
+  color: #b9b9b9;
+  font-size: calc(0.76rem - 2px);
+  line-height: 1.35;
+}
+
+@media (max-width: 820px) {
+.new-game-preview {
+    display: none;
+  }
+}
+
+.game-settings-mobile-controls {
+  display: none;
+}
+
+@media (max-width: 820px) {
+.game-settings-dialog {
+    align-items: flex-end;
+  }
+
+.game-settings-dialog-content {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    max-height: min(88dvh, 760px);
+    overflow: auto;
+    padding: 16px 16px calc(14px + env(safe-area-inset-bottom));
+    border-radius: 14px 14px 0 0;
+    box-sizing: border-box;
+  }
+
+.game-settings-dialog-content h2 {
+    margin-bottom: 14px;
+    font-size: 1.05rem;
+  }
+
+.game-settings-layout {
+    display: block;
+  }
+
+.game-settings-desktop-field,
+.game-settings-desktop-options,
+.game-settings-engine-note,
+.new-game-preview {
+    display: none;
+  }
+
+.game-settings-mobile-controls {
+    display: grid;
+    gap: 12px;
+  }
+
+.game-settings-mobile-controls .game-settings-field {
+    gap: 6px;
+  }
+
+.game-settings-mobile-controls select {
+    min-height: 46px;
+    font-size: 0.9rem;
+  }
+
+.game-settings-mobile-increments {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+.game-settings-mobile-position {
+    display: grid;
+    gap: 9px;
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #242424;
+  }
+
+.game-settings-mobile-position-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #ddd;
+    font-size: 0.78rem;
+  }
+
+.game-settings-mobile-position-header strong {
+    color: #f4f4f4;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.86rem;
+  }
+
+.game-settings-mobile-position input[type="range"] {
+    width: 100%;
+    min-height: 34px;
+    accent-color: #8f8f8f;
+  }
+
+.game-settings-mobile-position-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+  }
+
+.game-settings-mobile-position-actions button {
+    min-height: 42px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: #333;
+    color: #f5f5f5;
+    font: inherit;
+  }
+
+.game-settings-mobile-position-actions button.active {
+    border-color: #9a8f5e;
+    background: #45402e;
+  }
+
+.game-settings-dialog-actions {
+    position: sticky;
+    bottom: calc(-14px - env(safe-area-inset-bottom));
+    z-index: 4;
+    margin: 14px -16px calc(-14px - env(safe-area-inset-bottom));
+    padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid #3d3d3d;
+    background: rgba(43, 43, 43, 0.97);
+  }
+
+.game-settings-dialog-button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 46px;
+  }
+}

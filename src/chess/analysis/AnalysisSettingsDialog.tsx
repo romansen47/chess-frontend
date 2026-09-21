@@ -4,6 +4,7 @@ import type { EngineDefinition, EngineProfile } from "../../engineConfigTypes";
 import { fetchEngineCapabilities } from "../api/engineCapabilitiesApi";
 import EngineProfilePicker from "../engine/EngineProfilePicker";
 import NumericStepper from "../ui/NumericStepper";
+import "./AnalysisSettingsDialog.css";
 import type { AnalysisReplaySettings } from "../types";
 
 const MOBILE_ANALYSIS_TIME_PRESETS = [1, 2, 3, 5, 10, 15, 30, 60];

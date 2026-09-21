@@ -2,6 +2,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { createInitialPieces, getPieceSymbol, squareName } from "../board/boardUtils";
 import NumericStepper from "../ui/NumericStepper";
 import type { GameSettings, Piece } from "../types";
+import "./NewGameDialog.css";
 
 interface NewGameDialogProps {
   settings: GameSettings;
