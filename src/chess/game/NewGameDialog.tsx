@@ -1,5 +1,6 @@
 import { useI18n } from "../../i18n/I18nProvider";
 import { createInitialPieces, getPieceSymbol, squareName } from "../board/boardUtils";
+import NumericStepper from "../ui/NumericStepper";
 import type { GameSettings, Piece } from "../types";
 
 interface NewGameDialogProps {
@@ -111,139 +112,49 @@ export default function NewGameDialog({
         <div className="game-settings-layout">
           <div className="game-settings-form">
             <div className="game-settings-desktop-options" aria-label={t("game.newGame")}>
-              <div className="game-settings-stepper">
-                <span className="game-settings-stepper-label">{t("game.timeEachPlayerMinutes")}</span>
-                <div className="game-settings-stepper-main">
-                  <strong>{timeMinutes}</strong>
-                  <span className="game-settings-stepper-unit">min</span>
-                </div>
-                <div className="game-settings-stepper-buttons">
-                  <button
-                    type="button"
-                    onClick={() => updateNumberField(
-                      "timeForEachPlayerSeconds",
-                      (timeMinutes + 1) * 60,
-                    )}
-                    disabled={starting}
-                    aria-label={`${t("game.timeEachPlayerMinutes")} +1`}
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateNumberField(
-                      "timeForEachPlayerSeconds",
-                      Math.max(1, timeMinutes - 1) * 60,
-                    )}
-                    disabled={starting || timeMinutes <= 1}
-                    aria-label={`${t("game.timeEachPlayerMinutes")} -1`}
-                  >
-                    ▼
-                  </button>
-                </div>
-              </div>
-
-              <div className="game-settings-stepper">
-                <span className="game-settings-stepper-label">{t("game.startingPosition")}</span>
-                <div className="game-settings-stepper-main game-settings-position-value">
-                  <span className="game-settings-position-prefix">#</span>
-                  <input
-                    className="game-settings-position-input"
-                    type="number"
-                    min={0}
-                    max={959}
-                    step={1}
-                    inputMode="numeric"
-                    value={startingPositionId}
-                    onFocus={(event) => event.currentTarget.select()}
-                    onChange={(event) => updateStartingPosition(Number(event.target.value))}
-                    disabled={starting}
-                    aria-label={t("game.startingPosition")}
-                  />
-                </div>
-                <div className="game-settings-stepper-buttons">
-                  <button
-                    type="button"
-                    onClick={() => updateStartingPosition(startingPositionId + 1)}
-                    disabled={starting || startingPositionId >= 959}
-                    aria-label={`${t("game.startingPosition")} +1`}
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateStartingPosition(startingPositionId - 1)}
-                    disabled={starting || startingPositionId <= 0}
-                    aria-label={`${t("game.startingPosition")} -1`}
-                  >
-                    ▼
-                  </button>
-                </div>
-              </div>
-
-              <div className="game-settings-stepper">
-                <span className="game-settings-stepper-label">{t("game.incrementWhiteSeconds")}</span>
-                <div className="game-settings-stepper-main">
-                  <strong>{settings.incrementForWhiteSeconds}</strong>
-                  <span className="game-settings-stepper-unit">s</span>
-                </div>
-                <div className="game-settings-stepper-buttons">
-                  <button
-                    type="button"
-                    onClick={() => updateNumberField(
-                      "incrementForWhiteSeconds",
-                      settings.incrementForWhiteSeconds + 1,
-                    )}
-                    disabled={starting}
-                    aria-label={`${t("game.incrementWhiteSeconds")} +1`}
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateNumberField(
-                      "incrementForWhiteSeconds",
-                      Math.max(0, settings.incrementForWhiteSeconds - 1),
-                    )}
-                    disabled={starting || settings.incrementForWhiteSeconds <= 0}
-                    aria-label={`${t("game.incrementWhiteSeconds")} -1`}
-                  >
-                    ▼
-                  </button>
-                </div>
-              </div>
-
-              <div className="game-settings-stepper">
-                <span className="game-settings-stepper-label">{t("game.incrementBlackSeconds")}</span>
-                <div className="game-settings-stepper-main">
-                  <strong>{settings.incrementForBlackSeconds}</strong>
-                  <span className="game-settings-stepper-unit">s</span>
-                </div>
-                <div className="game-settings-stepper-buttons">
-                  <button
-                    type="button"
-                    onClick={() => updateNumberField(
-                      "incrementForBlackSeconds",
-                      settings.incrementForBlackSeconds + 1,
-                    )}
-                    disabled={starting}
-                    aria-label={`${t("game.incrementBlackSeconds")} +1`}
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateNumberField(
-                      "incrementForBlackSeconds",
-                      Math.max(0, settings.incrementForBlackSeconds - 1),
-                    )}
-                    disabled={starting || settings.incrementForBlackSeconds <= 0}
-                    aria-label={`${t("game.incrementBlackSeconds")} -1`}
-                  >
-                    ▼
-                  </button>
-                </div>
-              </div>
+              <NumericStepper
+                label={t("game.timeEachPlayerMinutes")}
+                value={timeMinutes}
+                unit="min"
+                min={1}
+                disabled={starting}
+                onChange={(minutes) => updateNumberField(
+                  "timeForEachPlayerSeconds",
+                  minutes * 60,
+                )}
+              />
+              <NumericStepper
+                label={t("game.startingPosition")}
+                value={startingPositionId}
+                prefix="#"
+                min={0}
+                max={959}
+                editable
+                disabled={starting}
+                onChange={updateStartingPosition}
+              />
+              <NumericStepper
+                label={t("game.incrementWhiteSeconds")}
+                value={settings.incrementForWhiteSeconds}
+                unit="s"
+                min={0}
+                disabled={starting}
+                onChange={(seconds) => updateNumberField(
+                  "incrementForWhiteSeconds",
+                  seconds,
+                )}
+              />
+              <NumericStepper
+                label={t("game.incrementBlackSeconds")}
+                value={settings.incrementForBlackSeconds}
+                unit="s"
+                min={0}
+                disabled={starting}
+                onChange={(seconds) => updateNumberField(
+                  "incrementForBlackSeconds",
+                  seconds,
+                )}
+              />
             </div>
 
             <div className="game-settings-mobile-controls">

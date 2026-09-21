@@ -1,0 +1,88 @@
+.engine-profile-menu {
+  display: grid;
+  gap: 0;
+}
+
+.engine-profile-menu-group + .engine-profile-menu-group {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid #464646;
+}
+
+.engine-profile-menu-engine {
+  padding: 5px 8px 4px;
+  color: #9d9d9d;
+  font-size: calc(0.72rem - 2px);
+  font-weight: 700;
+}
+
+.engine-profile-menu-item {
+  width: 100%;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #dddddd;
+  font: inherit;
+  font-size: calc(0.79rem - 2px);
+  text-align: left;
+  cursor: pointer;
+}
+
+.engine-profile-menu-item:hover:not(:disabled),
+.engine-profile-menu-item:focus-visible:not(:disabled) {
+  outline: none;
+  background: #414141;
+  color: #ffffff;
+}
+
+.engine-profile-menu-item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.engine-profile-menu-check {
+  width: 20px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.engine-profile-menu-label {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.engine-profile-menu-primary,
+.engine-profile-menu-secondary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-profile-menu-primary {
+  color: inherit;
+}
+
+.engine-profile-menu-secondary {
+  color: #a9a9a9;
+  font-size: calc(0.68rem - 2px);
+}
+
+.engine-profile-menu-status {
+  padding: 8px 9px;
+  color: #bdbdbd;
+  font-size: calc(0.75rem - 2px);
+}
+
+.engine-profile-menu-separator {
+  height: 1px;
+  margin: 5px 4px;
+  background: #4b4b4b;
+}

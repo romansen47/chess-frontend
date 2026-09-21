@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { EngineDefinition, EngineProfile } from "../../engineConfig";
 import { fetchEngineCapabilities } from "../api/engineCapabilitiesApi";
+import EngineProfilePicker from "../engine/EngineProfilePicker";
+import NumericStepper from "../ui/NumericStepper";
 import type { AnalysisReplaySettings } from "../types";
 
 const MOBILE_ANALYSIS_TIME_PRESETS = [1, 2, 3, 5, 10, 15, 30, 60];
@@ -38,38 +40,6 @@ export default function AnalysisSettingsDialog({
 }: AnalysisSettingsDialogProps) {
   const { t } = useI18n();
   const [deepAnalysisAvailable, setDeepAnalysisAvailable] = useState<boolean | null>(null);
-  const [profilePickerOpen, setProfilePickerOpen] = useState(false);
-  const profilePickerRef = useRef<HTMLDivElement | null>(null);
-
-  const profileGroups = useMemo(
-    () => engines
-      .map((engine) => ({
-        engine,
-        profiles: profiles.filter((profile) => profile.engineId === engine.id && profile.id),
-      }))
-      .filter((group) => group.profiles.length > 0),
-    [engines, profiles],
-  );
-
-  useEffect(() => {
-    if (!profilePickerOpen) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (profilePickerRef.current?.contains(event.target as Node)) return;
-      setProfilePickerOpen(false);
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setProfilePickerOpen(false);
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [profilePickerOpen]);
-
   useEffect(() => {
     let cancelled = false;
     void fetchEngineCapabilities()
@@ -113,137 +83,45 @@ export default function AnalysisSettingsDialog({
         <p className="analysis-settings-description">{t("analysis.dialogDescription")}</p>
 
         <div className="analysis-settings-form">
-          <div
-            className="analysis-settings-profile-picker analysis-settings-field-wide"
-            ref={profilePickerRef}
-          >
-            <span className="analysis-settings-profile-picker-label">{t("analysis.engineProfile")}</span>
-            <button
-              type="button"
-              className="analysis-settings-profile-picker-trigger"
-              aria-haspopup="menu"
-              aria-expanded={profilePickerOpen}
-              onClick={() => setProfilePickerOpen((previous) => !previous)}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                setProfilePickerOpen(true);
-              }}
-              disabled={profiles.length === 0 || running}
-            >
-              <span className="analysis-settings-profile-picker-text">
-                <strong>{selectedProfile?.name ?? t("analysis.noEngineProfile")}</strong>
-                <small>
-                  {selectedEngine?.name || selectedEngine?.engineName || t("settings.unknownEngine")}
-                </small>
-              </span>
-              <span className="analysis-settings-profile-picker-chevron" aria-hidden="true">▾</span>
-            </button>
-
-            {profilePickerOpen && (
-              <div
-                className="analysis-settings-profile-menu"
-                role="menu"
-                aria-label={t("analysis.engineProfile")}
-              >
-                {profileGroups.map(({ engine, profiles: engineProfiles }) => (
-                  <div className="analysis-settings-profile-menu-group" key={engine.id ?? engine.name}>
-                    <div className="analysis-settings-profile-menu-engine">
-                      {engine.name}
-                    </div>
-                    {engineProfiles.map((profile) => (
-                      <button
-                        key={profile.id ?? profile.name}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={settings.engineProfileId === profile.id}
-                        className="analysis-settings-profile-menu-item"
-                        onClick={() => {
-                          onSettingsChange({
-                            ...settings,
-                            engineProfileId: profile.id,
-                          });
-                          setProfilePickerOpen(false);
-                        }}
-                      >
-                        <span className="analysis-settings-profile-menu-check">
-                          {settings.engineProfileId === profile.id ? "✓" : ""}
-                        </span>
-                        <span>{profile.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <EngineProfilePicker
+            className="analysis-settings-field-wide"
+            label={t("analysis.engineProfile")}
+            engines={engines}
+            profiles={profiles}
+            selectedProfileId={settings.engineProfileId}
+            disabled={profiles.length === 0 || running}
+            emptyLabel={t("analysis.noEngineProfile")}
+            unknownEngineLabel={t("settings.unknownEngine")}
+            onChange={(profileId) => onSettingsChange({
+              ...settings,
+              engineProfileId: profileId,
+            })}
+          />
 
           <div className="analysis-settings-desktop-steppers analysis-settings-field-wide">
-            <div className={`analysis-settings-stepper${settings.depth > 0 ? " active" : ""}`}>
-              <span className="analysis-settings-stepper-label">{t("analysis.depth")}</span>
-              <div className="analysis-settings-stepper-value">
-                <strong>{settings.depth}</strong>
-              </div>
-              <div className="analysis-settings-stepper-buttons">
-                <button
-                  type="button"
-                  onClick={() => onSettingsChange({
-                    ...settings,
-                    depth: settings.depth + 1,
-                  })}
-                  disabled={running}
-                  aria-label={`${t("analysis.depth")} +1`}
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onSettingsChange({
-                    ...settings,
-                    depth: Math.max(0, settings.depth - 1),
-                  })}
-                  disabled={running || settings.depth <= 0}
-                  aria-label={`${t("analysis.depth")} -1`}
-                >
-                  ▼
-                </button>
-              </div>
-              <span className="analysis-settings-stepper-hint">
-                {t("analysis.depth")}
-                {" · "}0 = {t("analysis.timePerPosition")}
-              </span>
-            </div>
-
-            <div className={`analysis-settings-stepper${settings.depth <= 0 ? " active" : ""}`}>
-              <span className="analysis-settings-stepper-label">{t("analysis.timePerPosition")}</span>
-              <div className="analysis-settings-stepper-value">
-                <strong>{settings.moveTimeSeconds}</strong>
-                <span>s</span>
-              </div>
-              <div className="analysis-settings-stepper-buttons">
-                <button
-                  type="button"
-                  onClick={() => onSettingsChange({
-                    ...settings,
-                    moveTimeSeconds: settings.moveTimeSeconds + 1,
-                  })}
-                  disabled={running}
-                  aria-label={`${t("analysis.timePerPosition")} +1`}
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onSettingsChange({
-                    ...settings,
-                    moveTimeSeconds: Math.max(1, settings.moveTimeSeconds - 1),
-                  })}
-                  disabled={running || settings.moveTimeSeconds <= 1}
-                  aria-label={`${t("analysis.timePerPosition")} -1`}
-                >
-                  ▼
-                </button>
-              </div>
-            </div>
+            <NumericStepper
+              variant="card"
+              active={settings.depth > 0}
+              label={t("analysis.depth")}
+              value={settings.depth}
+              min={0}
+              disabled={running}
+              hint={<>0 = {t("analysis.timePerPosition")}</>}
+              onChange={(depth) => onSettingsChange({ ...settings, depth })}
+            />
+            <NumericStepper
+              variant="card"
+              active={settings.depth <= 0}
+              label={t("analysis.timePerPosition")}
+              value={settings.moveTimeSeconds}
+              unit="s"
+              min={1}
+              disabled={running}
+              onChange={(moveTimeSeconds) => onSettingsChange({
+                ...settings,
+                moveTimeSeconds,
+              })}
+            />
           </div>
 
           <div className="analysis-settings-mobile-search">

@@ -4,7 +4,6 @@
   width: 300px;
   max-height: min(520px, calc(100vh - 16px));
   overflow-y: auto;
-
   padding: 6px;
   border: 1px solid #555555;
   border-radius: 7px;
@@ -18,81 +17,6 @@
   color: #f0f0f0;
   font-size: calc(0.8rem - 2px);
   font-weight: 700;
-}
-
-.engine-profile-context-menu-separator {
-  height: 1px;
-  margin: 5px 4px;
-  background: #4b4b4b;
-}
-
-.engine-profile-context-menu-item {
-  width: 100%;
-  min-height: 42px;
-  padding: 6px 8px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: #dddddd;
-
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  gap: 6px;
-  align-items: center;
-
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.engine-profile-context-menu-item:hover:not(:disabled),
-.engine-profile-context-menu-item:focus-visible:not(:disabled) {
-  outline: none;
-  background: #414141;
-  color: #ffffff;
-}
-
-.engine-profile-context-menu-item:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.engine-profile-context-menu-check {
-  width: 18px;
-  text-align: center;
-  font-weight: 700;
-}
-
-.engine-profile-context-menu-label {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.engine-profile-context-menu-profile {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: calc(0.79rem - 2px);
-}
-
-.engine-profile-context-menu-engine {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #a9a9a9;
-  font-size: calc(0.68rem - 2px);
-}
-
-.engine-profile-context-menu-literal {
-  font-family: inherit;
-}
-
-.engine-profile-context-menu-status {
-  padding: 8px 9px;
-  color: #bdbdbd;
-  font-size: calc(0.75rem - 2px);
 }
 
 .engine-profile-context-menu-error {

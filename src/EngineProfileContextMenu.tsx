@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   fetchEngineConfigOverview,
   fetchEngineRuntimeAssignments,
@@ -8,6 +8,7 @@ import {
   type EngineRuntimeTarget,
 } from "./engineConfig";
 import { notifyEngineRuntimeAssignmentsChanged } from "./chess/engine/engineRuntimeEvents";
+import EngineProfileMenu, { EngineProfileMenuItem } from "./chess/engine/EngineProfileMenu";
 import { useI18n } from "./i18n/I18nProvider";
 import "./EngineProfileContextMenu.css";
 
@@ -113,12 +114,6 @@ export default function EngineProfileContextMenu() {
     setPosition({ x, y });
   }, [menu, overview, runtime, loading, error]);
 
-  const engineById = useMemo(() => new Map(
-    (overview?.engines ?? [])
-      .filter((engine) => engine.id)
-      .map((engine) => [engine.id as string, engine]),
-  ), [overview]);
-
   if (!menu) return null;
 
   const targetLabel = menu.target === "white"
@@ -141,11 +136,6 @@ export default function EngineProfileContextMenu() {
 
   const profiles = (overview?.profiles ?? []).filter((profile) => profile.id);
   const defaultProfile = profiles.find((profile) => profile.id === defaultProfileId) ?? null;
-
-  const engineNameForProfile = (engineId: string) => {
-    const engine = engineById.get(engineId);
-    return engine?.name || engine?.engineName || t("settings.unknownEngine");
-  };
 
   const selectProfile = async (profileId: string | null) => {
     if (saving) return;
@@ -184,52 +174,35 @@ export default function EngineProfileContextMenu() {
 
       {overview && (
         <>
-          <button
-            type="button"
-            role="menuitemradio"
-            aria-checked={runtimeProfileId == null}
-            className="engine-profile-context-menu-item"
+          <EngineProfileMenuItem
+            checked={runtimeProfileId == null}
             disabled={saving || !defaultProfile}
-            onClick={() => void selectProfile(null)}
-          >
-            <span className="engine-profile-context-menu-check">{runtimeProfileId == null ? "✓" : ""}</span>
-            <span className="engine-profile-context-menu-label">
-              <span className="engine-profile-context-menu-profile">
-                {t("settings.defaults")} · {defaultProfile
-                  ? <code className="engine-profile-context-menu-literal">{defaultProfile.name}</code>
-                  : t("settings.noProfile")}
-              </span>
-              {defaultProfile && (
-                <code className="engine-profile-context-menu-engine engine-profile-context-menu-literal">
-                  {engineNameForProfile(defaultProfile.engineId)}
-                </code>
-              )}
-            </span>
-          </button>
+            primary={
+              <>
+                {t("settings.defaults")} · {defaultProfile?.name ?? t("settings.noProfile")}
+              </>
+            }
+            secondary={
+              defaultProfile
+                ? overview.engines.find((engine) => engine.id === defaultProfile.engineId)?.name
+                  || overview.engines.find((engine) => engine.id === defaultProfile.engineId)?.engineName
+                  || t("settings.unknownEngine")
+                : undefined
+            }
+            onSelect={() => void selectProfile(null)}
+          />
 
-          <div className="engine-profile-context-menu-separator" />
+          <div className="engine-profile-menu-separator" />
 
-          {profiles.map((profile) => (
-            <button
-              key={profile.id}
-              type="button"
-              role="menuitemradio"
-              aria-checked={runtimeProfileId === profile.id}
-              className="engine-profile-context-menu-item"
-              disabled={saving}
-              onClick={() => void selectProfile(profile.id)}
-            >
-              <span className="engine-profile-context-menu-check">{runtimeProfileId === profile.id ? "✓" : ""}</span>
-              <span className="engine-profile-context-menu-label">
-                <code className="engine-profile-context-menu-profile engine-profile-context-menu-literal">{profile.name}</code>
-                <code className="engine-profile-context-menu-engine engine-profile-context-menu-literal">{engineNameForProfile(profile.engineId)}</code>
-              </span>
-            </button>
-          ))}
-
-          {profiles.length === 0 && (
-            <div className="engine-profile-context-menu-status">{t("settings.noProfile")}</div>
-          )}
+          <EngineProfileMenu
+            engines={overview.engines}
+            profiles={profiles}
+            selectedProfileId={runtimeProfileId}
+            disabled={saving}
+            unknownEngineLabel={t("settings.unknownEngine")}
+            emptyLabel={t("settings.noProfile")}
+            onSelect={(profileId) => void selectProfile(profileId)}
+          />
         </>
       )}
 
