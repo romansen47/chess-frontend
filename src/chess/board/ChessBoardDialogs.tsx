@@ -66,6 +66,7 @@ export default function ChessBoardDialogs({ dialogs, actions }: Props) {
 
     {dialogs.showAnalysisSettingsDialog && <AnalysisSettingsDialog
       settings={dialogs.analysisSettings} profiles={dialogs.analysisEngineProfiles}
+      engines={dialogs.analysisEngines}
       selectedProfile={dialogs.selectedAnalysisProfile} selectedEngine={dialogs.selectedAnalysisEngine}
       error={dialogs.analysisReplayError} running={dialogs.isAnalysisReplayRunning}
       onSettingsChange={actions.setAnalysisSettings} onCancel={actions.closeAnalysisSettings}

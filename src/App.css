@@ -2482,3 +2482,252 @@
     display: none !important;
   }
 }
+
+
+/* Deep-analysis settings: contextual profile picker + compact desktop steppers. */
+.analysis-settings-profile-picker {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  color: #dddddd;
+  font-size: calc(0.8rem - 2px);
+}
+
+.analysis-settings-profile-picker-label {
+  color: #d3d3d3;
+}
+
+.analysis-settings-profile-picker-trigger {
+  width: 100%;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #1f1f1f;
+  color: #f5f5f5;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.analysis-settings-profile-picker-trigger:hover:not(:disabled),
+.analysis-settings-profile-picker-trigger[aria-expanded="true"] {
+  border-color: #707070;
+  background: #272727;
+}
+
+.analysis-settings-profile-picker-trigger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.analysis-settings-profile-picker-text {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.analysis-settings-profile-picker-text strong,
+.analysis-settings-profile-picker-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-settings-profile-picker-text strong {
+  font-size: calc(0.86rem - 2px);
+}
+
+.analysis-settings-profile-picker-text small {
+  color: #a9a9a9;
+  font-size: calc(0.7rem - 2px);
+}
+
+.analysis-settings-profile-picker-chevron {
+  color: #bdbdbd;
+  font-size: 0.8rem;
+}
+
+.analysis-settings-profile-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  max-height: min(380px, 52vh);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #555;
+  border-radius: 7px;
+  background: #292929;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+  box-sizing: border-box;
+}
+
+.analysis-settings-profile-menu-group + .analysis-settings-profile-menu-group {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid #464646;
+}
+
+.analysis-settings-profile-menu-engine {
+  padding: 5px 8px 4px;
+  color: #9d9d9d;
+  font-size: calc(0.72rem - 2px);
+  font-weight: 700;
+}
+
+.analysis-settings-profile-menu-item {
+  width: 100%;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #dddddd;
+  font: inherit;
+  font-size: calc(0.79rem - 2px);
+  text-align: left;
+  cursor: pointer;
+}
+
+.analysis-settings-profile-menu-item:hover,
+.analysis-settings-profile-menu-item:focus-visible {
+  outline: none;
+  background: #414141;
+  color: #ffffff;
+}
+
+.analysis-settings-profile-menu-check {
+  width: 20px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.analysis-settings-desktop-steppers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.analysis-settings-stepper {
+  position: relative;
+  min-height: 138px;
+  padding: 10px;
+  border: 1px solid #464646;
+  border-radius: 7px;
+  background: #242424;
+  box-sizing: border-box;
+}
+
+.analysis-settings-stepper.active {
+  border-color: #676767;
+  background: #292929;
+}
+
+.analysis-settings-stepper-label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 48px;
+  color: #bdbdbd;
+  font-size: calc(0.76rem - 2px);
+  line-height: 1.25;
+}
+
+.analysis-settings-stepper-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  transform: translate(-50%, -50%);
+}
+
+.analysis-settings-stepper-value strong {
+  color: #f5f5f5;
+  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.analysis-settings-stepper-value span {
+  color: #b7b7b7;
+  font-size: clamp(0.78rem, 1.2vw, 0.9rem);
+  font-weight: 500;
+}
+
+.analysis-settings-stepper-buttons {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transform: translateY(-50%);
+}
+
+.analysis-settings-stepper-buttons button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid #505050;
+  border-radius: 5px;
+  background: #303030;
+  color: #d7d7d7;
+  font: inherit;
+  font-size: 0.56rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.analysis-settings-stepper-buttons button:hover:not(:disabled) {
+  background: #414141;
+  color: #ffffff;
+}
+
+.analysis-settings-stepper-buttons button:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.analysis-settings-stepper-hint {
+  position: absolute;
+  left: 10px;
+  right: 48px;
+  bottom: 8px;
+  color: #888;
+  font-size: calc(0.66rem - 2px);
+  line-height: 1.2;
+}
+
+@media (max-width: 820px) {
+  .analysis-settings-desktop-steppers {
+    display: none;
+  }
+
+  .analysis-settings-profile-picker-trigger {
+    min-height: 46px;
+    font-size: 0.88rem;
+  }
+
+  .analysis-settings-profile-menu {
+    max-height: min(360px, 48vh);
+  }
+
+  .analysis-settings-config-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

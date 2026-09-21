@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { EngineDefinition, EngineProfile } from "../../engineConfig";
 import { fetchEngineCapabilities } from "../api/engineCapabilitiesApi";
@@ -14,6 +14,7 @@ function analysisPresetValues(values: number[], current: number): number[] {
 interface AnalysisSettingsDialogProps {
   settings: AnalysisReplaySettings;
   profiles: EngineProfile[];
+  engines: EngineDefinition[];
   selectedProfile: EngineProfile | null;
   selectedEngine: EngineDefinition | null;
   error: string | null;
@@ -26,6 +27,7 @@ interface AnalysisSettingsDialogProps {
 export default function AnalysisSettingsDialog({
   settings,
   profiles,
+  engines,
   selectedProfile,
   selectedEngine,
   error,
@@ -36,6 +38,46 @@ export default function AnalysisSettingsDialog({
 }: AnalysisSettingsDialogProps) {
   const { t } = useI18n();
   const [deepAnalysisAvailable, setDeepAnalysisAvailable] = useState<boolean | null>(null);
+  const [profilePickerOpen, setProfilePickerOpen] = useState(false);
+  const profilePickerRef = useRef<HTMLDivElement | null>(null);
+
+  const engineById = useMemo(
+    () => new Map(
+      engines
+        .filter((engine) => engine.id)
+        .map((engine) => [engine.id as string, engine]),
+    ),
+    [engines],
+  );
+
+  const profileGroups = useMemo(
+    () => engines
+      .map((engine) => ({
+        engine,
+        profiles: profiles.filter((profile) => profile.engineId === engine.id && profile.id),
+      }))
+      .filter((group) => group.profiles.length > 0),
+    [engines, profiles],
+  );
+
+  useEffect(() => {
+    if (!profilePickerOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (profilePickerRef.current?.contains(event.target as Node)) return;
+      setProfilePickerOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setProfilePickerOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [profilePickerOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,51 +122,138 @@ export default function AnalysisSettingsDialog({
         <p className="analysis-settings-description">{t("analysis.dialogDescription")}</p>
 
         <div className="analysis-settings-form">
-          <label className="analysis-settings-field analysis-settings-field-wide">
-            <span>{t("analysis.engineProfile")}</span>
-            <select
-              value={settings.engineProfileId ?? ""}
-              onChange={(event) => onSettingsChange({
-                ...settings,
-                engineProfileId: event.target.value || null,
-              })}
+          <div
+            className="analysis-settings-profile-picker analysis-settings-field-wide"
+            ref={profilePickerRef}
+          >
+            <span className="analysis-settings-profile-picker-label">{t("analysis.engineProfile")}</span>
+            <button
+              type="button"
+              className="analysis-settings-profile-picker-trigger"
+              aria-haspopup="menu"
+              aria-expanded={profilePickerOpen}
+              onClick={() => setProfilePickerOpen((previous) => !previous)}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setProfilePickerOpen(true);
+              }}
               disabled={profiles.length === 0 || running}
             >
-              {profiles.map((profile) => (
-                <option key={profile.id ?? profile.name} value={profile.id ?? ""}>
-                  {profile.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              <span className="analysis-settings-profile-picker-text">
+                <strong>{selectedProfile?.name ?? t("analysis.noEngineProfile")}</strong>
+                <small>
+                  {selectedEngine?.name || selectedEngine?.engineName || t("settings.unknownEngine")}
+                </small>
+              </span>
+              <span className="analysis-settings-profile-picker-chevron" aria-hidden="true">▾</span>
+            </button>
 
-          <label className="analysis-settings-field analysis-settings-desktop-search-field">
-            <span>{t("analysis.depth")}</span>
-            <input
-              type="number"
-              min={0}
-              value={settings.depth}
-              onChange={(event) => onSettingsChange({
-                ...settings,
-                depth: Math.max(0, Number(event.target.value)),
-              })}
-              disabled={running}
-            />
-          </label>
+            {profilePickerOpen && (
+              <div
+                className="analysis-settings-profile-menu"
+                role="menu"
+                aria-label={t("analysis.engineProfile")}
+              >
+                {profileGroups.map(({ engine, profiles: engineProfiles }) => (
+                  <div className="analysis-settings-profile-menu-group" key={engine.id ?? engine.name}>
+                    <div className="analysis-settings-profile-menu-engine">
+                      {engine.name}
+                    </div>
+                    {engineProfiles.map((profile) => (
+                      <button
+                        key={profile.id ?? profile.name}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={settings.engineProfileId === profile.id}
+                        className="analysis-settings-profile-menu-item"
+                        onClick={() => {
+                          onSettingsChange({
+                            ...settings,
+                            engineProfileId: profile.id,
+                          });
+                          setProfilePickerOpen(false);
+                        }}
+                      >
+                        <span className="analysis-settings-profile-menu-check">
+                          {settings.engineProfileId === profile.id ? "✓" : ""}
+                        </span>
+                        <span>{profile.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-          <label className="analysis-settings-field analysis-settings-desktop-search-field">
-            <span>{t("analysis.timePerPosition")}</span>
-            <input
-              type="number"
-              min={1}
-              value={settings.moveTimeSeconds}
-              onChange={(event) => onSettingsChange({
-                ...settings,
-                moveTimeSeconds: Math.max(1, Number(event.target.value)),
-              })}
-              disabled={running}
-            />
-          </label>
+          <div className="analysis-settings-desktop-steppers analysis-settings-field-wide">
+            <div className={`analysis-settings-stepper${settings.depth > 0 ? " active" : ""}`}>
+              <span className="analysis-settings-stepper-label">{t("analysis.depth")}</span>
+              <div className="analysis-settings-stepper-value">
+                <strong>{settings.depth}</strong>
+              </div>
+              <div className="analysis-settings-stepper-buttons">
+                <button
+                  type="button"
+                  onClick={() => onSettingsChange({
+                    ...settings,
+                    depth: settings.depth + 1,
+                  })}
+                  disabled={running}
+                  aria-label={`${t("analysis.depth")} +1`}
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSettingsChange({
+                    ...settings,
+                    depth: Math.max(0, settings.depth - 1),
+                  })}
+                  disabled={running || settings.depth <= 0}
+                  aria-label={`${t("analysis.depth")} -1`}
+                >
+                  ▼
+                </button>
+              </div>
+              <span className="analysis-settings-stepper-hint">
+                {t("analysis.depth")}
+                {" · "}0 = {t("analysis.timePerPosition")}
+              </span>
+            </div>
+
+            <div className={`analysis-settings-stepper${settings.depth <= 0 ? " active" : ""}`}>
+              <span className="analysis-settings-stepper-label">{t("analysis.timePerPosition")}</span>
+              <div className="analysis-settings-stepper-value">
+                <strong>{settings.moveTimeSeconds}</strong>
+                <span>s</span>
+              </div>
+              <div className="analysis-settings-stepper-buttons">
+                <button
+                  type="button"
+                  onClick={() => onSettingsChange({
+                    ...settings,
+                    moveTimeSeconds: settings.moveTimeSeconds + 1,
+                  })}
+                  disabled={running}
+                  aria-label={`${t("analysis.timePerPosition")} +1`}
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSettingsChange({
+                    ...settings,
+                    moveTimeSeconds: Math.max(1, settings.moveTimeSeconds - 1),
+                  })}
+                  disabled={running || settings.moveTimeSeconds <= 1}
+                  aria-label={`${t("analysis.timePerPosition")} -1`}
+                >
+                  ▼
+                </button>
+              </div>
+            </div>
+          </div>
 
           <div className="analysis-settings-mobile-search">
             <div className="analysis-settings-mobile-search-mode" role="group">
@@ -184,7 +313,6 @@ export default function AnalysisSettingsDialog({
 
           {selectedProfile && selectedEngine ? (
             <div className="analysis-settings-config-summary">
-              <div className="analysis-settings-summary-profile"><span>{t("analysis.profile")}</span><strong>{selectedProfile.name}</strong></div>
               <div className="analysis-settings-summary-engine"><span>{t("analysis.engine")}</span><strong>{selectedEngine.engineName || selectedEngine.name}</strong></div>
               <div className="analysis-settings-summary-search">
                 <span>{t("analysis.search")}</span>

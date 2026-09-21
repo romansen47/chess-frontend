@@ -55,6 +55,7 @@ export interface DialogState {
   showAnalysisSettingsDialog: boolean;
   analysisSettings: AnalysisReplaySettings;
   analysisEngineProfiles: ComponentProps<typeof AnalysisSettingsDialog>["profiles"];
+  analysisEngines: ComponentProps<typeof AnalysisSettingsDialog>["engines"];
   selectedAnalysisProfile: ComponentProps<typeof AnalysisSettingsDialog>["selectedProfile"];
   selectedAnalysisEngine: ComponentProps<typeof AnalysisSettingsDialog>["selectedEngine"];
   analysisReplayError: string | null;
