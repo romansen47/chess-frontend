@@ -169,7 +169,7 @@ export default function EngineProfileContextMenu() {
       </div>
 
       {loading && !overview && (
-        <div className="engine-profile-context-menu-status">{t("common.loading")}</div>
+        <div className="engine-profile-menu-status">{t("common.loading")}</div>
       )}
 
       {overview && (
