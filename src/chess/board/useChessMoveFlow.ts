@@ -2,12 +2,12 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { fetchAnalysisPossibleMoves } from "../api/analysisApi";
 import { fetchBoard, fetchPossibleMoves, submitMove } from "../api/boardApi";
 import { fetchGameSnapshot } from "../api/gameApi";
-import { appendCanonicalMoveToLiveEvaluationPosition, createLiveEvaluationPosition } from "../evaluation/liveEvaluationPosition";
+import { appendCanonicalMoveToLiveEvaluationPosition } from "../evaluation/liveEvaluationPosition";
 import { sameLiveEvaluationPosition } from "../evaluation/liveEvaluationUtils";
 import { GAME_SOUND_SOURCES } from "../game/gameSounds";
-import { mapImportedUciMovesToRows } from "../game/gameFormatters";
 import { applyLocalMoveTransition, reconcilePieceSnapshot } from "./pieceTransitions";
 import { mapBackendPiecesToLocalPieces } from "./positionUtils";
+import { projectGameState } from "../game/gameStateProjection";
 import { appendMoveResultToRows, mergeAuthoritativeMoveRows } from "../game/moveListUtils";
 import type { ClockState, MoveResult, PerformMoveOptions, PieceType } from "../types";
 import type { ChessBoardState } from "./useChessBoardState";
@@ -90,20 +90,16 @@ export function useChessMoveFlow(options: Options) {
       try {
         const snapshot = await fetchGameSnapshot();
         if (snapshot.importedAnalysisGame) return null;
-        const authoritativeMoves = snapshot.game.moves ?? [];
-        const position = createLiveEvaluationPosition(
-          authoritativeMoves,
-          snapshot.game.initialFen,
-          snapshot.game.startingPositionId ?? 518,
+        const projection = projectGameState(snapshot.game);
+        board.liveEvaluationPositionRef.current = projection.liveEvaluationPosition;
+        board.latestMovePlyRef.current = Math.max(
+          board.latestMovePlyRef.current,
+          projection.latestPly,
         );
-        board.liveEvaluationPositionRef.current = position;
-        const authoritativeRows = mapImportedUciMovesToRows(authoritativeMoves);
-        const authoritativePly = authoritativeMoves.reduce(
-          (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0), 0,
+        board.setMoves((current) =>
+          mergeAuthoritativeMoveRows(current, projection.moveRows),
         );
-        board.latestMovePlyRef.current = Math.max(board.latestMovePlyRef.current, authoritativePly);
-        board.setMoves((current) => mergeAuthoritativeMoveRows(current, authoritativeRows));
-        return position;
+        return projection.liveEvaluationPosition;
       } catch (error) {
         console.warn("[reconcileMoveListFromBackend] could not refresh move list", error);
         return null;

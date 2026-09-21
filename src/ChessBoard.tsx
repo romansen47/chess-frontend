@@ -1,60 +1,26 @@
-import { useRef } from "react";
 import { useComputerMoves } from "./chess/game/useComputerMoves";
 import { useAnalysisController } from "./chess/analysis/useAnalysisController";
 import { useBoardInteraction } from "./chess/board/useBoardInteraction";
-import type { AnalysisInteractionContext } from "./chess/board/boardInteractionTypes";
 import { useChessBoardState } from "./chess/board/useChessBoardState";
 import { useChessEngineState } from "./chess/board/useChessEngineState";
 import { useChessGameState } from "./chess/board/useChessGameState";
 import { useChessLiveEvaluation } from "./chess/board/useChessLiveEvaluation";
 import { useChessMoveFlow } from "./chess/board/useChessMoveFlow";
 import { useChessGameLifecycle } from "./chess/board/useChessGameLifecycle";
+import { useChessRuntimeBridges } from "./chess/board/useChessRuntimeBridges";
 import ChessBoardContainer from "./chess/board/ChessBoardContainer";
-import type { ClockState, MoveResult, PerformMoveOptions, PieceType } from "./chess/types";
-
-interface MoveRuntime {
-  playGameSound: (sound: "move" | "capture" | "notify") => Promise<void>;
-  animateMoveLocally: (from: string, to: string, promotion?: PieceType | null, position?: string | null) => void;
-  loadBoardFromBackend: () => Promise<void>;
-  loadPossibleMoves: (from: string) => Promise<string[]>;
-  handleGameEndState: (state: string | null | undefined) => boolean;
-  handleComputerMove: (data: MoveResult) => Promise<void>;
-  synchronizeAfterMoveSequence: () => Promise<void>;
-  performMove: (from: string, to: string, promotion?: PieceType, options?: PerformMoveOptions) => Promise<void>;
-  performBoardMove: (from: string, to: string, promotion?: PieceType) => Promise<void>;
-}
-
-const EMPTY_MOVE_RUNTIME: MoveRuntime = {
-  playGameSound: async () => undefined,
-  animateMoveLocally: () => undefined,
-  loadBoardFromBackend: async () => undefined,
-  loadPossibleMoves: async () => [],
-  handleGameEndState: () => false,
-  handleComputerMove: async () => undefined,
-  synchronizeAfterMoveSequence: async () => undefined,
-  performMove: async () => undefined,
-  performBoardMove: async () => undefined,
-};
 
 export const ChessBoard: React.FC = () => {
   const board = useChessBoardState();
   const engine = useChessEngineState();
   const game = useChessGameState();
 
-  const moveRuntimeRef = useRef<MoveRuntime>(EMPTY_MOVE_RUNTIME);
-  const liveRuntimeRef = useRef<{ stopLiveEvaluation: () => Promise<void> }>({
-    stopLiveEvaluation: async () => undefined,
-  });
-  const lifecycleRuntimeRef = useRef({ loadClock: async (): Promise<ClockState | null> => null });
-  const analysisInteractionRef = useRef<AnalysisInteractionContext>({
-    replayActive: false,
-    replayActiveCurrent: false,
-    replayFinished: false,
-    selectedPosition: null,
-    variationMoveCount: 0,
-    variationGameState: null,
-    replayRunning: false,
-  });
+  const {
+    moveRuntimeRef,
+    liveRuntimeRef,
+    lifecycleRuntimeRef,
+    analysisInteractionRef,
+  } = useChessRuntimeBridges();
 
   const computer = useComputerMoves({
     currentSideToMove: game.clock?.sideToMove,

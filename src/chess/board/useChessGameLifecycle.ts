@@ -213,9 +213,7 @@ export function useChessGameLifecycle(options: Options) {
       game.setIsStartingNewGame(true);
       board.setLoadError(null);
       game.setGameSettingsError(null);
-      await options.disablePlayerEngines();
-      await options.stopLiveEvaluation();
-      await analysis.stopEvaluation();
+      await stopActiveGameRuntime();
       analysis.resetState();
       analysis.setWhitePlayerName(null);
       analysis.setBlackPlayerName(null);
