@@ -162,7 +162,6 @@ export function useAnalysisNavigation(
     state.showAnalysisSettingsDialog,
     options.showGameSettingsDialog,
     options.showSettings,
-    options.showEngineManager,
     options.showChessDatabaseDialog,
     options.promotionContext,
     options.moves,
