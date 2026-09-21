@@ -638,7 +638,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
               disabled={busy || !selectedEngine}
               title={selectedEngine?.name}
             >
-              + {t("settings.newProfile")}
+              {t("settings.newProfile")}
             </button>
           </div>
         </div>
