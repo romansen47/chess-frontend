@@ -1,77 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { useI18n } from "./i18n/I18nProvider";
+import { useRef, useState, type ChangeEvent } from "react";
+import ChessDatabaseImportView from "./chess/database/ChessDatabaseImportView";
+import ChessDatabaseOverviewView from "./chess/database/ChessDatabaseOverviewView";
+import ChessDatabaseSearchView from "./chess/database/ChessDatabaseSearchView";
+import type { ChessDatabaseLoadedGame } from "./chess/database/chessDatabaseTypes";
+import { useChessDatabaseImport } from "./chess/database/useChessDatabaseImport";
+import { useChessDatabaseSearch } from "./chess/database/useChessDatabaseSearch";
+import { useChessDatabaseStatus } from "./chess/database/useChessDatabaseStatus";
 import "./ChessDatabaseDialog.css";
 
-export interface ChessDatabaseLoadedGame {
-  totalPlies: number;
-  sideToMove: string | null;
-  position: string;
-  moves: Array<{
-    ply: number;
-    uci: string;
-    san: string | null;
-    position: string;
-  }>;
-  whitePlayerName: string | null;
-  blackPlayerName: string | null;
-}
-
-interface DatabaseStatus {
-  available: boolean;
-  path: string;
-  name: string;
-  schemaVersion: number | null;
-  gameCount: number;
-  sizeBytes: number;
-  message: string | null;
-}
-
-type DatabaseImportPhase =
-  | "READING_PGN"
-  | "FINALIZING_DATABASE"
-  | "COMPLETE"
-  | "CANCELLED"
-  | "FAILED";
-
-interface DatabaseImportJob {
-  id: string;
-  fileName: string;
-  status: "RUNNING" | "COMPLETE" | "CANCELLED" | "FAILED";
-  phase: DatabaseImportPhase;
-  totalBytes: number;
-  bytesRead: number;
-  processedGames: number;
-  importedGames: number;
-  skippedGames: number;
-  totalPlies: number;
-  elapsedMillis: number;
-  message: string | null;
-}
-
-interface DatabaseGameSummary {
-  id: number;
-  date: string | null;
-  white: string;
-  black: string;
-  whiteElo: number | null;
-  blackElo: number | null;
-  result: string | null;
-  event: string | null;
-  eco: string | null;
-  plyCount: number;
-}
-
-type PlayerColorAssignment = "any" | "player1White" | "player1Black";
-
-interface SearchForm {
-  player: string;
-  player2: string;
-  colorAssignment: PlayerColorAssignment;
-  fromYear: string;
-  toYear: string;
-  result: string;
-  minElo: string;
-}
+export type { ChessDatabaseLoadedGame };
 
 interface ChessDatabaseDialogProps {
   onClose: () => void;
@@ -80,353 +17,42 @@ interface ChessDatabaseDialogProps {
 
 type DialogView = "overview" | "search" | "import";
 
-const EMPTY_SEARCH: SearchForm = {
-  player: "",
-  player2: "",
-  colorAssignment: "any",
-  fromYear: "",
-  toYear: "",
-  result: "",
-  minElo: "",
-};
-
-function formatBytes(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) {
-    return "0 B";
-  }
-
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let size = value;
-  let unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex++;
-  }
-
-  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
-}
-
-function formatElapsed(value: number): string {
-  const totalSeconds = Math.max(0, Math.floor(value / 1000));
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-}
-
-function optionalNumber(value: string): number | null {
-  if (!value.trim()) {
-    return null;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function playerSearchCriteria(searchForm: SearchForm) {
-  const player1 = searchForm.player.trim() || null;
-  const player2 = searchForm.player2.trim() || null;
-
-  if (searchForm.colorAssignment === "player1White") {
-    return {
-      player: null,
-      player2: null,
-      white: player1,
-      black: player2,
-    };
-  }
-
-  if (searchForm.colorAssignment === "player1Black") {
-    return {
-      player: null,
-      player2: null,
-      white: player2,
-      black: player1,
-    };
-  }
-
-  return {
-    player: player1,
-    player2,
-    white: null,
-    black: null,
-  };
-}
-
-function importProgressPercent(job: DatabaseImportJob | null): number {
-  if (!job || job.totalBytes <= 0) {
-    return job?.status === "COMPLETE" ? 100 : 0;
-  }
-
-  return Math.max(0, Math.min(100, (job.bytesRead / job.totalBytes) * 100));
-}
-
-function importStatusLabel(job: DatabaseImportJob): string {
-  switch (job.phase) {
-    case "READING_PGN":
-      return "Reading PGN";
-    case "FINALIZING_DATABASE":
-      return "Finalizing";
-    case "COMPLETE":
-      return "Complete";
-    case "CANCELLED":
-      return "Cancelled";
-    case "FAILED":
-      return "Failed";
-    default:
-      return job.status;
-  }
-}
-
-function importOperationLabel(job: DatabaseImportJob): string {
-  switch (job.phase) {
-    case "READING_PGN":
-      return "Parsing games and staging position statistics";
-    case "FINALIZING_DATABASE":
-      return "Merging position statistics and publishing staged games";
-    case "COMPLETE":
-      return "Database import complete";
-    case "CANCELLED":
-      return "Import cancelled";
-    case "FAILED":
-      return "Import failed";
-    default:
-      return job.status;
-  }
-}
-
 export default function ChessDatabaseDialog({
   onClose,
   onGameLoaded,
 }: ChessDatabaseDialogProps) {
-  const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [view, setView] = useState<DialogView>("overview");
-  const [status, setStatus] = useState<DatabaseStatus | null>(null);
-  const [statusError, setStatusError] = useState<string | null>(null);
-  const [isStatusLoading, setIsStatusLoading] = useState(false);
 
-  const [importFileName, setImportFileName] = useState<string>("");
-  const [isImportStarting, setIsImportStarting] = useState(false);
-  const [importJob, setImportJob] = useState<DatabaseImportJob | null>(null);
-  const [importStartError, setImportStartError] = useState<string | null>(null);
-  const [cancelRequested, setCancelRequested] = useState(false);
-
-  const [searchForm, setSearchForm] = useState<SearchForm>(EMPTY_SEARCH);
-  const [searchResults, setSearchResults] = useState<DatabaseGameSummary[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [loadingGameId, setLoadingGameId] = useState<number | null>(null);
-
-  useEffect(() => {
-    void loadStatus();
-  }, []);
-
-  useEffect(() => {
-    const importId = importJob?.id;
-    if (!importId || importJob?.status !== "RUNNING") {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      void refreshImportJob(importId);
-    }, 400);
-
-    return () => window.clearInterval(timer);
-  }, [importJob?.id, importJob?.status]);
-
-  async function loadStatus() {
-    setIsStatusLoading(true);
-    setStatusError(null);
-    try {
-      const response = await fetch("/api/chess-database/status");
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-      const nextStatus: DatabaseStatus = await response.json();
-      setStatus(nextStatus);
-      if (!nextStatus.available && nextStatus.message) {
-        setStatusError(nextStatus.message);
-      }
-    } catch (error) {
-      setStatusError(error instanceof Error ? error.message : t("database.statusReadFailed"));
-    } finally {
-      setIsStatusLoading(false);
-    }
-  }
-
-  async function refreshImportJob(importId: string) {
-    try {
-      const response = await fetch(`/api/chess-database/imports/${encodeURIComponent(importId)}`);
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-      const nextJob: DatabaseImportJob = await response.json();
-      setImportJob(nextJob);
-      if (nextJob.status !== "RUNNING") {
-        setCancelRequested(false);
-        await loadStatus();
-      }
-    } catch (error) {
-      setImportStartError(error instanceof Error ? error.message : "Could not read import progress.");
-    }
-  }
+  const statusController = useChessDatabaseStatus();
+  const importController = useChessDatabaseImport({
+    refreshStatus: statusController.loadStatus,
+  });
+  const searchController = useChessDatabaseSearch({
+    onGameLoaded,
+    onClose,
+  });
 
   function chooseImportFile() {
     fileInputRef.current?.click();
   }
 
-  async function handleImportFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImportFileSelected(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     setView("import");
-    setImportFileName(file.name);
-    setImportJob(null);
-    setImportStartError(null);
-    setCancelRequested(false);
-    setIsImportStarting(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file, file.name);
-      const response = await fetch("/api/chess-database/import", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-
-      const job: DatabaseImportJob = await response.json();
-      setImportJob(job);
-      if (job.status !== "RUNNING") {
-        await loadStatus();
-      }
-    } catch (error) {
-      setImportStartError(error instanceof Error ? error.message : t("database.importStartFailed"));
-    } finally {
-      setIsImportStarting(false);
-    }
-  }
-
-  async function cancelImport() {
-    if (!importJob || importJob.status !== "RUNNING") {
-      return;
-    }
-
-    setCancelRequested(true);
-    try {
-      const response = await fetch(
-        `/api/chess-database/imports/${encodeURIComponent(importJob.id)}/cancel`,
-        { method: "POST" },
-      );
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-      const nextJob: DatabaseImportJob = await response.json();
-      setImportJob(nextJob);
-    } catch (error) {
-      setCancelRequested(false);
-      setImportStartError(error instanceof Error ? error.message : t("database.importCancelFailed"));
-    }
+    await importController.startImport(file);
   }
 
   function closeImportResult() {
-    if (isImportStarting || importJob?.status === "RUNNING") {
-      return;
-    }
-    setView("overview");
-    setImportJob(null);
-    setImportStartError(null);
-    setCancelRequested(false);
-  }
-
-  function updateSearchField<K extends keyof SearchForm>(key: K, value: SearchForm[K]) {
-    setSearchForm((previous) => ({ ...previous, [key]: value }));
-  }
-
-  function resetSearch() {
-    setSearchForm({ ...EMPTY_SEARCH });
-    setSearchResults([]);
-    setSearchError(null);
-    setHasSearched(false);
-  }
-
-  async function searchGames() {
-    setIsSearching(true);
-    setSearchError(null);
-    setSearchResults([]);
-    setHasSearched(true);
-    try {
-      const playerCriteria = playerSearchCriteria(searchForm);
-      const response = await fetch("/api/chess-database/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...playerCriteria,
-          fromYear: optionalNumber(searchForm.fromYear),
-          toYear: optionalNumber(searchForm.toYear),
-          result: searchForm.result || null,
-          minElo: optionalNumber(searchForm.minElo),
-          limit: 200,
-        }),
-      });
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-
-      const result: DatabaseGameSummary[] = await response.json();
-      setSearchResults(result);
-    } catch (error) {
-      setSearchError(error instanceof Error ? error.message : t("database.searchFailed"));
-    } finally {
-      setIsSearching(false);
+    if (importController.resetImport()) {
+      setView("overview");
     }
   }
-
-  async function loadGame(gameId: number) {
-    setLoadingGameId(gameId);
-    setSearchError(null);
-    try {
-      const response = await fetch(`/api/chess-database/games/${gameId}/load`, {
-        method: "POST",
-      });
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `HTTP ${response.status}`);
-      }
-
-      const game: ChessDatabaseLoadedGame = await response.json();
-      await onGameLoaded(game);
-      onClose();
-    } catch (error) {
-      setSearchError(error instanceof Error ? error.message : t("database.gameLoadFailed"));
-    } finally {
-      setLoadingGameId(null);
-    }
-  }
-
-  const progressPercent = importProgressPercent(importJob);
-  const importRunning = isImportStarting || importJob?.status === "RUNNING";
-  const importCanClose = !importRunning && (importJob !== null || importStartError !== null);
-  const pgnComplete = importJob != null && progressPercent >= 100;
-  const finalizationActive = importJob?.phase === "FINALIZING_DATABASE";
-  const finalizationComplete = importJob?.status === "COMPLETE";
 
   return (
     <>
@@ -435,389 +61,31 @@ export default function ChessDatabaseDialog({
         className="chess-database-hidden-input"
         type="file"
         accept=".pgn,.txt,application/x-chess-pgn,text/plain"
-        onChange={handleImportFileSelected}
+        onChange={(event) => void handleImportFileSelected(event)}
       />
 
       {view === "overview" && (
-        <div className="chess-database-overlay" role="presentation">
-          <section className="chess-database-dialog" role="dialog" aria-modal="true" aria-labelledby="chess-database-title">
-            <h2 id="chess-database-title">{t("database.title")}</h2>
-
-            <div className="chess-database-status-card">
-              {isStatusLoading && <div className="chess-database-muted">Loading database status…</div>}
-              {!isStatusLoading && status && (
-                <>
-                  <div className="chess-database-status-row">
-                    <span>{t("common.database")}</span>
-                    <strong>{status.name || t("database.title")}</strong>
-                  </div>
-                  <div className="chess-database-status-row">
-                    <span>{t("common.file")}</span>
-                    <strong className="chess-database-path" title={status.path}>{status.path}</strong>
-                  </div>
-                  <div className="chess-database-status-row">
-                    <span>{t("common.games")}</span>
-                    <strong>{status.gameCount.toLocaleString()}</strong>
-                  </div>
-                  <div className="chess-database-status-row">
-                    <span>{t("common.size")}</span>
-                    <strong>{formatBytes(status.sizeBytes)}</strong>
-                  </div>
-                </>
-              )}
-              {statusError && <div className="chess-database-error">{statusError}</div>}
-            </div>
-
-            <div className="chess-database-actions">
-              <button type="button" onClick={chooseImportFile}>{t("database.importPgn")}</button>
-              <button type="button" onClick={() => setView("search")}>{t("database.searchGames")}</button>
-            </div>
-
-            <div className="chess-database-footer">
-              <button type="button" onClick={onClose}>{t("common.close")}</button>
-            </div>
-          </section>
-        </div>
+        <ChessDatabaseOverviewView
+          controller={statusController}
+          onImport={chooseImportFile}
+          onSearch={() => setView("search")}
+          onClose={onClose}
+        />
       )}
 
       {view === "import" && (
-        <div className="chess-database-overlay" role="presentation">
-          <section className="chess-database-dialog chess-database-import-dialog" role="dialog" aria-modal="true" aria-labelledby="chess-database-import-title">
-            <h2 id="chess-database-import-title">{t("database.importTitle")}</h2>
-            <div className="chess-database-import-file" title={importJob?.fileName || importFileName}>
-              {importJob?.fileName || importFileName}
-            </div>
-
-            {isImportStarting && (
-              <div className="chess-database-muted">Preparing import…</div>
-            )}
-
-            {importJob && (
-              <>
-                <div className="chess-database-import-phases">
-                  <div className={`chess-database-import-phase ${pgnComplete ? "is-complete" : "is-active"}`}>
-                    <div className="chess-database-import-phase-header">
-                      <strong>1. Reading PGN</strong>
-                      <span>{pgnComplete ? "Complete" : "Running"}</span>
-                    </div>
-                    <div
-                      className="chess-database-progress"
-                      role="progressbar"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={Math.round(progressPercent)}
-                    >
-                      <div
-                        className="chess-database-progress-bar"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                    <div className="chess-database-progress-label">
-                      <strong>{progressPercent.toFixed(1)}%</strong>
-                      <span>{formatBytes(importJob.bytesRead)} / {formatBytes(importJob.totalBytes)}</span>
-                    </div>
-                  </div>
-
-                  <div className={`chess-database-import-phase ${finalizationActive ? "is-active" : ""} ${finalizationComplete ? "is-complete" : ""}`}>
-                    <div className="chess-database-import-phase-header">
-                      <strong>2. Building database</strong>
-                      <span>
-                        {finalizationComplete ? "Complete" : finalizationActive ? "Running" : "Waiting"}
-                      </span>
-                    </div>
-                    {finalizationActive && (
-                      <div
-                        className="chess-database-indeterminate"
-                        role="progressbar"
-                        aria-label={t("database.finalizing")}
-                      >
-                        <div className="chess-database-indeterminate-bar" />
-                      </div>
-                    )}
-                    <div className="chess-database-import-phase-detail">
-                      {finalizationComplete
-                        ? t("database.finalizationComplete")
-                        : finalizationActive
-                          ? "Merging position statistics and publishing staged games…"
-                          : t("database.startsAfterPgn")}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="chess-database-import-result">
-                  <div><span>{t("common.status")}</span><strong>{importStatusLabel(importJob)}</strong></div>
-                  <div><span>{t("common.currentOperation")}</span><strong>{importOperationLabel(importJob)}</strong></div>
-                  <div><span>{t("database.gamesProcessed")}</span><strong>{importJob.processedGames.toLocaleString()}</strong></div>
-                  <div><span>{t("database.gamesAccepted")}</span><strong>{importJob.importedGames.toLocaleString()}</strong></div>
-                  <div><span>{t("database.gamesSkipped")}</span><strong>{importJob.skippedGames.toLocaleString()}</strong></div>
-                  <div><span>{t("database.pliesIndexed")}</span><strong>{importJob.totalPlies.toLocaleString()}</strong></div>
-                  <div><span>{t("common.elapsed")}</span><strong>{formatElapsed(importJob.elapsedMillis)}</strong></div>
-                </div>
-
-                {importJob.message && (
-                  <div className={importJob.status === "FAILED" ? "chess-database-error" : "chess-database-import-message"}>
-                    {importJob.message}
-                  </div>
-                )}
-              </>
-            )}
-
-            {importStartError && <div className="chess-database-error">{importStartError}</div>}
-
-            <div className="chess-database-footer chess-database-import-footer">
-              {importJob?.status === "RUNNING" && (
-                <button type="button" onClick={() => void cancelImport()} disabled={cancelRequested}>
-                  {cancelRequested ? "Cancelling…" : "Cancel"}
-                </button>
-              )}
-              <button type="button" disabled={!importCanClose} onClick={closeImportResult}>
-                OK
-              </button>
-            </div>
-          </section>
-        </div>
+        <ChessDatabaseImportView
+          controller={importController}
+          onCloseResult={closeImportResult}
+        />
       )}
 
       {view === "search" && (
-        <div className="chess-database-overlay" role="presentation">
-          <section
-            className="chess-database-dialog chess-database-search-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="chess-database-search-title"
-          >
-            <div className="chess-database-search-header">
-              <div>
-                <h2 id="chess-database-search-title">{t("database.searchTitle")}</h2>
-                <p>{t("database.searchStartHint")}</p>
-              </div>
-            </div>
-
-            <div className="chess-database-search-body">
-              <form
-                className="chess-database-search-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void searchGames();
-                }}
-              >
-                <div className="chess-database-filter-panels">
-                  <section className="chess-database-filter-panel">
-                    <div className="chess-database-filter-panel-title">
-                      <strong>{t("common.player")}</strong>
-                      <span>{t("database.playerPairHint")}</span>
-                    </div>
-                    <div className="chess-database-search-grid chess-database-player-grid">
-                      <label>
-                        <span className="chess-database-player-label-row">
-                          <span>{t("common.player")} 1</span>
-                          {searchForm.colorAssignment !== "any" && (
-                            <span
-                              className={`chess-database-color-badge ${
-                                searchForm.colorAssignment === "player1White"
-                                  ? "is-white"
-                                  : "is-black"
-                              }`}
-                            >
-                              {searchForm.colorAssignment === "player1White"
-                                ? t("common.white")
-                                : t("common.black")}
-                            </span>
-                          )}
-                        </span>
-                        <input
-                          value={searchForm.player}
-                          onChange={(event) => updateSearchField("player", event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        <span className="chess-database-player-label-row">
-                          <span>{t("common.player")} 2</span>
-                          {searchForm.colorAssignment !== "any" && (
-                            <span
-                              className={`chess-database-color-badge ${
-                                searchForm.colorAssignment === "player1White"
-                                  ? "is-black"
-                                  : "is-white"
-                              }`}
-                            >
-                              {searchForm.colorAssignment === "player1White"
-                                ? t("common.black")
-                                : t("common.white")}
-                            </span>
-                          )}
-                        </span>
-                        <input
-                          value={searchForm.player2}
-                          onChange={(event) => updateSearchField("player2", event.target.value)}
-                        />
-                      </label>
-                    </div>
-
-                    <label className="chess-database-color-assignment">
-                      <span>{t("database.colorAssignment")}</span>
-                      <select
-                        value={searchForm.colorAssignment}
-                        onChange={(event) =>
-                          updateSearchField(
-                            "colorAssignment",
-                            event.target.value as PlayerColorAssignment,
-                          )
-                        }
-                      >
-                        <option value="any">{t("common.any")}</option>
-                        <option value="player1White">
-                          {t("common.player")} 1 = {t("common.white")} · {t("common.player")} 2 = {t("common.black")}
-                        </option>
-                        <option value="player1Black">
-                          {t("common.player")} 1 = {t("common.black")} · {t("common.player")} 2 = {t("common.white")}
-                        </option>
-                      </select>
-                    </label>
-                  </section>
-
-                  <section className="chess-database-filter-panel">
-                    <div className="chess-database-filter-panel-title">
-                      <strong>{t("common.games")}</strong>
-                    </div>
-                    <div className="chess-database-search-grid">
-                      <label>
-                        <span>{t("database.fromYear")}</span>
-                        <input
-                          type="number"
-                          min="1000"
-                          max="9999"
-                          value={searchForm.fromYear}
-                          onChange={(event) => updateSearchField("fromYear", event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        <span>{t("database.toYear")}</span>
-                        <input
-                          type="number"
-                          min="1000"
-                          max="9999"
-                          value={searchForm.toYear}
-                          onChange={(event) => updateSearchField("toYear", event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        <span>{t("common.result")}</span>
-                        <select
-                          value={searchForm.result}
-                          onChange={(event) => updateSearchField("result", event.target.value)}
-                        >
-                          <option value="">{t("common.any")}</option>
-                          <option value="1-0">1-0</option>
-                          <option value="0-1">0-1</option>
-                          <option value="1/2-1/2">½-½</option>
-                        </select>
-                      </label>
-                      <label>
-                        <span>{t("database.minimumElo")}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          value={searchForm.minElo}
-                          onChange={(event) => updateSearchField("minElo", event.target.value)}
-                        />
-                      </label>
-                    </div>
-                  </section>
-                </div>
-
-                <div className="chess-database-search-actions">
-                  <button
-                    type="button"
-                    className="chess-database-secondary-button"
-                    onClick={resetSearch}
-                    disabled={isSearching || loadingGameId !== null}
-                  >
-                    {t("database.resetFilters")}
-                  </button>
-                  <button
-                    type="submit"
-                    className="chess-database-primary-button"
-                    disabled={isSearching || loadingGameId !== null}
-                  >
-                    {isSearching ? t("database.querying") : t("database.searchGames")}
-                  </button>
-                </div>
-              </form>
-
-              {searchError && <div className="chess-database-error">{searchError}</div>}
-
-              <div className="chess-database-results-section">
-                <div className="chess-database-results-toolbar">
-                  <strong>{t("database.searchResults")}</strong>
-                  {hasSearched && (
-                    <span>{searchResults.length.toLocaleString()} {t("common.games")}</span>
-                  )}
-                </div>
-
-                <div className="chess-database-results-wrap">
-                  <table className="chess-database-results">
-                    <thead>
-                      <tr>
-                        <th>{t("common.date")}</th>
-                        <th>{t("common.white")}</th>
-                        <th>{t("common.black")}</th>
-                        <th>{t("common.result")}</th>
-                        <th>{t("database.eco")}</th>
-                        <th>{t("common.event")}</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {searchResults.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="chess-database-empty">
-                            {hasSearched ? t("database.noSearchResults") : t("database.searchStartHint")}
-                          </td>
-                        </tr>
-                      )}
-                      {searchResults.map((game) => (
-                        <tr key={game.id}>
-                          <td>{game.date || "?"}</td>
-                          <td>{game.white}{game.whiteElo != null ? ` (${game.whiteElo})` : ""}</td>
-                          <td>{game.black}{game.blackElo != null ? ` (${game.blackElo})` : ""}</td>
-                          <td>{game.result === "1/2-1/2" ? "½-½" : game.result || "*"}</td>
-                          <td>{game.eco || "—"}</td>
-                          <td title={game.event || ""}>{game.event || "—"}</td>
-                          <td>
-                            <button
-                              type="button"
-                              className="chess-database-row-action"
-                              onClick={() => void loadGame(game.id)}
-                              disabled={loadingGameId !== null}
-                            >
-                              {loadingGameId === game.id
-                                ? t("database.loadingGameAction")
-                                : t("database.loadGameAction")}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <div className="chess-database-footer chess-database-search-footer">
-              <button
-                type="button"
-                onClick={() => setView("overview")}
-                disabled={loadingGameId !== null}
-              >
-                {t("common.back")}
-              </button>
-              <button type="button" onClick={onClose} disabled={loadingGameId !== null}>
-                {t("common.close")}
-              </button>
-            </div>
-          </section>
-        </div>
+        <ChessDatabaseSearchView
+          controller={searchController}
+          onBack={() => setView("overview")}
+          onClose={onClose}
+        />
       )}
     </>
   );

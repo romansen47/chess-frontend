@@ -1,6 +1,6 @@
 import { useEffect, type ChangeEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { ChessDatabaseLoadedGame } from "../../ChessDatabaseDialog";
+import type { ChessDatabaseLoadedGame } from "../database/chessDatabaseTypes";
 import { formatPlayerDisplayName, formatTimeControlFromSettings } from "../game/gameFormatters";
 import { projectGameState, type GameStateProjectionSource } from "../game/gameStateProjection";
 import { createNewGame, exportPgn, fetchClock, fetchGameSettings, fetchGameSnapshot, importPgn } from "../api/gameApi";
