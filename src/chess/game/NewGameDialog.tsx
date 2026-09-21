@@ -144,6 +144,10 @@ export default function NewGameDialog({
               </div>
 
               <div className="game-settings-stepper">
+                <span className="game-settings-stepper-label">{t("game.startingPosition")}</span>
+                <div className="game-settings-stepper-main">
+                  <strong>#{startingPositionId}</strong>
+                </div>              <div className="game-settings-stepper">
                 <span className="game-settings-stepper-label">{t("game.incrementWhiteSeconds")}</span>
                 <div className="game-settings-stepper-main">
                   <strong>{settings.incrementForWhiteSeconds}</strong>
@@ -207,11 +211,7 @@ export default function NewGameDialog({
                 </div>
               </div>
 
-              <div className="game-settings-stepper">
-                <span className="game-settings-stepper-label">{t("game.startingPosition")}</span>
-                <div className="game-settings-stepper-main">
-                  <strong>#{startingPositionId}</strong>
-                </div>
+
                 <div className="game-settings-stepper-buttons">
                   <button
                     type="button"
