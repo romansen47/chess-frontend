@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import type {
+  EngineConfigOverview,
+  EngineRuntimeAssignments,
+  EngineRuntimeTarget,
+} from "./engineConfigTypes";
 import {
   fetchEngineConfigOverview,
   fetchEngineRuntimeAssignments,
   updateEngineRuntimeProfile,
-  type EngineConfigOverview,
-  type EngineRuntimeAssignments,
-  type EngineRuntimeTarget,
-} from "./engineConfig";
+} from "./chess/api/engineConfigApi";
 import { notifyEngineRuntimeAssignmentsChanged } from "./chess/engine/engineRuntimeEvents";
 import EngineProfileMenu, { EngineProfileMenuItem } from "./chess/engine/EngineProfileMenu";
 import { useI18n } from "./i18n/I18nProvider";

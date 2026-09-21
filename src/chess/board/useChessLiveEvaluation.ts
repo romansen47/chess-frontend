@@ -1,9 +1,9 @@
 import { useEffect } from "react";
+import type { EngineConfigOverview } from "../../engineConfigTypes";
 import {
   fetchEngineConfigOverview,
   fetchEngineRuntimeAssignments,
-  type EngineConfigOverview,
-} from "../../engineConfig";
+} from "../api/engineConfigApi";
 import { useI18n } from "../../i18n/I18nProvider";
 import { fetchGameSnapshot } from "../api/gameApi";
 import { createLiveEvaluationPosition } from "../evaluation/liveEvaluationPosition";
