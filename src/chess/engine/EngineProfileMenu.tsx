@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { EngineDefinition, EngineProfile } from "../../engineConfig";
+import type { EngineDefinition, EngineProfile } from "../../engineConfigTypes";
 import "./EngineProfileMenu.css";
 
 interface EngineProfileMenuItemProps {

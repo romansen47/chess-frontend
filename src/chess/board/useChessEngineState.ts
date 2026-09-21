@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type {
   EngineConfigOverview,
   EngineRuntimeAssignments,
-} from "../../engineConfig";
+} from "../../engineConfigTypes";
 import type { EngineEvaluation } from "../types";
 import { fetchProgramFeatures } from "../api/programApi";
 import { BackendLiveEvaluationSource } from "../evaluation/BackendLiveEvaluationSource";

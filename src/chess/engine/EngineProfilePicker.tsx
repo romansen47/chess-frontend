@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { EngineDefinition, EngineProfile } from "../../engineConfig";
+import type { EngineDefinition, EngineProfile } from "../../engineConfigTypes";
 import EngineProfileMenu from "./EngineProfileMenu";
 import "./EngineProfilePicker.css";
 

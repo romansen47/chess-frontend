@@ -1,4 +1,4 @@
-import type { EngineProfile } from "../engineConfig";
+import type { EngineProfile } from "../engineConfigTypes";
 import { useI18n } from "../i18n/I18nProvider";
 
 interface Props {

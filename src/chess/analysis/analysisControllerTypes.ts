@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type {
   EngineConfigOverview,
   EngineRuntimeAssignments,
-} from "../../engineConfig";
+} from "../../engineConfigTypes";
 import type {
   ClockState,
   EngineEvaluation,

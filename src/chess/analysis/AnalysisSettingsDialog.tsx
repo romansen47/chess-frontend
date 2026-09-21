@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import type { EngineDefinition, EngineProfile } from "../../engineConfig";
+import type { EngineDefinition, EngineProfile } from "../../engineConfigTypes";
 import { fetchEngineCapabilities } from "../api/engineCapabilitiesApi";
 import EngineProfilePicker from "../engine/EngineProfilePicker";
 import NumericStepper from "../ui/NumericStepper";
