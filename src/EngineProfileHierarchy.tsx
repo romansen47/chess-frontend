@@ -7,18 +7,18 @@ import type {
 } from "./engineConfig";
 import { fetchEngineConfigOverview, isSystemManagedUciOption } from "./engineConfig";
 import { useI18n } from "./i18n/I18nProvider";
+import EngineDetailsPanel from "./engineProfile/EngineDetailsPanel";
+import EngineImportPanel from "./engineProfile/EngineImportPanel";
+import EngineProfileEditor from "./engineProfile/EngineProfileEditor";
+import EngineProfileNavigation from "./engineProfile/EngineProfileNavigation";
+import EngineProfileOptionDialog from "./engineProfile/EngineProfileOptionDialog";
+import type { ProfileOptionEditorState } from "./engineProfile/engineProfilePresentation";
 import "./EngineProfileHierarchy.css";
 import "./EngineConfigOptionPopup.css";
 
 interface Props {
   overview: EngineConfigOverview | null;
   onOverviewChange: (overview: EngineConfigOverview) => void;
-}
-
-interface ProfileOptionEditorState {
-  name: string;
-  option: UciOptionConfig;
-  value: string;
 }
 
 function copyEngine(engine: EngineDefinition): EngineDefinition {
@@ -61,39 +61,6 @@ function defaultProfileForEngine(
         .map(([name, option]) => [name, option.defaultValue ?? ""]),
     ),
   };
-}
-
-function optionHint(
-  option: UciOptionConfig,
-  labels: {
-    defaultLabel: string;
-    minLabel: string;
-    maxLabel: string;
-    emptyLabel: string;
-  },
-): string {
-  const parts: string[] = [];
-  if (option.defaultValue !== null) {
-    parts.push(
-      `${labels.defaultLabel} ${
-        option.defaultValue === "" ? labels.emptyLabel : option.defaultValue
-      }`,
-    );
-  }
-  if (option.min !== null) parts.push(`${labels.minLabel} ${option.min}`);
-  if (option.max !== null) parts.push(`${labels.maxLabel} ${option.max}`);
-  return parts.join(" · ");
-}
-
-function displayOptionValue(
-  option: UciOptionConfig,
-  value: string,
-  emptyLabel: string,
-): string {
-  if (option.type === "check") {
-    return value.toLowerCase() === "true" ? "true" : "false";
-  }
-  return value === "" ? emptyLabel : value;
 }
 
 export default function EngineProfileHierarchy({ overview, onOverviewChange }: Props) {
@@ -569,36 +536,11 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
     setProfileOptionEditor(null);
   }
 
-  function renderProfileCard(profile: EngineProfile) {
-    const labels = assignmentLabels(profile.id);
-    const fallback = profile.id === overview?.fallbackProfileId;
-    const selected = selectedProfileId === profile.id;
-    return (
-      <button
-        type="button"
-        key={profile.id ?? profile.name}
-        className={[
-          "engine-profile-card",
-          selected ? "engine-profile-card-selected" : "",
-        ].filter(Boolean).join(" ")}
-        onClick={() => selectProfile(profile)}
-        disabled={busy || !profile.id}
-      >
-        <span className="engine-profile-card-title-row">
-          <strong>{profile.name}</strong>
-          {(fallback || labels.length > 0) && (
-            <span className="engine-profile-active-dot" />
-          )}
-        </span>
-        <span className="engine-profile-card-meta">
-          {fallback
-            ? t("settings.fallback")
-            : labels.length > 0
-              ? labels.join(" · ")
-              : t("settings.reusableProfile")}
-        </span>
-      </button>
-    );
+  function cancelImportEngine() {
+    setImportingEngine(false);
+    setImportDraft(null);
+    setMessage(null);
+    setError(null);
   }
 
   if (!overview) {
@@ -618,504 +560,73 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
         </div>
       )}
 
-      <aside className="engine-profile-tree">
-        <div className="engine-profile-tree-header">
-          <div>
-            <strong>{t("settings.enginesAndProfiles")}</strong>
-            <span>{t("settings.enginesAndProfilesDescription")}</span>
-          </div>
-          <div className="engine-profile-tree-header-actions">
-            <button
-              type="button"
-              onClick={beginImportEngine}
-              disabled={busy}
-            >
-              {t("settings.importEngine")}
-            </button>
-            <button
-              type="button"
-              onClick={() => selectedEngine && beginCreateProfile(selectedEngine)}
-              disabled={busy || !selectedEngine}
-              title={selectedEngine?.name}
-            >
-              {t("settings.newProfile")}
-            </button>
-          </div>
-        </div>
-
-        {engines.length === 0 && (
-          <div className="engine-profile-hierarchy-empty">
-            {t("settings.noEngineDefined")}
-          </div>
-        )}
-
-        <div className="engine-profile-tree-list">
-          {engines.map((engine) => {
-            const engineProfiles = profilesForEngine(engine.id);
-            const engineSelected =
-              !selectedProfileId && selectedEngineId === engine.id;
-            const engineExpanded = expandedEngineId === engine.id;
-            return (
-              <div
-                className={[
-                  "engine-profile-tree-group",
-                  engineExpanded ? "expanded" : "",
-                ].filter(Boolean).join(" ")}
-                key={engine.id ?? engine.name}
-              >
-                <button
-                  type="button"
-                  className={[
-                    "engine-profile-engine-row",
-                    engineSelected ? "selected" : "",
-                  ].filter(Boolean).join(" ")}
-                  onClick={() => engine.id && toggleEngineInTree(engine.id)}
-                  disabled={busy || !engine.id}
-                  aria-expanded={engineExpanded}
-                >
-                  <span className="engine-profile-engine-main">
-                    <span className="engine-profile-disclosure" aria-hidden="true">
-                      {engineExpanded ? "▾" : "▸"}
-                    </span>
-                    <span className="engine-profile-engine-text">
-                      <strong>{engine.name}</strong>
-                      <small>
-                        {engine.engineName || t("settings.uciEngine")}
-                        {engine.engineAuthor ? ` · ${engine.engineAuthor}` : ""}
-                      </small>
-                    </span>
-                  </span>
-                  <span className="engine-profile-count">{engineProfiles.length}</span>
-                </button>
-
-                {engineExpanded && (
-                  <div className="engine-profile-tree-children">
-                  {engineProfiles.map((profile) => {
-                    const labels = assignmentLabels(profile.id);
-                    const fallback = profile.id === overview.fallbackProfileId;
-                    return (
-                      <button
-                        type="button"
-                        key={profile.id ?? profile.name}
-                        className={[
-                          "engine-profile-tree-profile",
-                          selectedProfileId === profile.id ? "selected" : "",
-                        ].filter(Boolean).join(" ")}
-                        onClick={() => selectProfile(profile)}
-                        disabled={busy || !profile.id}
-                      >
-                        <span>{profile.name}</span>
-                        {(fallback || labels.length > 0) && (
-                          <span className="engine-profile-active-dot" />
-                        )}
-                      </button>
-                    );
-                  })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </aside>
-
-      <div className="engine-profile-mobile-selector">
-        <label>
-          <span>{t("settings.engineLabel")}</span>
-          <select
-            value={selectedEngineId ?? ""}
-            onChange={(event) => selectEngine(event.target.value)}
-            disabled={busy || engines.length === 0}
-          >
-            {engines.map((engine) => (
-              <option key={engine.id ?? engine.name} value={engine.id ?? ""}>
-                {engine.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          onClick={beginImportEngine}
-          disabled={busy}
-          aria-label={t("settings.importEngine")}
-          title={t("settings.importEngine")}
-        >
-          +
-        </button>
-
-        {selectedEngine && !importingEngine && !creatingProfile && !selectedProfileId && (
-          <div className="engine-profile-mobile-profile-list">
-            <div className="engine-profile-mobile-profile-header">
-              <span>
-                {t("settings.profilesForEngine", { engine: selectedEngine.name })}
-              </span>
-              <button
-                type="button"
-                onClick={() => beginCreateProfile(selectedEngine)}
-                disabled={busy}
-              >
-                + {t("settings.newProfile")}
-              </button>
-            </div>
-            {selectedEngineProfiles.map(renderProfileCard)}
-          </div>
-        )}
-      </div>
+      <EngineProfileNavigation
+        engines={engines}
+        profiles={profiles}
+        selectedEngine={selectedEngine}
+        selectedEngineId={selectedEngineId}
+        selectedProfileId={selectedProfileId}
+        expandedEngineId={expandedEngineId}
+        selectedEngineProfiles={selectedEngineProfiles}
+        fallbackProfileId={overview.fallbackProfileId}
+        busy={busy}
+        importingEngine={importingEngine}
+        creatingProfile={creatingProfile}
+        assignmentLabels={assignmentLabels}
+        onImportEngine={beginImportEngine}
+        onCreateProfile={beginCreateProfile}
+        onSelectEngine={selectEngine}
+        onToggleEngine={toggleEngineInTree}
+        onSelectProfile={selectProfile}
+      />
 
       <main className="engine-profile-details">
         {importingEngine ? (
-          <div className="engine-profile-editor-card">
-            <div className="engine-config-details-heading">
-              <div>
-                <strong>{t("settings.importEngine")}</strong>
-                <span>{t("settings.importEngineDescription")}</span>
-              </div>
-            </div>
-
-            <label className="engine-profile-field">
-              <span>{t("settings.discoveredServerEngines")}</span>
-              <select
-                value={importDraft?.engine ?? ""}
-                onChange={(event) => selectDiscoveredEngine(event.target.value)}
-                disabled={busy || discoveredEngines.length === 0}
-              >
-                <option value="">
-                  {discoveredEngines.length === 0
-                    ? t("settings.noDiscoveredServerEngines")
-                    : t("settings.chooseDiscoveredEngine")}
-                </option>
-                {discoveredEngines.map((candidate) => (
-                  <option key={candidate.engine} value={candidate.engine}>
-                    {candidate.name} · {candidate.engineName}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <details className="engine-profile-manual-import">
-              <summary>{t("settings.manualEngineSetup")}</summary>
-              <div className="engine-profile-manual-import-fields">
-                <label className="engine-profile-field">
-                  <span>{t("settings.enginePathFallback")}</span>
-                  <input
-                    value={manualEnginePath}
-                    onChange={(event) => setManualEnginePath(event.target.value)}
-                    placeholder="/usr/games/stockfish"
-                  />
-                </label>
-                <label className="engine-profile-field">
-                  <span>{t("settings.engineNameOptional")}</span>
-                  <input
-                    value={manualEngineName}
-                    onChange={(event) => setManualEngineName(event.target.value)}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => void inspectEngineByPath()}
-                  disabled={busy || !manualEnginePath.trim()}
-                >
-                  {busy ? t("settings.inspecting") : t("settings.useEnteredPath")}
-                </button>
-              </div>
-            </details>
-
-            {importDraft && (
-              <div className="engine-profile-engine-summary">
-                <div>
-                  <span>{t("settings.engineName")}</span>
-                  <strong>{manualEngineName || importDraft.name}</strong>
-                </div>
-                <div>
-                  <span>{t("settings.uciName")}</span>
-                  <strong>{importDraft.engineName || "–"}</strong>
-                </div>
-                <div>
-                  <span>{t("common.author")}</span>
-                  <strong>{importDraft.engineAuthor || "–"}</strong>
-                </div>
-                <div>
-                  <span>{t("common.options")}</span>
-                  <strong>{Object.keys(importDraft.options).length}</strong>
-                </div>
-                <div className="engine-profile-summary-path">
-                  <span>{t("engine.executable")}</span>
-                  <strong>{importDraft.engine}</strong>
-                </div>
-              </div>
-            )}
-
-            <div className="engine-config-actions engine-config-actions-footer">
-              <button
-                type="button"
-                onClick={() => {
-                  setImportingEngine(false);
-                  setImportDraft(null);
-                  setMessage(null);
-                  setError(null);
-                }}
-                disabled={busy}
-              >
-                {t("common.cancel")}
-              </button>
-              <div className="engine-config-actions-spacer" />
-              <button
-                type="button"
-                onClick={() => void importEngine()}
-                disabled={busy || !importDraft}
-              >
-                {busy ? t("settings.saving") : t("settings.importEngine")}
-              </button>
-            </div>
-          </div>
+          <EngineImportPanel
+            discoveredEngines={discoveredEngines}
+            importDraft={importDraft}
+            manualEnginePath={manualEnginePath}
+            manualEngineName={manualEngineName}
+            busy={busy}
+            onSelectDiscoveredEngine={selectDiscoveredEngine}
+            onManualEnginePathChange={setManualEnginePath}
+            onManualEngineNameChange={setManualEngineName}
+            onInspectEngine={() => void inspectEngineByPath()}
+            onCancel={cancelImportEngine}
+            onImport={() => void importEngine()}
+          />
         ) : profileDraft && profileEngine ? (
-          <div
-            className={[
-              "engine-profile-editor-card",
-              advancedOpen ? "engine-profile-advanced-open" : "",
-            ].filter(Boolean).join(" ")}
-          >
-            <button
-              type="button"
-              className="engine-profile-mobile-back"
-              onClick={() => profileEngine.id && selectEngine(profileEngine.id)}
-              disabled={busy || !profileEngine.id}
-            >
-              ← {t("common.back")} · {profileEngine.name}
-            </button>
-
-            <div className="engine-config-details-heading">
-              <div>
-                <strong>
-                  {creatingProfile
-                    ? t("settings.newProfileTitle")
-                    : profileDraft.name}
-                </strong>
-                <span>
-                  {t("settings.profileBelongsToEngine", {
-                    engine: profileEngine.name,
-                  })}
-                </span>
-              </div>
-              <div className="engine-config-heading-badges">
-                {isFallbackProfile && (
-                  <span className="engine-config-chip">
-                    {t("settings.fallback")}
-                  </span>
-                )}
-                {assignmentLabels(profileDraft.id).map((label) => (
-                  <span
-                    className="engine-config-chip engine-config-chip-active"
-                    key={label}
-                  >
-                    {label}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <label className="engine-profile-field engine-profile-name-field">
-              <span>{t("settings.profileName")}</span>
-              <input
-                value={profileDraft.name}
-                onChange={(event) =>
-                  setProfileDraft({ ...profileDraft, name: event.target.value })
-                }
-              />
-            </label>
-
-            <button
-              type="button"
-              className="engine-profile-advanced-toggle"
-              onClick={() => setAdvancedOpen((previous) => !previous)}
-            >
-              {advancedOpen
-                ? t("settings.hideAdvancedOptions")
-                : t("settings.showAdvancedOptions", {
-                    count: visibleProfileOptions.length,
-                  })}
-            </button>
-
-            <div className="engine-profile-options-header">
-              <div>
-                <strong>
-                  {t("settings.profileUciOptions", {
-                    count: visibleProfileOptions.length,
-                  })}
-                </strong>
-                <span>{t("settings.profileUciOptionsDescription")}</span>
-              </div>
-              <div className="engine-config-option-tools">
-                <input
-                  type="search"
-                  value={optionFilter}
-                  onChange={(event) => setOptionFilter(event.target.value)}
-                  placeholder={t("settings.filterOptions")}
-                />
-                <button
-                  type="button"
-                  onClick={resetProfileOptionsToDefaults}
-                  disabled={busy}
-                >
-                  {t("settings.resetDefaults")}
-                </button>
-              </div>
-            </div>
-
-            <div className="engine-profile-options">
-              {visibleProfileOptions.map(([name, option]) => {
-                const value =
-                  profileDraft.optionValues[name] ??
-                  option.defaultValue ??
-                  "";
-                return (
-                  <div className="engine-config-option" key={name}>
-                    <div className="engine-config-option-name">
-                      <strong>{name}</strong>
-                      <span className="engine-config-option-type">
-                        {option.type}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      className="engine-config-option-value-button"
-                      onClick={() => openProfileOptionEditor(name, option)}
-                      disabled={busy}
-                    >
-                      {displayOptionValue(
-                        option,
-                        value,
-                        t("settings.optionEmpty"),
-                      )}
-                    </button>
-                    <div className="engine-config-option-meta">
-                      {optionHint(option, {
-                        defaultLabel: t("settings.optionDefault"),
-                        minLabel: t("settings.optionMin"),
-                        maxLabel: t("settings.optionMax"),
-                        emptyLabel: t("settings.optionEmpty"),
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-              {visibleProfileOptions.length === 0 && (
-                <div className="engine-config-no-options">
-                  {t("settings.noMatchingUciOptions")}
-                </div>
-              )}
-            </div>
-
-            <div className="engine-config-actions engine-config-actions-footer">
-              {profileDraft.id && (
-                <button
-                  type="button"
-                  className="engine-config-delete"
-                  onClick={() => void deleteSelectedProfile()}
-                  disabled={
-                    busy ||
-                    isFallbackProfile ||
-                    isAssignedProfile(profileDraft.id)
-                  }
-                  title={
-                    isFallbackProfile
-                      ? t("settings.fallbackProfileCannotDelete")
-                      : isAssignedProfile(profileDraft.id)
-                        ? t("settings.removeFromDefaultsBeforeDelete")
-                        : undefined
-                  }
-                >
-                  {t("settings.deleteProfile")}
-                </button>
-              )}
-              <div className="engine-config-actions-spacer" />
-              <button
-                type="button"
-                onClick={() => void saveProfile()}
-                disabled={busy || !profileDraft.name.trim()}
-              >
-                {busy
-                  ? t("settings.saving")
-                  : profileDraft.id
-                    ? t("settings.saveProfile")
-                    : t("settings.createProfile")}
-              </button>
-            </div>
-          </div>
+          <EngineProfileEditor
+            profileDraft={profileDraft}
+            profileEngine={profileEngine}
+            creatingProfile={creatingProfile}
+            advancedOpen={advancedOpen}
+            optionFilter={optionFilter}
+            visibleProfileOptions={visibleProfileOptions}
+            busy={busy}
+            isFallbackProfile={isFallbackProfile}
+            assignmentLabels={assignmentLabels(profileDraft.id)}
+            assigned={isAssignedProfile(profileDraft.id)}
+            onBack={() => profileEngine.id && selectEngine(profileEngine.id)}
+            onNameChange={(name) => setProfileDraft({ ...profileDraft, name })}
+            onToggleAdvanced={() => setAdvancedOpen((previous) => !previous)}
+            onOptionFilterChange={setOptionFilter}
+            onResetDefaults={resetProfileOptionsToDefaults}
+            onOpenOptionEditor={openProfileOptionEditor}
+            onDelete={() => void deleteSelectedProfile()}
+            onSave={() => void saveProfile()}
+          />
         ) : selectedEngine ? (
-          <div className="engine-profile-editor-card">
-            <div className="engine-config-details-heading">
-              <div>
-                <strong>{selectedEngine.name}</strong>
-                <span>{t("settings.engineReadOnlyDescription")}</span>
-              </div>
-              <span className="engine-config-chip">
-                {t("settings.profileCount", {
-                  count: selectedEngineProfiles.length,
-                })}
-              </span>
-            </div>
-
-            <div className="engine-profile-engine-summary">
-              <div>
-                <span>{t("settings.uciName")}</span>
-                <strong>{selectedEngine.engineName || "–"}</strong>
-              </div>
-              <div>
-                <span>{t("common.author")}</span>
-                <strong>{selectedEngine.engineAuthor || "–"}</strong>
-              </div>
-              <div>
-                <span>{t("common.options")}</span>
-                <strong>{Object.keys(selectedEngine.options).length}</strong>
-              </div>
-              <div className="engine-profile-summary-path">
-                <span>{t("engine.executable")}</span>
-                <strong>{selectedEngine.engine}</strong>
-              </div>
-            </div>
-
-            <div className="engine-profile-profile-section">
-              <div className="engine-profile-profile-section-header">
-                <div>
-                  <strong>
-                    {t("settings.profilesForEngine", {
-                      engine: selectedEngine.name,
-                    })}
-                  </strong>
-                  <span>{t("settings.profilesForEngineDescription")}</span>
-                </div>
-              </div>
-
-              <div className="engine-profile-card-list">
-                {selectedEngineProfiles.length === 0 ? (
-                  <div className="engine-profile-hierarchy-empty">
-                    {t("settings.noProfilesForEngine")}
-                  </div>
-                ) : (
-                  selectedEngineProfiles.map(renderProfileCard)
-                )}
-              </div>
-            </div>
-
-            <div className="engine-config-actions engine-config-actions-footer">
-              <button
-                type="button"
-                className="engine-config-delete"
-                onClick={() => void deleteSelectedEngine()}
-                disabled={busy || selectedEngineProfiles.length > 0}
-                title={
-                  selectedEngineProfiles.length > 0
-                    ? t("settings.deleteProfilesBeforeEngine")
-                    : undefined
-                }
-              >
-                {t("settings.deleteEngine")}
-              </button>
-              <div className="engine-config-actions-spacer" />
-            </div>
-          </div>
+          <EngineDetailsPanel
+            engine={selectedEngine}
+            profiles={selectedEngineProfiles}
+            selectedProfileId={selectedProfileId}
+            fallbackProfileId={overview.fallbackProfileId}
+            busy={busy}
+            assignmentLabels={assignmentLabels}
+            onSelectProfile={selectProfile}
+            onDeleteEngine={() => void deleteSelectedEngine()}
+          />
         ) : (
           <div className="engine-profile-hierarchy-empty engine-profile-details-empty">
             {t("settings.selectOrImportEngine")}
@@ -1124,151 +635,14 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
       </main>
 
       {profileOptionEditor && (
-        <div
-          className="engine-config-option-popup-backdrop"
-          role="presentation"
-          onMouseDown={() => setProfileOptionEditor(null)}
-        >
-          <form
-            className="engine-config-option-popup"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("settings.editOption", {
-              name: profileOptionEditor.name,
-            })}
-            onMouseDown={(event) => event.stopPropagation()}
-            onSubmit={(event) => {
-              event.preventDefault();
-              applyProfileOptionEditor();
-            }}
-          >
-            <div className="engine-config-option-popup-header">
-              <div className="engine-config-option-popup-title">
-                <strong>{profileOptionEditor.name}</strong>
-                <div className="engine-config-option-popup-meta">
-                  <span className="engine-config-option-type">
-                    {profileOptionEditor.option.type}
-                  </span>
-                  <span>
-                    {optionHint(profileOptionEditor.option, {
-                      defaultLabel: t("settings.optionDefault"),
-                      minLabel: t("settings.optionMin"),
-                      maxLabel: t("settings.optionMax"),
-                      emptyLabel: t("settings.optionEmpty"),
-                    })}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setProfileOptionEditor(null)}
-                aria-label={t("settings.closeEditor")}
-              >
-                ×
-              </button>
-            </div>
-
-            <label className="engine-config-option-popup-editor">
-              <span>{t("settings.profileValue")}</span>
-              {profileOptionEditor.option.type === "check" ? (
-                <span className="engine-config-option-popup-check">
-                  <input
-                    type="checkbox"
-                    checked={
-                      profileOptionEditor.value.toLowerCase() === "true"
-                    }
-                    onChange={(event) =>
-                      setProfileOptionEditor({
-                        ...profileOptionEditor,
-                        value: event.target.checked ? "true" : "false",
-                      })
-                    }
-                    autoFocus
-                  />
-                  <span>
-                    {profileOptionEditor.value.toLowerCase() === "true"
-                      ? "true"
-                      : "false"}
-                  </span>
-                </span>
-              ) : profileOptionEditor.option.type === "combo" ? (
-                <select
-                  value={profileOptionEditor.value}
-                  onChange={(event) =>
-                    setProfileOptionEditor({
-                      ...profileOptionEditor,
-                      value: event.target.value,
-                    })
-                  }
-                  autoFocus
-                >
-                  {(profileOptionEditor.option.vars ?? []).map((candidate) => (
-                    <option key={candidate} value={candidate}>
-                      {candidate}
-                    </option>
-                  ))}
-                </select>
-              ) : profileOptionEditor.option.type === "spin" ? (
-                <div className="engine-config-option-popup-spin">
-                  <input
-                    className="engine-config-option-popup-spin-range"
-                    type="range"
-                    min={profileOptionEditor.option.min ?? 0}
-                    max={profileOptionEditor.option.max ?? 100}
-                    step={1}
-                    value={profileOptionEditor.value}
-                    onChange={(event) =>
-                      setProfileOptionEditor({
-                        ...profileOptionEditor,
-                        value: event.target.value,
-                      })
-                    }
-                  />
-                  <span className="engine-config-option-popup-spin-value">
-                    {profileOptionEditor.value}
-                  </span>
-                  <input
-                    className="engine-config-option-popup-spin-number"
-                    type="number"
-                    min={profileOptionEditor.option.min ?? undefined}
-                    max={profileOptionEditor.option.max ?? undefined}
-                    value={profileOptionEditor.value}
-                    onChange={(event) =>
-                      setProfileOptionEditor({
-                        ...profileOptionEditor,
-                        value: event.target.value,
-                      })
-                    }
-                    required
-                    autoFocus
-                  />
-                </div>
-              ) : (
-                <input
-                  type="text"
-                  value={profileOptionEditor.value}
-                  onChange={(event) =>
-                    setProfileOptionEditor({
-                      ...profileOptionEditor,
-                      value: event.target.value,
-                    })
-                  }
-                  autoFocus
-                />
-              )}
-            </label>
-
-            <div className="engine-config-option-popup-actions">
-              <button
-                type="button"
-                onClick={() => setProfileOptionEditor(null)}
-              >
-                {t("common.cancel")}
-              </button>
-              <button type="submit">{t("settings.apply")}</button>
-            </div>
-          </form>
-        </div>
+        <EngineProfileOptionDialog
+          editor={profileOptionEditor}
+          onValueChange={(value) =>
+            setProfileOptionEditor({ ...profileOptionEditor, value })
+          }
+          onClose={() => setProfileOptionEditor(null)}
+          onApply={applyProfileOptionEditor}
+        />
       )}
     </div>
   );
