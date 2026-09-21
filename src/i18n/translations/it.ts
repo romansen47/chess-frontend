@@ -1,4 +1,6 @@
-export const italianTranslations: Record<string, string> = {
+import type { TranslationKey } from "./en";
+
+export const italianTranslations = {
   "app.title": "Strumento di analisi scacchistica",
   "language.label": "Lingua",
   "language.english": "Inglese",
@@ -442,4 +444,4 @@ export const italianTranslations: Record<string, string> = {
   "annotations.saveChanges": "Salva modifiche",
   "annotations.savedAnnotation": "Annotazione della partita salvata",
   "annotations.saveFailed": "Impossibile salvare le annotazioni della partita.",
-};
+} satisfies Record<TranslationKey, string>;

@@ -1,4 +1,6 @@
-export const spanishTranslations: Record<string, string> = {
+import type { TranslationKey } from "./en";
+
+export const spanishTranslations = {
   "app.title": "Herramienta de análisis de ajedrez",
   "language.label": "Idioma",
   "language.english": "Inglés",
@@ -442,4 +444,4 @@ export const spanishTranslations: Record<string, string> = {
   "annotations.saveChanges": "Guardar cambios",
   "annotations.savedAnnotation": "Anotación de partida guardada",
   "annotations.saveFailed": "No se pudieron guardar las anotaciones de la partida.",
-};
+} satisfies Record<TranslationKey, string>;
