@@ -2,7 +2,7 @@ import type {
   EngineDefinition,
   EngineProfile,
   UciOptionConfig,
-} from "../engineConfig";
+} from "../engineConfigTypes";
 import { useI18n } from "../i18n/I18nProvider";
 import { displayOptionValue, optionHint } from "./engineProfilePresentation";
 

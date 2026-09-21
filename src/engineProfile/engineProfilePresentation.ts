@@ -1,4 +1,4 @@
-import type { UciOptionConfig } from "../engineConfig";
+import type { UciOptionConfig } from "../engineConfigTypes";
 
 export interface ProfileOptionEditorState {
   name: string;

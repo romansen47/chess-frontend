@@ -1,4 +1,4 @@
-import type { EngineDefinition, EngineProfile } from "../engineConfig";
+import type { EngineDefinition, EngineProfile } from "../engineConfigTypes";
 import { useI18n } from "../i18n/I18nProvider";
 import EngineProfileCard from "./EngineProfileCard";
 
