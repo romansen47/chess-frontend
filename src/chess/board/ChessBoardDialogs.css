@@ -1,0 +1,64 @@
+/* Game-end dialog. */
+.game-end-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+}
+
+.game-end-dialog-content {
+  background: #2b2b2b;
+  color: #f5f5f5;
+  border-radius: 10px;
+  padding: 18px;
+  min-width: 340px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+  text-align: center;
+}
+
+.game-end-dialog-content h2 {
+  margin: 0 0 10px 0;
+  font-size: calc(1.15rem - 2px);
+  font-weight: 700;
+}
+
+.game-end-dialog-content p {
+  margin: 0 0 16px 0;
+  color: #dddddd;
+  font-size: calc(0.95rem - 2px);
+}
+
+.game-end-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.game-end-dialog-button {
+  min-width: 104px;
+  padding: 6px 12px;
+  font-size: calc(0.85rem - 2px);
+  border-radius: 5px;
+  border: 1px solid #555;
+  background: #f5f5f5;
+  color: #111111;
+  cursor: pointer;
+}
+
+.game-end-dialog-button:hover {
+  background: #ffffff;
+}
+
+@media (max-width: 820px) {
+.game-end-dialog-content {
+    width: calc(100vw - 24px);
+    min-width: 0;
+    max-width: 520px;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+    box-sizing: border-box;
+  }
+}

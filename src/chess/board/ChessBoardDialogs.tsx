@@ -3,6 +3,8 @@ import AnalysisSettingsDialog from "../analysis/AnalysisSettingsDialog";
 import NewGameDialog from "../game/NewGameDialog";
 import type { ClockState } from "../types";
 import type { DialogActions, DialogState } from "./chessBoardViewTypes";
+import "./promotion.css";
+import "./ChessBoardDialogs.css";
 
 const PROMOTION_TYPES = ["queen", "rook", "bishop", "knight"] as const;
 

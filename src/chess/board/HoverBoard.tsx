@@ -5,6 +5,7 @@ import {
   getPieceSymbolFromPositionChar,
   isWhitePositionPiece,
 } from "./positionUtils";
+import "./HoverBoard.css";
 
 interface HoverBoardProps {
   preview: HoverPreview | null;
