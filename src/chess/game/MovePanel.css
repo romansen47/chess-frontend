@@ -1,0 +1,246 @@
+/* Move list, player labels and move annotations. */
+.moves-panel {
+  flex: 0 0 266px;
+  height: 730px;
+  min-width: 0;
+  background: #2b2b2b;
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  color: #f5f5f5;
+  font-size: calc(0.85rem - 2px);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.moves-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 6px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.moves-board-flip-button {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #3a3a3a;
+  color: #dddddd;
+  font: inherit;
+  font-size: calc(1rem - 2px);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.moves-board-flip-button:hover {
+  background: #444;
+  color: #ffffff;
+}
+
+.moves-board-flip-button:focus-visible {
+  outline: 2px solid #d6c26a;
+  outline-offset: 1px;
+}
+
+.player-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.player-name-row-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.player-name-color {
+  flex: 0 0 38px;
+  font-size: calc(0.68rem - 2px);
+  color: #bbbbbb;
+}
+
+.player-name-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(0.74rem - 2px);
+  color: #f5f5f5;
+}
+
+.player-name-row-black .player-name-value {
+  color: #dddddd;
+}
+
+.moves-list {
+  max-height: calc(8 * 88px + 24px - 112px);
+  overflow-y: auto;
+  font-size: calc(0.78rem - 2px);
+}
+
+.moves-empty {
+  font-style: italic;
+  color: #aaaaaa;
+  padding: 4px 0;
+}
+
+.move-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 0;
+}
+
+.move-number {
+  width: 26px;
+  text-align: right;
+  margin-right: 4px;
+  color: #bbbbbb;
+}
+
+.move-entry {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.move-entry-white {
+  color: #ffffff;
+}
+
+.move-entry-black {
+  color: #dddddd;
+}
+
+.move-entry-previewable {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.move-entry-previewable:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.move-entry-analysis-selected {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.move-annotation-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+
+.move-annotation-group .move-annotation {
+  margin-left: 0;
+}
+
+.move-annotation {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  margin-left: 3px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.move-annotation-onlyMove,
+.move-annotation-extraordinary {
+  background: #2f80ed;
+  color: #ffffff;
+}
+
+.move-annotation-mistake {
+  background: #f2c94c;
+  color: #111111;
+}
+
+.move-annotation-blunder {
+  background: #eb5757;
+  color: #ffffff;
+}
+
+.move-annotation-saved {
+  background: #7659b8;
+  color: #ffffff;
+}
+
+.move-stored-indicators {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+
+.move-stored-indicators span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #aeb8cf;
+  font-size: 6px;
+  font-weight: 700;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+@media (max-width: 820px) {
+.moves-panel {
+    grid-area: moves;
+    width: 100%;
+    height: min(320px, 42vh);
+    flex: none;
+    padding: 8px 9px;
+  }
+
+.moves-list {
+    max-height: calc(100% - 104px);
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 420px) {
+.player-name-color {
+    flex-basis: 34px;
+  }
+
+.moves-panel {
+    height: min(300px, 40vh);
+  }
+}
+
+@media (max-width: 820px) {
+.board-layout-analysis .moves-panel {
+    grid-area: content;
+  }
+
+.board-layout-analysis[data-mobile-analysis-tab="deep"] .moves-panel,
+.board-layout-analysis[data-mobile-analysis-tab="eval"] .moves-panel {
+    display: none;
+  }
+}

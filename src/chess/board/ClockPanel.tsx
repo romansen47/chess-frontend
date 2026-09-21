@@ -1,6 +1,7 @@
 import { useI18n } from "../../i18n/I18nProvider";
 import type { ClockState } from "../types";
 import { formatClockTime } from "../game/gameFormatters";
+import "./ClockPanel.css";
 
 interface ClockPanelProps {
   clock: ClockState | null;

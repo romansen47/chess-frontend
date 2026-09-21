@@ -3,6 +3,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import { useMoveAnnotationTooltip } from "../analysis/useMoveAnnotationTooltip";
 import type { GameAnnotation, MoveAnnotation, MoveRow } from "../types";
 import PgnImportProblemDialog, { isPgnImportProblem } from "./PgnImportProblemDialog";
+import "./MovePanel.css";
 
 interface MovePanelState {
   moves: MoveRow[];
