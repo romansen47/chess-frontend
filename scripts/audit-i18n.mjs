@@ -64,4 +64,4 @@ for (const key of keys) {
 }
 
 console.log("i18n audit: " + keys.length + " keys, " + unused.length + " suspected unused");
-for (const key of unused) console.log("  " + key);
+for (const key of unused) console.log("  " + key);\nif (unused.length > 0) process.exitCode = 1;
