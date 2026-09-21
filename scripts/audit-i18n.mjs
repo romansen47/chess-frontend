@@ -32,7 +32,7 @@ function parseDictionary(source) {
 
 function quotedKeyPattern(key) {
   const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp("[\"\'`]" + escaped + "[\"\'`]");
+  return new RegExp("[\"'`]" + escaped + "[\"'`]");
 }
 
 const dictionaries = {};
