@@ -12,12 +12,12 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "npm run typecheck && npm run test:unit && npm run test:stockfish",
+    "test": "npm run typecheck && npm run lint && npm run test:unit && npm run test:stockfish",
     "test:unit": "vitest run",
     "test:stockfish": "node scripts/smoke-stockfish.mjs",
     "typecheck": "tsc -p tsconfig.app.json",
     "typecheck:evaluation": "tsc -p tsconfig.evaluation.json",
-    "check": "npm run typecheck && npm run lint && npm run test:unit && npm run test:stockfish && npm run build"
+    "check": "npm test && npm run build"
   },
   "dependencies": {
     "react": "^19.3.0",
