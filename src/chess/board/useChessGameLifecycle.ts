@@ -1,10 +1,8 @@
 import { useEffect, type ChangeEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { ChessDatabaseLoadedGame } from "../../ChessDatabaseDialog";
-import { createInitialPieces } from "./boardUtils";
-import { mapPositionStringToLocalPieces } from "./positionUtils";
-import { formatPlayerDisplayName, formatTimeControlFromSettings, mapImportedUciMovesToRows } from "../game/gameFormatters";
-import { createLiveEvaluationPosition } from "../evaluation/liveEvaluationPosition";
+import { formatPlayerDisplayName, formatTimeControlFromSettings } from "../game/gameFormatters";
+import { projectGameState, type GameStateProjectionSource } from "../game/gameStateProjection";
 import { createNewGame, exportPgn, fetchClock, fetchGameSettings, fetchGameSnapshot, importPgn } from "../api/gameApi";
 import { terminateBackend, terminateDevelopmentFrontend } from "../api/programApi";
 import type { ClockState, GameAnnotation, GameSettings, UciGameResponse } from "../types";
@@ -45,6 +43,22 @@ export function useChessGameLifecycle(options: Options) {
   const { board, engine, game, analysis } = options;
   const { t } = useI18n();
 
+  function applyBoardProjection(source: GameStateProjectionSource) {
+    const projection = projectGameState(source);
+    board.liveEvaluationPositionRef.current = projection.liveEvaluationPosition;
+    board.latestMovePlyRef.current = projection.latestPly;
+    board.setMoves(projection.moveRows);
+    board.setPieces(projection.pieces);
+    board.setLastMove(projection.lastMove);
+    return projection;
+  }
+
+  async function stopActiveGameRuntime() {
+    await options.disablePlayerEngines();
+    await options.stopLiveEvaluation();
+    await analysis.stopEvaluation();
+  }
+
   async function loadClock(): Promise<ClockState | null> {
     if (board.uciAnalysisLoadedRef.current) return null;
     try {
@@ -67,27 +81,8 @@ export function useChessGameLifecycle(options: Options) {
     try {
       const snapshot = await fetchGameSnapshot();
       const gameData = snapshot.game;
-      const restoredMoves = gameData.moves ?? [];
-      const startingPositionId = gameData.startingPositionId ?? 518;
-      board.liveEvaluationPositionRef.current = createLiveEvaluationPosition(
-        restoredMoves,
-        gameData.initialFen,
-        startingPositionId,
-      );
+      const projection = applyBoardProjection(gameData);
       analysis.restoreAnnotations(gameData.annotations);
-      board.latestMovePlyRef.current = restoredMoves.reduce(
-        (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0), 0,
-      );
-      board.setMoves(mapImportedUciMovesToRows(restoredMoves));
-      if (gameData.position?.length === 64) {
-        board.setPieces(mapPositionStringToLocalPieces(gameData.position));
-      } else {
-        board.setPieces(createInitialPieces(startingPositionId));
-      }
-      const lastMove = restoredMoves[restoredMoves.length - 1];
-      board.setLastMove(lastMove?.uci?.length >= 4
-        ? { from: lastMove.uci.substring(0, 2), to: lastMove.uci.substring(2, 4) }
-        : null);
       const imported = Boolean(snapshot.importedAnalysisGame);
       board.setUciAnalysisLoaded(imported);
       if (imported) {
@@ -98,10 +93,10 @@ export function useChessGameLifecycle(options: Options) {
         analysis.setImportedPlayers(
           formatPlayerDisplayName(gameData.whitePlayerName, "White"),
           formatPlayerDisplayName(gameData.blackPlayerName, "Black"),
-          gameData.totalPlies ?? restoredMoves.length,
+          gameData.totalPlies ?? projection.moves.length,
         );
       }
-      await analysis.restoreReplayAfterReload(restoredMoves);
+      await analysis.restoreReplayAfterReload(projection.moves);
       return snapshot;
     } catch (error) {
       console.error("[loadCurrentGameSnapshot] error", error);
@@ -174,47 +169,20 @@ export function useChessGameLifecycle(options: Options) {
       analysis.setShowSettingsDialog(false);
       options.resetBoardInteraction();
       board.setHoverPreview(null);
-      await options.disablePlayerEngines();
-      await options.stopLiveEvaluation();
-      await analysis.stopEvaluation();
+      await stopActiveGameRuntime();
       engine.setEngineAutoUpdate(false);
       engine.setEngineEval(null);
       engine.setLiveEvaluationBar(null);
       analysis.resetState();
-      const importedMoves = imported.moves ?? [];
-      const startingPositionId = "startingPositionId" in imported
-        && typeof imported.startingPositionId === "number"
-        ? imported.startingPositionId
-        : 518;
-      const initialFen = "initialFen" in imported && typeof imported.initialFen === "string"
-        ? imported.initialFen
-        : null;
-      board.liveEvaluationPositionRef.current = createLiveEvaluationPosition(
-        importedMoves,
-        initialFen,
-        startingPositionId,
-      );
-      board.latestMovePlyRef.current = importedMoves.reduce(
-        (maxPly, move) => Math.max(maxPly, Number.isFinite(move.ply) ? move.ply : 0), 0,
-      );
+      const projection = applyBoardProjection(imported);
       analysis.restoreAnnotations("annotations" in imported ? imported.annotations : undefined);
       board.setUciAnalysisLoaded(true);
-      board.setMoves(mapImportedUciMovesToRows(importedMoves));
       analysis.setImportedPlayers(
         formatPlayerDisplayName(imported.whitePlayerName, "White"),
         formatPlayerDisplayName(imported.blackPlayerName, "Black"),
-        imported.totalPlies ?? importedMoves.length,
+        imported.totalPlies ?? projection.moves.length,
       );
       game.setGameEndState(null);
-      board.setPieces(
-        imported.position?.length === 64
-          ? mapPositionStringToLocalPieces(imported.position)
-          : createInitialPieces(startingPositionId),
-      );
-      const lastMove = importedMoves[importedMoves.length - 1];
-      board.setLastMove(lastMove?.uci?.length >= 4
-        ? { from: lastMove.uci.substring(0, 2), to: lastMove.uci.substring(2, 4) }
-        : null);
       analysis.setShowSettingsDialog(true);
     } finally {
       board.setIsLoadingMoves(false);
@@ -255,22 +223,13 @@ export function useChessGameLifecycle(options: Options) {
       const applied = await createNewGame(settings);
       const freshSnapshot = await fetchGameSnapshot();
       const freshGame = freshSnapshot.game;
-      const startingPositionId = freshGame.startingPositionId ?? applied.startingPositionId ?? 518;
+      applyBoardProjection({
+        ...freshGame,
+        startingPositionId:
+          freshGame.startingPositionId ?? applied.startingPositionId ?? 518,
+      });
       game.setGameSettings(applied);
       board.setUciAnalysisLoaded(false);
-      board.setPieces(
-        freshGame.position?.length === 64
-          ? mapPositionStringToLocalPieces(freshGame.position)
-          : createInitialPieces(startingPositionId),
-      );
-      board.latestMovePlyRef.current = 0;
-      board.liveEvaluationPositionRef.current = createLiveEvaluationPosition(
-        [],
-        freshGame.initialFen,
-        startingPositionId,
-      );
-      board.setMoves([]);
-      board.setLastMove(null);
       options.resetBoardInteraction();
       board.setHoverPreview(null);
       game.setShowGameEndDialog(false);

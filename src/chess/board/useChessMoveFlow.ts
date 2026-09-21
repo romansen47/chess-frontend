@@ -8,7 +8,7 @@ import { GAME_SOUND_SOURCES } from "../game/gameSounds";
 import { mapImportedUciMovesToRows } from "../game/gameFormatters";
 import { applyLocalMoveTransition, reconcilePieceSnapshot } from "./pieceTransitions";
 import { mapBackendPiecesToLocalPieces } from "./positionUtils";
-import { mergeAuthoritativeMoveRows } from "../game/moveListUtils";
+import { appendMoveResultToRows, mergeAuthoritativeMoveRows } from "../game/moveListUtils";
 import type { ClockState, MoveResult, PerformMoveOptions, PieceType } from "../types";
 import type { ChessBoardState } from "./useChessBoardState";
 import type { ChessEngineState } from "./useChessEngineState";
@@ -133,36 +133,17 @@ export function useChessMoveFlow(options: Options) {
   }
 
   function addMoveToMoveList(result: MoveResult) {
-    const san = result.san?.trim() || `${result.from}-${result.to}`;
-    const position = result.position ?? undefined;
-    const ply = typeof result.ply === "number" && Number.isInteger(result.ply) && result.ply > 0 ? result.ply : null;
-    if (ply != null) {
-      const previousPly = board.latestMovePlyRef.current;
-      board.latestMovePlyRef.current = Math.max(previousPly, ply);
-      const moveNumber = Math.ceil(ply / 2);
-      board.setMoves((current) => {
-        const copy = current.map((row) => ({ ...row }));
-        let row = copy.find((candidate) => candidate.moveNumber === moveNumber);
-        if (!row) { row = { moveNumber }; copy.push(row); }
-        const uci = result.uci?.trim() || `${result.from}${result.to}`;
-        if (ply % 2 === 1) Object.assign(row, { white: san, whiteUci: uci, whitePosition: position });
-        else Object.assign(row, { black: san, blackUci: uci, blackPosition: position });
-        return copy.sort((left, right) => left.moveNumber - right.moveNumber);
-      });
-      return;
+    if (
+      typeof result.ply === "number"
+      && Number.isInteger(result.ply)
+      && result.ply > 0
+    ) {
+      board.latestMovePlyRef.current = Math.max(
+        board.latestMovePlyRef.current,
+        result.ply,
+      );
     }
-    const moverSide = result.sideToMove === "white" ? "black" : result.sideToMove === "black" ? "white" : null;
-    board.setMoves((current) => {
-      const copy = current.map((row) => ({ ...row }));
-      const last = copy[copy.length - 1];
-      const uci = result.uci?.trim() || `${result.from}${result.to}`;
-      if (moverSide === "white") copy.push({ moveNumber: last ? last.moveNumber + 1 : 1, white: san, whiteUci: uci, whitePosition: position });
-      else if (moverSide === "black" && last?.white && !last.black) Object.assign(last, { black: san, blackUci: uci, blackPosition: position });
-      else if (moverSide === "black") copy.push({ moveNumber: last ? last.moveNumber + 1 : 1, black: san, blackUci: uci, blackPosition: position });
-      else if (!last || last.black) copy.push({ moveNumber: last ? last.moveNumber + 1 : 1, white: san, whiteUci: uci, whitePosition: position });
-      else Object.assign(last, { black: san, blackUci: uci, blackPosition: position });
-      return copy;
-    });
+    board.setMoves((current) => appendMoveResultToRows(current, result));
   }
 
   function handleGameEndState(gameState: string | null | undefined) {
