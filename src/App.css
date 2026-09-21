@@ -1057,16 +1057,16 @@
   position: relative;
   min-width: 0;
   min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 30px;
-  grid-template-rows: auto minmax(0, 1fr);
   padding: 10px;
   background: #242424;
   box-sizing: border-box;
 }
 
 .game-settings-stepper-label {
-  grid-column: 1 / -1;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 48px;
   min-width: 0;
   color: #bdbdbd;
   font-size: calc(0.76rem - 2px);
@@ -1074,11 +1074,15 @@
 }
 
 .game-settings-stepper-main {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   min-width: 0;
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 6px;
+  transform: translate(-50%, -50%);
 }
 
 .game-settings-stepper-main strong {
@@ -1098,10 +1102,13 @@
 }
 
 .game-settings-stepper-buttons {
-  align-self: center;
+  position: absolute;
+  right: 10px;
+  top: 50%;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transform: translateY(-50%);
 }
 
 .game-settings-stepper-buttons button {
