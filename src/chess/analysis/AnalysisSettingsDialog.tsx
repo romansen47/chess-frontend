@@ -41,15 +41,6 @@ export default function AnalysisSettingsDialog({
   const [profilePickerOpen, setProfilePickerOpen] = useState(false);
   const profilePickerRef = useRef<HTMLDivElement | null>(null);
 
-  const engineById = useMemo(
-    () => new Map(
-      engines
-        .filter((engine) => engine.id)
-        .map((engine) => [engine.id as string, engine]),
-    ),
-    [engines],
-  );
-
   const profileGroups = useMemo(
     () => engines
       .map((engine) => ({
