@@ -3,6 +3,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import EngineLineExplorer from "../engine/EngineLineExplorer";
 import { activeEvaluationBarValue } from "../evaluation/evaluationBar";
 import type { EnginePanelActions, EnginePanelState } from "./chessBoardViewTypes";
+import "./EnginePanel.css";
 
 interface EnginePanelProps {
   engine: EnginePanelState;

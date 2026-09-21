@@ -1,0 +1,193 @@
+/* Chess board grid, pieces, targets and on-board annotations. */
+.board-container {
+  position: relative;
+  width: calc(8 * 88px);
+  height: calc(8 * 88px);
+}
+
+.board {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  border: 2px solid #333;
+  background: #000;
+}
+
+.square {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+}
+
+.square-light {
+  background: #f0d9b5;
+}
+
+.square-dark {
+  background: #769656;
+}
+
+.square-selected {
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.85);
+}
+
+.square-last-move {
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.6);
+}
+
+.possible-targets-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.possible-target-marker {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 3px solid rgba(0, 255, 200, 0.9);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+  box-sizing: border-box;
+}
+
+.possible-target-marker-selected {
+  border-color: rgba(255, 255, 0, 0.95);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.square-label {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  font-size: calc(0.7rem - 2px);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.pieces-layer {
+  pointer-events: none;
+}
+
+.board-move-annotation {
+  position: absolute;
+  z-index: 45;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: help;
+  box-sizing: border-box;
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.board-move-annotation[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  z-index: 200;
+  width: max-content;
+  max-width: 320px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+  background: rgba(24, 24, 24, 0.97);
+  color: #f5f5f5;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-2px);
+  transition: opacity 100ms ease-out, transform 100ms ease-out;
+  pointer-events: none;
+}
+
+.board-move-annotation[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.pieces-layer .piece {
+  position: absolute;
+  font-size: calc(var(--board-square-size, 88px) * 0.8);
+  line-height: var(--board-square-size, 88px);
+  text-align: center;
+}
+
+.piece {
+  position: absolute;
+  width: var(--board-square-size, 88px);
+  height: var(--board-square-size, 88px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(3.2rem - 2px);
+  line-height: 1;
+  pointer-events: auto;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  will-change: transform;
+}
+
+.piece-dragging {
+  z-index: 30;
+  cursor: grabbing;
+  transition: none !important;
+}
+
+.piece-white {
+  color: #ffffff !important;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+.piece-black {
+  color: #000000 !important;
+}
+
+@media (max-width: 820px) {
+.board-container {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+.square-label {
+    right: max(1px, calc(var(--board-square-size, 88px) * 0.045));
+    bottom: max(1px, calc(var(--board-square-size, 88px) * 0.045));
+    font-size: clamp(6px, calc(var(--board-square-size, 88px) * 0.1), 9px);
+  }
+
+.square-selected,
+.square-last-move {
+    box-shadow: inset 0 0 0 clamp(2px, calc(var(--board-square-size, 88px) * 0.045), 4px)
+      rgba(255, 255, 0, 0.72);
+  }
+
+.possible-target-marker {
+    border-width: 2px;
+  }
+
+.board-move-annotation {
+    min-width: 9px;
+    min-height: 9px;
+    font-size: clamp(5px, calc(var(--board-square-size, 88px) * 0.08), 7px);
+  }
+}

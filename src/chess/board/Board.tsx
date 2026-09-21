@@ -13,6 +13,7 @@ import {
   squareToBoardOffset,
   type BoardOrientation,
 } from "./boardOrientation";
+import "./Board.css";
 
 const DEFAULT_BOARD_SIZE = 704;
 const DEFAULT_SQUARE_SIZE = DEFAULT_BOARD_SIZE / 8;

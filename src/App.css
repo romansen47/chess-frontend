@@ -227,210 +227,33 @@
 
 
 /* Container für Brett + Figuren */
-.board-container {
-  position: relative;
-  width: calc(8 * 88px);
-  height: calc(8 * 88px);
-}
 
 
 /* Schachbrett-Raster */
-.board {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  border: 2px solid #333;
-  background: #000;
-}
-
-
-.square {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  user-select: none;
-  cursor: pointer;
-}
 
 
 /* Brettfarben */
-.square-light {
-  background: #f0d9b5;
-}
-
-
-.square-dark {
-  background: #769656;
-}
 
 
 /* Auswahl / letzter Zug */
-.square-selected {
-  box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.85);
-}
-
-
-.square-last-move {
-  box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.6);
-}
 
 
 /* Mögliche Ziel-Felder */
-.possible-targets-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-}
-
-
-.possible-target-marker {
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.35);
-  border: 3px solid rgba(0, 255, 200, 0.9);
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
-  box-sizing: border-box;
-}
-
-
-.possible-target-marker-selected {
-  border-color: rgba(255, 255, 0, 0.95);
-  background: rgba(0, 0, 0, 0.3);
-}
 
 
 /* Beschriftung unten rechts im Feld */
-.square-label {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  font-size: calc(0.7rem - 2px);
-  color: rgba(0, 0, 0, 0.7);
-}
 
 
 /* Figuren-Layer */
-.pieces-layer {
-  pointer-events: none;
-}
-
-
-.board-move-annotation {
-  position: absolute;
-  z-index: 45;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  cursor: help;
-  box-sizing: border-box;
-  font-size: 7px;
-  font-weight: 800;
-  line-height: 1;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-}
-
-
-.board-move-annotation[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 8px);
-  z-index: 200;
-  width: max-content;
-  max-width: 320px;
-  padding: 7px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 5px;
-  background: rgba(24, 24, 24, 0.97);
-  color: #f5f5f5;
-  font-size: 9px;
-  font-weight: 500;
-  line-height: 1.35;
-  white-space: normal;
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(-50%) translateY(-2px);
-  transition: opacity 100ms ease-out, transform 100ms ease-out;
-  pointer-events: none;
-}
-
-
-.board-move-annotation[data-tooltip]:hover::after {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
-}
-
-
-.pieces-layer .piece {
-  position: absolute;
-  font-size: calc(var(--board-square-size, 88px) * 0.8);
-  line-height: var(--board-square-size, 88px);
-  text-align: center;
-}
 
 
 /* Figurendarstellung; die Bewegungstransition liegt in boardMoveAnimation.css. */
-.piece {
-  position: absolute;
-  width: var(--board-square-size, 88px);
-  height: var(--board-square-size, 88px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(3.2rem - 2px);
-  line-height: 1;
-  pointer-events: auto;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-  will-change: transform;
-}
-
-
-.piece-dragging {
-  z-index: 30;
-  cursor: grabbing;
-  transition: none !important;
-}
-
-
-.piece-white {
-  color: #ffffff !important;
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
-}
-
-
-.piece-black {
-  color: #000000 !important;
-}
 
 
 /* Linkes Panel: Züge */
 
 
 /* Rechtes Panel: nutzt dynamisch den verbleibenden Platz im Browserfenster. */
-.engine-panel {
-  flex: 1 1 0;
-  width: auto;
-  min-width: 360px;
-  max-width: none;
-  align-self: flex-start;
-
-  color: #f5f5f5;
-  box-sizing: border-box;
-}
 
 
 /* Kopfzeile der Zugliste */
@@ -458,126 +281,13 @@
 
 
 /* Alte Engine-Controls; bleiben nur für Kompatibilität */
-.engine-controls {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-
-.engine-refresh-button,
-.engine-toggle-button {
-  flex: 0 0 auto;
-  padding: 4px 8px;
-  font-size: calc(0.75rem - 2px);
-  border-radius: 4px;
-  border: 1px solid #555;
-  background: #3a3a3a;
-  color: #f5f5f5;
-  cursor: pointer;
-}
-
-
-.engine-refresh-button:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
 
 
 /* Hauptbereich im Engine-Panel:
    Bewertungsbalken bleibt links, Content-Spalte rechts. */
-.engine-panel-main {
-  width: 100%;
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  box-sizing: border-box;
-}
 
 
 /* Schmale, senkrechte Bewertungsleiste direkt rechts vom Brett */
-.engine-bar-wrapper {
-  flex: 0 0 26px;
-  width: 26px;
-  height: 730px;
-
-  border: 1px solid #666;
-  border-radius: 4px;
-  padding: 0;
-  overflow: hidden;
-  background: #111111;
-
-  display: flex;
-  flex-direction: column-reverse;
-  box-sizing: border-box;
-
-  appearance: none;
-  cursor: pointer;
-}
-
-
-.engine-bar-wrapper.engine-bar-black-bottom {
-  flex-direction: column;
-}
-
-
-.engine-bar-wrapper:hover {
-  border-color: #999;
-}
-
-
-.engine-bar-wrapper:focus-visible {
-  outline: 3px solid #d6c26a;
-  outline-offset: 2px;
-}
-
-
-.engine-bar-wrapper.engine-bar-disabled {
-  opacity: 0.78;
-}
-
-
-.engine-bar-wrapper.engine-bar-no-result {
-  background: #111111;
-}
-
-
-.engine-bar-wrapper.engine-bar-has-result {
-  background: #111111;
-}
-
-
-.engine-bar-white,
-.engine-bar-black {
-  width: 100%;
-  transition: height 400ms ease-in-out;
-}
-
-
-.engine-bar-white {
-  background: #f3f3f3;
-}
-
-
-.engine-bar-black {
-  background: #111111;
-}
-
-
-.engine-content-column {
-  flex: 1 1 auto;
-  min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-
-.engine-primary-content {
-  display: contents;
-}
 
 
 .mobile-analysis-profile {
@@ -586,98 +296,12 @@
 
 
 /* Rechts von der Leiste: Fenster mit Engine-Lines */
-.engine-lines {
-  flex: 0 0 auto;
-  height: 730px;
-  overflow: auto;
-
-  background: #2b2b2b;
-  border-radius: 8px;
-  padding: 8px 10px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
-
-  box-sizing: border-box;
-}
-
-
-.engine-lines-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 2px 2px 7px;
-  margin-bottom: 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  color: #bdbdbd;
-  font-size: calc(0.75rem - 2px);
-  font-weight: 600;
-}
-
-
-.engine-lines-summary span:last-child {
-  white-space: nowrap;
-  font-weight: 500;
-}
-
-
-.engine-line {
-  padding: 4px 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-
-.engine-line-header {
-  font-weight: 600;
-  font-size: calc(0.8rem - 2px);
-  white-space: nowrap;
-}
-
-
-.engine-line-moves {
-  font-size: calc(0.75rem - 2px);
-  color: #dddddd;
-  margin-top: 2px;
-
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: normal;
-}
 
 
 /* Engine-Fehler / leerer Zustand */
-.engine-error {
-  color: #ff8080;
-  font-size: calc(0.8rem - 2px);
-  margin-bottom: 4px;
-}
-
-
-.engine-empty {
-  font-style: italic;
-  color: #aaaaaa;
-  padding: 4px 0;
-}
 
 
 /* Engine-Panel Placeholder */
-.engine-placeholder {
-  width: 100%;
-  min-width: 0;
-  height: 730px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #888888;
-  font-size: calc(0.8rem - 2px);
-  text-align: center;
-  padding: 8px 4px;
-  box-sizing: border-box;
-}
-
-
-.engine-placeholder-text {
-  opacity: 0.9;
-}
 
 
 /* Promotion-Dialog */
@@ -1342,76 +966,6 @@
   }
 
 
-  .board-container {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1 / 1;
-  }
-
-
-  .square-label {
-    right: max(1px, calc(var(--board-square-size, 88px) * 0.045));
-    bottom: max(1px, calc(var(--board-square-size, 88px) * 0.045));
-    font-size: clamp(6px, calc(var(--board-square-size, 88px) * 0.1), 9px);
-  }
-
-
-  .square-selected,
-.square-last-move {
-    box-shadow: inset 0 0 0 clamp(2px, calc(var(--board-square-size, 88px) * 0.045), 4px)
-      rgba(255, 255, 0, 0.72);
-  }
-
-
-  .possible-target-marker {
-    border-width: 2px;
-  }
-
-
-  .board-move-annotation {
-    min-width: 9px;
-    min-height: 9px;
-    font-size: clamp(5px, calc(var(--board-square-size, 88px) * 0.08), 7px);
-  }
-
-
-  .engine-panel {
-    grid-area: engine;
-    width: var(--mobile-eval-width);
-    min-width: 0;
-    max-width: var(--mobile-eval-width);
-    flex: none;
-  }
-
-
-  .engine-panel-main {
-    width: var(--mobile-eval-width);
-    display: block;
-  }
-
-
-  .engine-bar-wrapper {
-    width: var(--mobile-eval-width);
-    height: var(--mobile-board-size);
-    min-height: 0;
-    border-radius: 3px;
-  }
-
-
-  .engine-content-column {
-    width: 0;
-    min-width: 0;
-    height: 0;
-    gap: 0;
-    overflow: visible;
-  }
-
-
-  .engine-primary-content {
-    display: none;
-  }
-
-
   .mobile-analysis-profile {
     grid-area: profile;
     display: block;
@@ -1620,11 +1174,6 @@
   .mobile-analysis-deep .analysis-line-card,
 .mobile-analysis-eval .analysis-line-card {
     padding: 7px 8px;
-  }
-
-
-  .mobile-analysis-eval .engine-line-explorer-analysis {
-    display: block;
   }
 
 
