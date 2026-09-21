@@ -4,8 +4,18 @@ import type {
   EngineDefinition,
   EngineProfile,
   UciOptionConfig,
-} from "./engineConfig";
-import { fetchEngineConfigOverview, isSystemManagedUciOption } from "./engineConfig";
+} from "./engineConfigTypes";
+import { isSystemManagedUciOption } from "./engineConfigTypes";
+import {
+  createEngineDefinition,
+  createEngineProfile,
+  deleteEngineDefinition,
+  deleteEngineProfile,
+  discoverEngineDefinitions,
+  fetchEngineConfigOverview,
+  inspectEngineDefinition,
+  updateEngineProfile,
+} from "./chess/api/engineConfigApi";
 import { useI18n } from "./i18n/I18nProvider";
 import EngineDetailsPanel from "./engineProfile/EngineDetailsPanel";
 import EngineImportPanel from "./engineProfile/EngineImportPanel";
@@ -270,13 +280,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
       setBusy(true);
       setError(null);
       setMessage(t("settings.scanningSystem"));
-      const response = await fetch("/api/engine-configs/engines/discover", {
-        method: "POST",
-      });
-      if (!response.ok) {
-        throw new Error((await response.text()) || `HTTP ${response.status}`);
-      }
-      const candidates = (await response.json()) as EngineDefinition[];
+      const candidates = await discoverEngineDefinitions();
       setDiscoveredEngines(candidates);
       setMessage(
         candidates.length === 0
@@ -322,18 +326,10 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
       setBusy(true);
       setError(null);
       setMessage(t("settings.readingUciDefinition"));
-      const response = await fetch("/api/engine-configs/engines/inspect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          engine,
-          name: manualEngineName.trim() || null,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error((await response.text()) || `HTTP ${response.status}`);
-      }
-      const inspected = (await response.json()) as EngineDefinition;
+      const inspected = await inspectEngineDefinition(
+        engine,
+        manualEngineName.trim() || null,
+      );
       setImportDraft(copyEngine(inspected));
       setManualEnginePath(inspected.engine);
       setManualEngineName(inspected.name);
@@ -365,15 +361,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
     try {
       setBusy(true);
       setError(null);
-      const response = await fetch("/api/engine-configs/engines", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        throw new Error((await response.text()) || `HTTP ${response.status}`);
-      }
-      const saved = (await response.json()) as EngineDefinition;
+      const saved = await createEngineDefinition(payload);
       const next = await reloadOverview();
       const selected =
         next.engines.find((engine) => engine.id === saved.id) ?? saved;
@@ -401,20 +389,9 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
       setError(null);
       setProfileOptionEditor(null);
       const isNew = !profileDraft.id;
-      const response = await fetch(
-        isNew
-          ? "/api/engine-configs/profiles"
-          : `/api/engine-configs/profiles/${profileDraft.id}`,
-        {
-          method: isNew ? "POST" : "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(profileDraft),
-        },
-      );
-      if (!response.ok) {
-        throw new Error((await response.text()) || `HTTP ${response.status}`);
-      }
-      const saved = (await response.json()) as EngineProfile;
+      const saved = isNew
+        ? await createEngineProfile(profileDraft)
+        : await updateEngineProfile(profileDraft.id as string, profileDraft);
       const next = await reloadOverview();
       const selected =
         next.profiles.find((profile) => profile.id === saved.id) ?? saved;
@@ -448,13 +425,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
     try {
       setBusy(true);
       setError(null);
-      const response = await fetch(
-        `/api/engine-configs/profiles/${selectedStoredProfile.id}`,
-        { method: "DELETE" },
-      );
-      if (!response.ok) {
-        throw new Error((await response.text()) || `HTTP ${response.status}`);
-      }
+      await deleteEngineProfile(selectedStoredProfile.id);
       await reloadOverview();
       setSelectedProfileId(null);
       setProfileDraft(null);
@@ -482,13 +453,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
     try {
       setBusy(true);
       setError(null);
-      const response = await fetch(
-        `/api/engine-configs/engines/${selectedEngine.id}`,
-        { method: "DELETE" },
-      );
-      if (!response.ok) {
-        throw new Error((await response.text()) || `HTTP ${response.status}`);
-      }
+      await deleteEngineDefinition(selectedEngine.id);
       const next = await reloadOverview();
       setSelectedEngineId(next.engines[0]?.id ?? null);
       setSelectedProfileId(null);

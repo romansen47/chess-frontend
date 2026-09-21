@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import type {
   EngineConfigOverview,
   EngineProfileAssignments,
-} from "./engineConfig";
+} from "./engineConfigTypes";
+import {
+  resetEngineConfig,
+  updateEngineDefaults,
+} from "./chess/api/engineConfigApi";
 import { useI18n } from "./i18n/I18nProvider";
 import EngineManager from "./EngineManager";
 import EngineProfileHierarchy from "./EngineProfileHierarchy";
@@ -68,13 +72,7 @@ export default function SettingsManager({
       setBusy(true);
       setError(null);
       setMessage(null);
-      const response = await fetch("/api/engine-configs/reset", {
-        method: "POST",
-      });
-      if (!response.ok) {
-        throw new Error((await response.text()) || `HTTP ${response.status}`);
-      }
-      const next = (await response.json()) as EngineConfigOverview;
+      const next = await resetEngineConfig();
       onOverviewChange(next);
       setDefaultsDraft(copyAssignments(next.defaults));
       setMode("DEFAULTS");
@@ -103,15 +101,7 @@ export default function SettingsManager({
       setBusy(true);
       setError(null);
       setMessage(null);
-      const response = await fetch("/api/engine-configs/defaults", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(defaultsDraft),
-      });
-      if (!response.ok) {
-        throw new Error((await response.text()) || `HTTP ${response.status}`);
-      }
-      const next = (await response.json()) as EngineConfigOverview;
+      const next = await updateEngineDefaults(defaultsDraft);
       onOverviewChange(next);
       setDefaultsDraft(copyAssignments(next.defaults));
       setMessage(t("settings.defaultSaved"));
