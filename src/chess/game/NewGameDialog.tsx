@@ -110,59 +110,128 @@ export default function NewGameDialog({
 
         <div className="game-settings-layout">
           <div className="game-settings-form">
-            <label className="game-settings-field game-settings-desktop-field">
-              <span>{t("game.timeEachPlayerMinutes")}</span>
-              <input
-                type="number"
-                min={1}
-                value={Math.max(1, Math.floor(settings.timeForEachPlayerSeconds / 60))}
-                onChange={(event) => updateNumberField(
-                  "timeForEachPlayerSeconds",
-                  Number(event.target.value) * 60,
-                )}
-                disabled={starting}
-              />
-            </label>
+            <div className="game-settings-desktop-options" aria-label={t("game.newGame")}>
+              <div className="game-settings-stepper">
+                <span className="game-settings-stepper-label">{t("game.timeEachPlayerMinutes")}</span>
+                <div className="game-settings-stepper-main">
+                  <strong>{timeMinutes}</strong>
+                  <span className="game-settings-stepper-unit">min</span>
+                </div>
+                <div className="game-settings-stepper-buttons">
+                  <button
+                    type="button"
+                    onClick={() => updateNumberField(
+                      "timeForEachPlayerSeconds",
+                      (timeMinutes + 1) * 60,
+                    )}
+                    disabled={starting}
+                    aria-label={`${t("game.timeEachPlayerMinutes")} +1`}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateNumberField(
+                      "timeForEachPlayerSeconds",
+                      Math.max(1, timeMinutes - 1) * 60,
+                    )}
+                    disabled={starting || timeMinutes <= 1}
+                    aria-label={`${t("game.timeEachPlayerMinutes")} -1`}
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
 
-            <label className="game-settings-field game-settings-desktop-field">
-              <span>{t("game.incrementWhiteSeconds")}</span>
-              <input
-                type="number"
-                min={0}
-                value={settings.incrementForWhiteSeconds}
-                onChange={(event) => updateNumberField(
-                  "incrementForWhiteSeconds",
-                  Number(event.target.value),
-                )}
-                disabled={starting}
-              />
-            </label>
+              <div className="game-settings-stepper">
+                <span className="game-settings-stepper-label">{t("game.incrementWhiteSeconds")}</span>
+                <div className="game-settings-stepper-main">
+                  <strong>{settings.incrementForWhiteSeconds}</strong>
+                  <span className="game-settings-stepper-unit">s</span>
+                </div>
+                <div className="game-settings-stepper-buttons">
+                  <button
+                    type="button"
+                    onClick={() => updateNumberField(
+                      "incrementForWhiteSeconds",
+                      settings.incrementForWhiteSeconds + 1,
+                    )}
+                    disabled={starting}
+                    aria-label={`${t("game.incrementWhiteSeconds")} +1`}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateNumberField(
+                      "incrementForWhiteSeconds",
+                      Math.max(0, settings.incrementForWhiteSeconds - 1),
+                    )}
+                    disabled={starting || settings.incrementForWhiteSeconds <= 0}
+                    aria-label={`${t("game.incrementWhiteSeconds")} -1`}
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
 
-            <label className="game-settings-field game-settings-desktop-field">
-              <span>{t("game.incrementBlackSeconds")}</span>
-              <input
-                type="number"
-                min={0}
-                value={settings.incrementForBlackSeconds}
-                onChange={(event) => updateNumberField(
-                  "incrementForBlackSeconds",
-                  Number(event.target.value),
-                )}
-                disabled={starting}
-              />
-            </label>
+              <div className="game-settings-stepper">
+                <span className="game-settings-stepper-label">{t("game.incrementBlackSeconds")}</span>
+                <div className="game-settings-stepper-main">
+                  <strong>{settings.incrementForBlackSeconds}</strong>
+                  <span className="game-settings-stepper-unit">s</span>
+                </div>
+                <div className="game-settings-stepper-buttons">
+                  <button
+                    type="button"
+                    onClick={() => updateNumberField(
+                      "incrementForBlackSeconds",
+                      settings.incrementForBlackSeconds + 1,
+                    )}
+                    disabled={starting}
+                    aria-label={`${t("game.incrementBlackSeconds")} +1`}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateNumberField(
+                      "incrementForBlackSeconds",
+                      Math.max(0, settings.incrementForBlackSeconds - 1),
+                    )}
+                    disabled={starting || settings.incrementForBlackSeconds <= 0}
+                    aria-label={`${t("game.incrementBlackSeconds")} -1`}
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
 
-            <label className="game-settings-field game-settings-desktop-field">
-              <span>{t("game.startingPosition")}</span>
-              <input
-                type="number"
-                min={0}
-                max={959}
-                value={startingPositionId}
-                onChange={(event) => updateStartingPosition(Number(event.target.value))}
-                disabled={starting}
-              />
-            </label>
+              <div className="game-settings-stepper">
+                <span className="game-settings-stepper-label">{t("game.startingPosition")}</span>
+                <div className="game-settings-stepper-main">
+                  <strong>#{startingPositionId}</strong>
+                </div>
+                <div className="game-settings-stepper-buttons">
+                  <button
+                    type="button"
+                    onClick={() => updateStartingPosition(startingPositionId + 1)}
+                    disabled={starting || startingPositionId >= 959}
+                    aria-label={`${t("game.startingPosition")} +1`}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateStartingPosition(startingPositionId - 1)}
+                    disabled={starting || startingPositionId <= 0}
+                    aria-label={`${t("game.startingPosition")} -1`}
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <div className="game-settings-mobile-controls">
               <label className="game-settings-field">
@@ -259,15 +328,16 @@ export default function NewGameDialog({
               </div>
             </div>
 
-            <div className="game-settings-engine-note">
-              {t("game.cpuProfileNote")}
-            </div>
           </div>
 
           <StartingPositionPreview
             positionId={startingPositionId}
             title={t("game.startingPositionPreview")}
           />
+        </div>
+
+        <div className="game-settings-engine-note">
+          {t("game.cpuProfileNote")}
         </div>
 
         {error && <div className="game-settings-error">{error}</div>}

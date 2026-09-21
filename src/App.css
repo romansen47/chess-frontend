@@ -1020,9 +1020,9 @@
 
 .game-settings-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) 260px;
-  gap: 18px;
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
 }
 
 .game-settings-dialog-content h2 {
@@ -1033,9 +1033,99 @@
 }
 
 .game-settings-form {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.game-settings-desktop-options {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  background: #4a4a4a;
+  box-sizing: border-box;
+}
+
+.game-settings-stepper {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 11px;
+  background: #242424;
+  box-sizing: border-box;
+}
+
+.game-settings-stepper-label {
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: #bdbdbd;
+  font-size: calc(0.76rem - 2px);
+  line-height: 1.25;
+}
+
+.game-settings-stepper-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.game-settings-stepper-main strong {
+  overflow: hidden;
+  color: #f5f5f5;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 600;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-settings-stepper-unit {
+  align-self: center;
+  color: #999;
+  font-size: calc(0.72rem - 2px);
+}
+
+.game-settings-stepper-buttons {
+  display: grid;
+  grid-template-rows: repeat(2, 1fr);
+  gap: 5px;
+  padding: 7px 0 2px;
+}
+
+.game-settings-stepper-buttons button {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid #505050;
+  border-radius: 5px;
+  background: #303030;
+  color: #ddd;
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.game-settings-stepper-buttons button:hover:not(:disabled) {
+  background: #414141;
+  color: #fff;
+}
+
+.game-settings-stepper-buttons button:disabled {
+  opacity: 0.32;
+  cursor: default;
 }
 
 .game-settings-field {
@@ -1060,29 +1150,24 @@
 
 .new-game-preview {
   min-width: 0;
-  padding: 10px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  overflow: hidden;
   border: 1px solid #454545;
-  border-radius: 7px;
+  border-radius: 8px;
   background: #242424;
   box-sizing: border-box;
 }
 
-.new-game-preview-title {
-  font-size: calc(0.82rem - 2px);
-  font-weight: 600;
-  color: #f5f5f5;
-  text-align: center;
-}
-
+.new-game-preview-title,
 .new-game-preview-id {
-  margin: 2px 0 8px;
-  font-size: calc(0.75rem - 2px);
-  color: #bdbdbd;
-  text-align: center;
+  display: none;
 }
 
 .new-game-preview-board {
   width: 100%;
+  height: 100%;
   aspect-ratio: 1 / 1;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -1590,6 +1675,7 @@
 }
 
 .game-settings-engine-note {
+  margin-top: 10px;
   padding: 8px 10px;
   border: 1px solid #474747;
   border-radius: 5px;
@@ -2020,6 +2106,7 @@
   }
 
   .game-settings-desktop-field,
+  .game-settings-desktop-options,
   .game-settings-engine-note,
   .new-game-preview {
     display: none;
