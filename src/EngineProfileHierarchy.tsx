@@ -102,6 +102,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
   const profiles = overview?.profiles ?? [];
 
   const [selectedEngineId, setSelectedEngineId] = useState<string | null>(null);
+  const [expandedEngineId, setExpandedEngineId] = useState<string | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [profileDraft, setProfileDraft] = useState<EngineProfile | null>(null);
   const [creatingProfile, setCreatingProfile] = useState(false);
@@ -235,8 +236,16 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
     setError(null);
   }
 
+  function toggleEngineInTree(engineId: string) {
+    const nextExpandedEngineId =
+      expandedEngineId === engineId ? null : engineId;
+    setExpandedEngineId(nextExpandedEngineId);
+    selectEngine(engineId);
+  }
+
   function selectProfile(profile: EngineProfile) {
     setSelectedEngineId(profile.engineId);
+    setExpandedEngineId(profile.engineId);
     setSelectedProfileId(profile.id);
     setProfileDraft(copyProfile(profile));
     setCreatingProfile(false);
@@ -263,6 +272,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
   function beginCreateProfile(engine: EngineDefinition) {
     if (!engine.id) return;
     setSelectedEngineId(engine.id);
+    setExpandedEngineId(engine.id);
     setSelectedProfileId(null);
     setProfileDraft(defaultProfileForEngine(engine, nextProfileName(engine)));
     setCreatingProfile(true);
@@ -403,6 +413,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
       setImportingEngine(false);
       setImportDraft(null);
       setSelectedEngineId(selected.id);
+      setExpandedEngineId(selected.id);
       setSelectedProfileId(null);
       setProfileDraft(null);
       setMessage(t("settings.engineImportedCreateProfile"));
@@ -442,6 +453,7 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
         next.profiles.find((profile) => profile.id === saved.id) ?? saved;
       setCreatingProfile(false);
       setSelectedEngineId(selected.engineId);
+      setExpandedEngineId(selected.engineId);
       setSelectedProfileId(selected.id);
       setProfileDraft(copyProfile(selected));
       setMessage(
@@ -612,13 +624,23 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
             <strong>{t("settings.enginesAndProfiles")}</strong>
             <span>{t("settings.enginesAndProfilesDescription")}</span>
           </div>
-          <button
-            type="button"
-            onClick={beginImportEngine}
-            disabled={busy}
-          >
-            {t("settings.importEngine")}
-          </button>
+          <div className="engine-profile-tree-header-actions">
+            <button
+              type="button"
+              onClick={beginImportEngine}
+              disabled={busy}
+            >
+              {t("settings.importEngine")}
+            </button>
+            <button
+              type="button"
+              onClick={() => selectedEngine && beginCreateProfile(selectedEngine)}
+              disabled={busy || !selectedEngine}
+              title={selectedEngine?.name}
+            >
+              + {t("settings.newProfile")}
+            </button>
+          </div>
         </div>
 
         {engines.length === 0 && (
@@ -632,28 +654,42 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
             const engineProfiles = profilesForEngine(engine.id);
             const engineSelected =
               !selectedProfileId && selectedEngineId === engine.id;
+            const engineExpanded = expandedEngineId === engine.id;
             return (
-              <div className="engine-profile-tree-group" key={engine.id ?? engine.name}>
+              <div
+                className={[
+                  "engine-profile-tree-group",
+                  engineExpanded ? "expanded" : "",
+                ].filter(Boolean).join(" ")}
+                key={engine.id ?? engine.name}
+              >
                 <button
                   type="button"
                   className={[
                     "engine-profile-engine-row",
                     engineSelected ? "selected" : "",
                   ].filter(Boolean).join(" ")}
-                  onClick={() => engine.id && selectEngine(engine.id)}
+                  onClick={() => engine.id && toggleEngineInTree(engine.id)}
                   disabled={busy || !engine.id}
+                  aria-expanded={engineExpanded}
                 >
-                  <span>
-                    <strong>{engine.name}</strong>
-                    <small>
-                      {engine.engineName || t("settings.uciEngine")}
-                      {engine.engineAuthor ? ` · ${engine.engineAuthor}` : ""}
-                    </small>
+                  <span className="engine-profile-engine-main">
+                    <span className="engine-profile-disclosure" aria-hidden="true">
+                      {engineExpanded ? "▾" : "▸"}
+                    </span>
+                    <span className="engine-profile-engine-text">
+                      <strong>{engine.name}</strong>
+                      <small>
+                        {engine.engineName || t("settings.uciEngine")}
+                        {engine.engineAuthor ? ` · ${engine.engineAuthor}` : ""}
+                      </small>
+                    </span>
                   </span>
                   <span className="engine-profile-count">{engineProfiles.length}</span>
                 </button>
 
-                <div className="engine-profile-tree-children">
+                {engineExpanded && (
+                  <div className="engine-profile-tree-children">
                   {engineProfiles.map((profile) => {
                     const labels = assignmentLabels(profile.id);
                     const fallback = profile.id === overview.fallbackProfileId;
@@ -675,15 +711,8 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
                       </button>
                     );
                   })}
-                  <button
-                    type="button"
-                    className="engine-profile-tree-add-profile"
-                    onClick={() => beginCreateProfile(engine)}
-                    disabled={busy || !engine.id}
-                  >
-                    + {t("settings.newProfile")}
-                  </button>
-                </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -1057,13 +1086,6 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
                   </strong>
                   <span>{t("settings.profilesForEngineDescription")}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => beginCreateProfile(selectedEngine)}
-                  disabled={busy}
-                >
-                  + {t("settings.newProfile")}
-                </button>
               </div>
 
               <div className="engine-profile-card-list">
@@ -1092,13 +1114,6 @@ export default function EngineProfileHierarchy({ overview, onOverviewChange }: P
                 {t("settings.deleteEngine")}
               </button>
               <div className="engine-config-actions-spacer" />
-              <button
-                type="button"
-                onClick={() => beginCreateProfile(selectedEngine)}
-                disabled={busy}
-              >
-                {t("settings.newProfile")}
-              </button>
             </div>
           </div>
         ) : (
