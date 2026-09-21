@@ -1,5 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { EngineConfigOverview } from "../../engineConfig";
+import type {
+  EngineConfigOverview,
+  EngineRuntimeAssignments,
+} from "../../engineConfig";
 import type {
   ClockState,
   EngineEvaluation,
@@ -14,6 +17,7 @@ import type {
 
 export interface UseAnalysisControllerOptions {
   engineConfigOverview: EngineConfigOverview | null;
+  engineRuntimeAssignments: EngineRuntimeAssignments | null;
   engineEval: EngineEvaluation | null;
   setEngineEval: Dispatch<SetStateAction<EngineEvaluation | null>>;
   setPieces: Dispatch<SetStateAction<Piece[]>>;

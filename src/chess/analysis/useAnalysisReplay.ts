@@ -158,12 +158,22 @@ export function useAnalysisReplay(
       state.setAnalysisWhitePlayerName(
         options.uciAnalysisLoaded
           ? state.analysisWhitePlayerName || "White"
-          : getDisplayedWhitePlayerName(options.clock, options.whiteComputerEnabled),
+          : getDisplayedWhitePlayerName(
+              options.clock,
+              options.whiteComputerEnabled,
+              options.engineConfigOverview,
+              options.engineRuntimeAssignments,
+            ),
       );
       state.setAnalysisBlackPlayerName(
         options.uciAnalysisLoaded
           ? state.analysisBlackPlayerName || "Black"
-          : getDisplayedBlackPlayerName(options.clock, options.blackComputerEnabled),
+          : getDisplayedBlackPlayerName(
+              options.clock,
+              options.blackComputerEnabled,
+              options.engineConfigOverview,
+              options.engineRuntimeAssignments,
+            ),
       );
       state.setAnalysisReplayActive(true);
       state.setAnalysisEvaluationEnabled(false);

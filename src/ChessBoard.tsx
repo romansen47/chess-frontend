@@ -87,6 +87,7 @@ export const ChessBoard: React.FC = () => {
 
   const analysis = useAnalysisController({
     engineConfigOverview: engine.engineConfigOverview,
+    engineRuntimeAssignments: engine.engineRuntimeAssignments,
     engineEval: engine.engineEval,
     setEngineEval: engine.setEngineEval,
     setPieces: board.setPieces,
