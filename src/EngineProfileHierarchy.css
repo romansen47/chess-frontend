@@ -1,0 +1,577 @@
+.engine-profile-hierarchy {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  background: #1f1f1f;
+}
+
+.engine-profile-tree {
+  min-height: 0;
+  overflow: auto;
+  border-right: 1px solid #383838;
+  background: #202020;
+}
+
+.engine-profile-tree-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border-bottom: 1px solid #383838;
+  background: #202020;
+}
+
+.engine-profile-tree-header > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.engine-profile-tree-header strong {
+  font-size: 0.82rem;
+}
+
+.engine-profile-tree-header span {
+  color: #939393;
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
+.engine-profile-tree-header button,
+.engine-profile-profile-section-header button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid #4b4b4b;
+  border-radius: 5px;
+  background: #303030;
+  color: #f1f1f1;
+  font: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.engine-profile-tree-list {
+  padding: 7px;
+}
+
+.engine-profile-tree-group {
+  margin-bottom: 7px;
+  overflow: hidden;
+  border: 1px solid #383838;
+  border-radius: 7px;
+  background: #252525;
+}
+
+.engine-profile-engine-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 0;
+  background: transparent;
+  color: #ededed;
+  text-align: left;
+  cursor: pointer;
+}
+
+.engine-profile-engine-row:hover,
+.engine-profile-engine-row.selected {
+  background: #333;
+}
+
+.engine-profile-engine-row > span:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.engine-profile-engine-row strong {
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-profile-engine-row small {
+  overflow: hidden;
+  color: #969696;
+  font-size: 0.63rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-profile-count {
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #444;
+  color: #ccc;
+  font-size: 0.64rem;
+  text-align: center;
+}
+
+.engine-profile-tree-children {
+  display: grid;
+  gap: 2px;
+  padding: 0 6px 6px 18px;
+}
+
+.engine-profile-tree-profile,
+.engine-profile-tree-add-profile {
+  width: 100%;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #c7c7c7;
+  text-align: left;
+  font: inherit;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.engine-profile-tree-profile:hover,
+.engine-profile-tree-profile.selected {
+  background: #383838;
+  color: #fff;
+}
+
+.engine-profile-tree-add-profile {
+  color: #9f9f9f;
+}
+
+.engine-profile-tree-add-profile:hover {
+  background: #303030;
+  color: #fff;
+}
+
+.engine-profile-active-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #8ea56d;
+}
+
+.engine-profile-details {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.engine-profile-editor-card {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.engine-profile-engine-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.engine-profile-engine-summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  background: #242424;
+}
+
+.engine-profile-engine-summary span {
+  color: #949494;
+  font-size: 0.64rem;
+}
+
+.engine-profile-engine-summary strong {
+  overflow: hidden;
+  color: #ededed;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-profile-summary-path {
+  grid-column: 1 / -1;
+}
+
+.engine-profile-summary-path strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.engine-profile-profile-section {
+  display: grid;
+  gap: 8px;
+}
+
+.engine-profile-profile-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.engine-profile-profile-section-header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.engine-profile-profile-section-header strong {
+  font-size: 0.82rem;
+}
+
+.engine-profile-profile-section-header span {
+  color: #929292;
+  font-size: 0.68rem;
+}
+
+.engine-profile-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.engine-profile-card {
+  min-width: 0;
+  min-height: 74px;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid #3e3e3e;
+  border-radius: 7px;
+  background: #272727;
+  color: #ececec;
+  text-align: left;
+  cursor: pointer;
+}
+
+.engine-profile-card:hover,
+.engine-profile-card-selected {
+  border-color: #5e5e5e;
+  background: #303030;
+}
+
+.engine-profile-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.engine-profile-card-title-row strong {
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-profile-card-meta {
+  color: #989898;
+  font-size: 0.66rem;
+  line-height: 1.3;
+}
+
+.engine-profile-field {
+  display: grid;
+  gap: 4px;
+}
+
+.engine-profile-field > span {
+  color: #a8a8a8;
+  font-size: 0.7rem;
+}
+
+.engine-profile-field input,
+.engine-profile-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+  padding: 5px 7px;
+  border: 1px solid #4a4a4a;
+  border-radius: 5px;
+  background: #191919;
+  color: #f2f2f2;
+  font: inherit;
+}
+
+.engine-profile-name-field {
+  max-width: 520px;
+}
+
+.engine-profile-advanced-toggle {
+  display: none;
+  width: 100%;
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid #454545;
+  border-radius: 6px;
+  background: #292929;
+  color: #eee;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.engine-profile-options-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.engine-profile-options-header > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.engine-profile-options-header strong {
+  font-size: 0.8rem;
+}
+
+.engine-profile-options-header span {
+  color: #929292;
+  font-size: 0.66rem;
+}
+
+.engine-profile-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 7px;
+}
+
+.engine-profile-manual-import {
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  background: #242424;
+}
+
+.engine-profile-manual-import summary {
+  padding: 9px 10px;
+  color: #aaa;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.engine-profile-manual-import-fields {
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.engine-profile-manual-import-fields button {
+  min-height: 36px;
+}
+
+.engine-profile-inline-status {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 300px;
+  right: 0;
+}
+
+.engine-profile-hierarchy {
+  position: relative;
+}
+
+.engine-profile-hierarchy-empty {
+  padding: 12px;
+  color: #999;
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+.engine-profile-details-empty {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+}
+
+.engine-profile-mobile-selector {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .engine-profile-hierarchy {
+    height: auto;
+    min-height: 100%;
+    display: block;
+  }
+
+  .engine-profile-tree {
+    display: none;
+  }
+
+  .engine-profile-mobile-selector {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 7px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #383838;
+    background: #202020;
+  }
+
+  .engine-profile-mobile-selector > label {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+  }
+
+  .engine-profile-mobile-selector > label > span {
+    color: #8f8f8f;
+    font-size: 0.66rem;
+  }
+
+  .engine-profile-mobile-selector select,
+  .engine-profile-mobile-selector > button {
+    min-height: 42px;
+  }
+
+  .engine-profile-mobile-selector > button {
+    align-self: end;
+    padding: 0;
+    font-size: 1.2rem;
+  }
+
+  .engine-profile-mobile-profile-list {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 6px;
+    padding-top: 3px;
+  }
+
+  .engine-profile-mobile-profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #aaa;
+    font-size: 0.68rem;
+  }
+
+  .engine-profile-mobile-profile-header button {
+    min-height: 34px;
+    padding: 4px 7px;
+  }
+
+  .engine-profile-card-list {
+    grid-template-columns: 1fr;
+  }
+
+  .engine-profile-card {
+    min-height: 58px;
+    padding: 8px 9px;
+  }
+
+  .engine-profile-details {
+    overflow: visible;
+    padding: 10px;
+  }
+
+  .engine-profile-editor-card {
+    min-height: 0;
+    gap: 10px;
+  }
+
+  .engine-profile-engine-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .engine-profile-summary-path {
+    display: none !important;
+  }
+
+  .engine-profile-profile-section {
+    display: none;
+  }
+
+  .engine-profile-name-field {
+    max-width: none;
+  }
+
+  .engine-profile-name-field input {
+    min-height: 42px;
+  }
+
+  .engine-profile-advanced-toggle {
+    display: block;
+  }
+
+  .engine-profile-options-header,
+  .engine-profile-options {
+    display: none;
+  }
+
+  .engine-profile-advanced-open .engine-profile-options-header {
+    display: flex;
+  }
+
+  .engine-profile-advanced-open .engine-profile-options-header > div:first-child {
+    display: none;
+  }
+
+  .engine-profile-advanced-open .engine-profile-options-header .engine-config-option-tools {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .engine-profile-advanced-open .engine-profile-options-header input {
+    display: none;
+  }
+
+  .engine-profile-advanced-open .engine-profile-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .engine-profile-inline-status {
+    position: static;
+    grid-column: 1 / -1;
+  }
+
+  .engine-profile-manual-import-fields input,
+  .engine-profile-manual-import-fields button,
+  .engine-profile-field select {
+    min-height: 42px;
+  }
+
+  .engine-profile-engine-summary > div {
+    padding: 7px;
+  }
+
+  .engine-profile-engine-summary span {
+    font-size: 0.61rem;
+  }
+
+  .engine-profile-engine-summary strong {
+    font-size: 0.68rem;
+  }
+
+  .engine-profile-editor-card .engine-config-actions-footer {
+    margin-left: -10px;
+    margin-right: -10px;
+  }
+}
