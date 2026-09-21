@@ -590,3 +590,54 @@
     margin-right: -10px;
   }
 }
+
+
+/* Keep scrolling ownership predictable:
+   desktop scrolls the two hierarchy panes independently,
+   mobile scrolls the complete Settings body. */
+@media (min-width: 701px) {
+  .engine-profile-hierarchy {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .engine-profile-details {
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .engine-profile-tree {
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 700px) {
+  .engine-profile-hierarchy,
+  .engine-profile-details,
+  .engine-profile-editor-card {
+    max-height: none;
+  }
+
+  .engine-profile-details {
+    overflow: visible;
+  }
+
+  .engine-profile-options {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .engine-profile-editor-card .engine-config-actions-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+  }
+}
