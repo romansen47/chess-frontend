@@ -110,3 +110,11 @@
     font-size: 1.2rem;
   }
 }
+
+.clock-history .clock-box {
+  cursor: default;
+}
+
+.clock-history .clock-box:hover {
+  filter: none;
+}

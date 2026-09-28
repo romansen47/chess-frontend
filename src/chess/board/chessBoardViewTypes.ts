@@ -1,3 +1,4 @@
+import type { HistoricalClock } from "../analysis/historicalClock";
 import type { ChangeEvent, ComponentProps, ReactNode, RefObject } from "react";
 import type ChessDatabaseDialog from "../../ChessDatabaseDialog";
 import type { EngineConfigOverview } from "../../engineConfig";
@@ -93,6 +94,7 @@ export interface ChessBoardViewProps {
   uciAnalysisLoaded: boolean;
   clock: ClockState | null;
   clockError: string | null;
+  historicalClock: HistoricalClock | null;
   whiteComputerEnabled: boolean;
   blackComputerEnabled: boolean;
   toggleWhiteComputer: () => void;

@@ -221,3 +221,28 @@
   color: #ff9090;
   font-size: 10px;
 }
+
+.annotation-comment-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.annotation-timing {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  font-size: 0.75rem;
+  margin: 8px 0 0;
+}
+
+.annotation-timing dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.annotation-selected-move {
+  font-weight: 600;
+  margin-bottom: 8px;
+}

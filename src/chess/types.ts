@@ -82,6 +82,8 @@ export interface UciGameMove {
 export type PgnNagSymbol = "!" | "!!" | "!?" | "?!" | "?" | "??";
 
 export interface GameAnnotation {
+  clockMillis?: number | null;
+  elapsedMoveMillis?: number | null;
   ply: number;
   nag: PgnNagSymbol | null;
   comment: string | null;

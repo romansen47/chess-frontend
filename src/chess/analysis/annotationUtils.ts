@@ -9,7 +9,7 @@ export function gameAnnotationRecord(
     if (
       !annotation
       || !Number.isFinite(annotation.ply)
-      || annotation.ply <= 0
+      || annotation.ply < 0
     ) {
       continue;
     }
@@ -27,5 +27,7 @@ export function isEmptyGameAnnotation(annotation: GameAnnotation): boolean {
   return !annotation.nag
     && !annotation.comment?.trim()
     && !annotation.evaluation?.trim()
-    && (annotation.variations?.length ?? 0) === 0;
+    && (annotation.variations?.length ?? 0) === 0
+    && annotation.clockMillis == null
+    && annotation.elapsedMoveMillis == null;
 }

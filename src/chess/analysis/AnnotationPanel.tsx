@@ -7,6 +7,8 @@ import type {
   PgnNagSymbol,
 } from "../types";
 import "./annotationPanel.css";
+import AnnotationComment from "./AnnotationComment";
+import AnnotationTiming from "./AnnotationTiming";
 
 interface AnnotationPanelProps {
   selectedPly: number | null;
@@ -143,17 +145,8 @@ export default function AnnotationPanel({
         </div>
       </section>
 
-      <section className="annotation-section">
-        <label className="annotation-field">
-          <span className="annotation-section-title">{t("annotations.comment")}</span>
-          <textarea
-            value={value.comment ?? ""}
-            rows={3}
-            placeholder={t("annotations.commentPlaceholder")}
-            onChange={(event) => update({ comment: event.target.value || null })}
-          />
-        </label>
-      </section>
+      <AnnotationComment comment={value.comment} onChange={(comment) => update({ comment })} />
+      <AnnotationTiming annotation={value} />
 
       <section className="annotation-section">
         <div className="annotation-section-title">{t("annotations.evaluation")}</div>

@@ -91,7 +91,7 @@ export function getAnalysisBlackPlayerName(clock: ClockState | null, storedAnaly
 
 export function formatClockTime(totalSeconds: number | null | undefined): string {
   if (totalSeconds == null) return "--:--";
-  const safeSeconds = Math.max(0, totalSeconds);
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
   const minutes = Math.floor(safeSeconds / 60);
   const seconds = safeSeconds % 60;
   return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;

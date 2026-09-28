@@ -20,7 +20,7 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
     headerProps, movePanelProps, boardProps,
     showChessDatabaseDialog, closeChessDatabaseDialog, onDatabaseGameLoaded,
     uciFileInputRef, onUciFileSelected,
-    analysisReplayActive, uciAnalysisLoaded, clock, clockError,
+    analysisReplayActive, uciAnalysisLoaded, clock, clockError, historicalClock,
     whiteComputerEnabled, blackComputerEnabled, toggleWhiteComputer, toggleBlackComputer,
     engine, engineActions, mobileDeepAnalysisContent, mobileEvalEngineContent,
     hoverPreview, hoverAnnotationText, dialogs, dialogActions,
@@ -46,6 +46,9 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
         <MovePanel {...movePanelProps} />
         <section className="board-column">
           <div className="board-wrapper"><Board {...boardProps} /></div>
+          {(analysisReplayActive || uciAnalysisLoaded) && historicalClock && (
+            <ClockPanel clock={historicalClock} readOnly />
+          )}
           {!analysisReplayActive && !uciAnalysisLoaded && (
             <ClockPanel clock={clock} clockError={clockError}
               whiteComputerEnabled={whiteComputerEnabled} blackComputerEnabled={blackComputerEnabled}

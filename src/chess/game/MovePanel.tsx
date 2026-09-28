@@ -4,6 +4,10 @@ import { useMoveAnnotationTooltip } from "../analysis/useMoveAnnotationTooltip";
 import type { GameAnnotation, MoveAnnotation, MoveRow } from "../types";
 import PgnImportProblemDialog, { isPgnImportProblem } from "./PgnImportProblemDialog";
 import "./MovePanel.css";
+import "../analysis/annotationPanel.css";
+import AnnotationComment from "../analysis/AnnotationComment";
+import AnnotationTiming from "../analysis/AnnotationTiming";
+import { getAnalysisMoveSelectionForPly } from "../analysis/analysisSelectionUtils";
 
 interface MovePanelState {
   moves: MoveRow[];
@@ -42,6 +46,8 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
   const { t } = useI18n();
   const getAnnotationTitle = useMoveAnnotationTooltip();
   const pgnImportProblem = isPgnImportProblem(state.error);
+  const selected = state.selectedPly == null ? null : getAnalysisMoveSelectionForPly(state.moves, state.selectedPly);
+  const stored = state.selectedPly == null ? null : state.storedAnnotations[state.selectedPly];
 
   function renderAnnotations(ply: number) {
     const stored = state.storedAnnotations[ply];
@@ -215,6 +221,16 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
             {state.computerThinking ? t("moves.computerThinking") : t("moves.loading")}
           </div>
         )}
+      </div>
+      <div className="mobile-move-comment">
+        {state.selectedPly == null ? <p>{t("annotations.selectMove")}</p> : <>
+          <div className="annotation-selected-move">
+            {state.selectedPly === 0 ? t("annotations.introduction")
+              : `${Math.ceil(state.selectedPly / 2)}${state.selectedPly % 2 ? "." : "..."} ${selected?.san ?? ""}`}
+          </div>
+          <AnnotationComment comment={stored?.comment} />
+          <AnnotationTiming annotation={stored} />
+        </>}
       </div>
     </section>
   );

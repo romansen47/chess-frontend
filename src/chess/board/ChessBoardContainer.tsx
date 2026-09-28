@@ -1,3 +1,4 @@
+import { historicalClock } from "../analysis/historicalClock";
 import type { MouseEvent } from "react";
 import AnalysisEngineDetails from "../analysis/AnalysisEngineDetails";
 import AnalysisProfilePanel from "../analysis/AnalysisProfilePanel";
@@ -196,6 +197,8 @@ export default function ChessBoardContainer({
     uciFileInputRef={game.uciFileInputRef} onUciFileSelected={lifecycle.handleUciFileSelected}
     analysisReplayActive={analysis.analysisReplayActive} uciAnalysisLoaded={board.uciAnalysisLoaded}
     clock={game.clock} clockError={game.clockError}
+    historicalClock={historicalClock(analysis.gameAnnotations,
+      analysis.analysisSelectedPosition?.ply ?? null, analysis.analysisVariationMoves.length)}
     whiteComputerEnabled={computer.whiteComputerEnabled} blackComputerEnabled={computer.blackComputerEnabled}
     toggleWhiteComputer={() => computer.updateWhiteComputerEnabled(!computer.whiteComputerEnabled)}
     toggleBlackComputer={() => computer.updateBlackComputerEnabled(!computer.blackComputerEnabled)}
