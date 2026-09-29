@@ -173,6 +173,9 @@ export default function ChessBoardContainer({
         error: board.loadError,
         annotations: analysis.analysisReplayActive ? analysis.moveAnnotations : {},
         storedAnnotations: analysis.gameAnnotations,
+        annotationsDirty: analysis.annotationsDirty,
+        annotationsSaving: analysis.annotationsSaving,
+        annotationSaveError: analysis.annotationSaveError,
       },
       actions: {
         showPreview: showMovePreview,
@@ -182,6 +185,8 @@ export default function ChessBoardContainer({
         hideAnnotationTooltip: () => board.setHoverAnnotationText(null),
         flipBoard: flipBoardOrientation,
         selectPosition: analysis.selectAnalysisPosition,
+        updateGameAnnotation: analysis.updateGameAnnotation,
+        persistGameAnnotations: analysis.persistGameAnnotations,
       },
     }}
     boardProps={{

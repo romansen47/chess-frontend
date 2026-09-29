@@ -21,9 +21,14 @@ interface MovePanelState {
   error: string | null;
   annotations: Record<number, MoveAnnotation>;
   storedAnnotations: Record<number, GameAnnotation>;
+  annotationsDirty: boolean;
+  annotationsSaving: boolean;
+  annotationSaveError: string | null;
 }
 
 interface MovePanelActions {
+  updateGameAnnotation: (annotation: GameAnnotation) => void;
+  persistGameAnnotations: () => void;
   showPreview: (event: MouseEvent<HTMLElement>, position: string | undefined) => void;
   movePreview: (event: MouseEvent<HTMLElement>) => void;
   hidePreview: () => void;
@@ -228,7 +233,25 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
             {state.selectedPly === 0 ? t("annotations.introduction")
               : `${Math.ceil(state.selectedPly / 2)}${state.selectedPly % 2 ? "." : "..."} ${selected?.san ?? ""}`}
           </div>
-          <AnnotationComment comment={stored?.comment} />
+          <AnnotationComment comment={stored?.comment} disabled={state.annotationsSaving} onChange={(comment) => {
+            if (state.selectedPly == null) return;
+            actions.updateGameAnnotation({
+              nag: null, evaluation: null, variations: [],
+              ...stored, ply: state.selectedPly, comment,
+            });
+          }} />
+          {state.annotationSaveError && <div className="annotation-error" role="alert">
+            {state.annotationSaveError}
+          </div>}
+          <div className="annotation-actions">
+            <span className="annotation-dirty" role="status">
+              {state.annotationsDirty ? t("annotations.unsaved") : ""}
+            </span>
+            <button type="button" onClick={actions.persistGameAnnotations}
+              disabled={!state.annotationsDirty || state.annotationsSaving}>
+              {state.annotationsSaving ? t("annotations.saving") : t("annotations.saveChanges")}
+            </button>
+          </div>
           <AnnotationTiming annotation={stored} />
         </>}
       </div>
