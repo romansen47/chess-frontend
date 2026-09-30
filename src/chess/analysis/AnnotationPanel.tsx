@@ -143,15 +143,19 @@ export default function AnnotationPanel({
           hideTitle
           onChange={(comment) => update({ comment })}
         />
-      </section>
-      <AnnotationTiming annotation={value} />
-
-      <section className="annotation-section">
-        <div className="annotation-section-title">{t("annotations.evaluation")}</div>
-        <div className="annotation-evaluation-row">
-          <input value={value.evaluation ?? ""} readOnly placeholder="—" />
+        <div className="annotation-evaluation-inline">
+          <span className="annotation-evaluation-label">{t("annotations.evaluation")}</span>
+          <output
+            className={[
+              "annotation-evaluation-value",
+              value.evaluation ? "" : "annotation-evaluation-value-empty",
+            ].filter(Boolean).join(" ")}
+          >
+            {value.evaluation ?? "—"}
+          </output>
           <button
             type="button"
+            className="annotation-evaluation-action"
             disabled={currentEvaluation == null}
             onClick={() => currentEvaluation != null
               && update({ evaluation: evaluationText(currentEvaluation) })}
@@ -159,12 +163,19 @@ export default function AnnotationPanel({
             {t("annotations.useCurrentEvaluation")}
           </button>
           {value.evaluation && (
-            <button type="button" onClick={() => update({ evaluation: null })}>
-              {t("common.delete")}
+            <button
+              type="button"
+              className="annotation-icon-button annotation-evaluation-clear"
+              aria-label={t("common.delete")}
+              title={t("common.delete")}
+              onClick={() => update({ evaluation: null })}
+            >
+              ×
             </button>
           )}
         </div>
       </section>
+      <AnnotationTiming annotation={value} />
 
       <section className="annotation-section">
         <div className="annotation-section-title">{t("annotations.savedVariations")}</div>
