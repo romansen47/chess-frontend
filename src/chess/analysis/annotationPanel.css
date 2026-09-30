@@ -139,8 +139,7 @@
   gap: 6px;
 }
 
-.annotation-field textarea,
-.annotation-evaluation-row input {
+.annotation-field textarea {
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 5px;
   background: rgba(0, 0, 0, 0.16);
@@ -155,14 +154,51 @@
   min-height: 58px;
 }
 
-.annotation-evaluation-row {
+.annotation-evaluation-inline {
   display: flex;
   align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 30px;
+  padding-top: 2px;
 }
 
-.annotation-evaluation-row input {
-  width: 82px;
+.annotation-evaluation-label {
+  margin-right: 1px;
+  color: #9aa3b8;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.annotation-evaluation-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 26px;
+  padding: 3px 9px;
+  border: 1px solid rgba(169, 137, 231, 0.46);
+  border-radius: 999px;
+  background: rgba(118, 89, 184, 0.12);
+  color: #e7dcfb;
+  box-sizing: border-box;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.annotation-evaluation-value-empty {
+  color: #8b93a7;
+  font-weight: 500;
+}
+
+.annotation-evaluation-action {
+  min-height: 26px !important;
+  padding: 3px 10px;
+}
+
+.annotation-evaluation-clear {
+  border-radius: 50%;
 }
 
 .annotation-panel button {
