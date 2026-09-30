@@ -393,7 +393,6 @@ export const spanishTranslations = {
   "annotations.played": "Jugada",
   "annotations.engineLineMeta": "{evaluation} · profundidad {depth}",
   "annotations.saving": "Guardando…",
-  "annotations.saveChanges": "Guardar cambios",
   "annotations.savedAnnotation": "Anotación de partida guardada",
   "annotations.saveFailed": "No se pudieron guardar las anotaciones de la partida.",
 } satisfies Record<TranslationKey, string>;

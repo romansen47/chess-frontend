@@ -101,7 +101,6 @@ export const germanTranslations = {
   "annotations.played": "Gespielt",
   "annotations.engineLineMeta": "{evaluation} · Tiefe {depth}",
   "annotations.saving": "Wird gespeichert…",
-  "annotations.saveChanges": "Änderungen speichern",
   "annotations.savedAnnotation": "Gespeicherte Partieannotation",
   "annotations.saveFailed": "Partiekommentare konnten nicht gespeichert werden.",
   "analysis.complete": "Analyse abgeschlossen",

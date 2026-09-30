@@ -101,7 +101,6 @@ export const frenchTranslations = {
   "annotations.played": "Joué",
   "annotations.engineLineMeta": "{evaluation} · profondeur {depth}",
   "annotations.saving": "Enregistrement…",
-  "annotations.saveChanges": "Enregistrer les modifications",
   "annotations.savedAnnotation": "Annotation enregistrée",
   "annotations.saveFailed": "Impossible d’enregistrer les annotations de la partie.",
   "analysis.complete": "Analyse terminée",

@@ -99,7 +99,6 @@ export const englishTranslations = {
   "annotations.played": "Played",
   "annotations.engineLineMeta": "{evaluation} · depth {depth}",
   "annotations.saving": "Saving…",
-  "annotations.saveChanges": "Save changes",
   "annotations.savedAnnotation": "Saved game annotation",
   "annotations.saveFailed": "Could not save the game annotations.",
   "analysis.complete": "Analysis complete",
