@@ -8,7 +8,7 @@ import type { AnalysisState } from "./useAnalysisState";
 
 export function useAnalysisDerived(state: AnalysisState, options: UseAnalysisControllerOptions) {
   const { t } = useI18n();
-  const getMoveAnnotationTooltip = useMoveAnnotationTooltip();
+  const getMoveAnnotationTooltip = useMoveAnnotationTooltip(options.debugMode);
 
   const analysisEngineProfiles = useMemo(
     () => options.engineConfigOverview?.profiles ?? [],

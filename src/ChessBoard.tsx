@@ -55,6 +55,7 @@ export const ChessBoard: React.FC = () => {
     engineConfigOverview: engine.engineConfigOverview,
     engineRuntimeAssignments: engine.engineRuntimeAssignments,
     engineEval: engine.engineEval,
+    debugMode: engine.debugMode,
     setEngineEval: engine.setEngineEval,
     setPieces: board.setPieces,
     setLastMove: board.setLastMove,

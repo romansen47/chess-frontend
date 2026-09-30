@@ -20,6 +20,7 @@ interface MovePanelState {
   loadingMoves: boolean;
   computerThinking: boolean;
   error: string | null;
+  debugMode: boolean;
   annotations: Record<number, MoveAnnotation>;
   storedAnnotations: Record<number, GameAnnotation>;
   annotationsDirty: boolean;
@@ -62,7 +63,7 @@ interface MovePanelProps {
 
 export default function MovePanel({ state, actions }: MovePanelProps) {
   const { t } = useI18n();
-  const getAnnotationTitle = useMoveAnnotationTooltip();
+  const getAnnotationTitle = useMoveAnnotationTooltip(state.debugMode);
   const pgnImportProblem = isPgnImportProblem(state.error);
   const selected = state.selectedPly == null ? null : getAnalysisMoveSelectionForPly(state.moves, state.selectedPly);
   const stored = state.selectedPly == null ? null : state.storedAnnotations[state.selectedPly];

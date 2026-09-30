@@ -19,6 +19,7 @@ export interface UseAnalysisControllerOptions {
   engineConfigOverview: EngineConfigOverview | null;
   engineRuntimeAssignments: EngineRuntimeAssignments | null;
   engineEval: EngineEvaluation | null;
+  debugMode: boolean;
   setEngineEval: Dispatch<SetStateAction<EngineEvaluation | null>>;
   setPieces: Dispatch<SetStateAction<Piece[]>>;
   setLastMove: Dispatch<SetStateAction<LastMove | null>>;

@@ -7,7 +7,7 @@ import type { MoveAnnotation } from "../types";
  * Keeping this in one hook ensures annotations in the move list and on the
  * analysis board explain themselves in exactly the same way.
  */
-export function useMoveAnnotationTooltip() {
+export function useMoveAnnotationTooltip(debugMode: boolean = false) {
   const { t, locale } = useI18n();
 
   function formatNumber(value: number): string {
@@ -33,6 +33,10 @@ export function useMoveAnnotationTooltip() {
 
   return (annotation: MoveAnnotation): string => {
     if (annotation.kind === "extraordinary") {
+      if (!debugMode) {
+        return `${annotation.symbol} · ${t("analysis.moveAnnotationRemarkable")}`;
+      }
+
       const values = {
         earlyDepth: annotation.earlyDepth ?? 0,
         finalDepth: annotation.finalDepth ?? 0,

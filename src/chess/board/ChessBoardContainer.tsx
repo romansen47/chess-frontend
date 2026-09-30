@@ -204,6 +204,7 @@ export default function ChessBoardContainer({
         loadingMoves: board.isLoadingMoves,
         computerThinking: computer.isComputerThinking,
         error: board.loadError,
+        debugMode: engine.debugMode,
         annotations: analysis.analysisReplayActive ? analysis.moveAnnotations : {},
         storedAnnotations: analysis.gameAnnotations,
         annotationsDirty: analysis.annotationsDirty,
