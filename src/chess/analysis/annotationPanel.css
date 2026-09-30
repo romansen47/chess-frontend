@@ -68,6 +68,16 @@
   min-width: 0;
 }
 
+.annotation-comment-editor-tools {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  min-width: 0;
+}
+
 .annotation-rating-inline {
   display: flex;
   align-items: center;
@@ -155,31 +165,32 @@
 }
 
 .annotation-evaluation-inline {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 7px;
+  flex-wrap: nowrap;
+  gap: 6px;
   min-height: 30px;
-  padding-top: 2px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .annotation-evaluation-label {
-  margin-right: 1px;
   color: #9aa3b8;
   font-size: 9px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .annotation-evaluation-value {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 52px;
+  min-width: 46px;
   min-height: 26px;
-  padding: 3px 9px;
-  border: 1px solid rgba(169, 137, 231, 0.46);
+  padding: 3px 8px;
+  border: 1px solid rgba(169, 137, 231, 0.58);
   border-radius: 999px;
-  background: rgba(118, 89, 184, 0.12);
+  background: rgba(118, 89, 184, 0.14);
   color: #e7dcfb;
   box-sizing: border-box;
   font-size: 10px;
@@ -188,17 +199,57 @@
 }
 
 .annotation-evaluation-value-empty {
-  color: #8b93a7;
+  color: #9aa3b8;
   font-weight: 500;
 }
 
 .annotation-evaluation-action {
   min-height: 26px !important;
-  padding: 3px 10px;
+  padding: 3px 9px;
+  border: 1px solid rgba(169, 137, 231, 0.72);
+  border-radius: 999px;
+  background: rgba(118, 89, 184, 0.12);
+  color: #d9cafa;
+  box-shadow: none;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.annotation-evaluation-action:hover:not(:disabled),
+.annotation-evaluation-action:focus-visible:not(:disabled) {
+  border-color: #c7aef5;
+  background: rgba(118, 89, 184, 0.3);
+  color: #ffffff;
+}
+
+.annotation-evaluation-action:focus-visible {
+  outline: 2px solid rgba(202, 178, 248, 0.85);
+  outline-offset: 2px;
+}
+
+.annotation-evaluation-action:disabled {
+  opacity: 0.48;
 }
 
 .annotation-evaluation-clear {
+  border: 1px solid rgba(169, 137, 231, 0.58);
   border-radius: 50%;
+  background: rgba(118, 89, 184, 0.12);
+  color: #d9cafa;
+}
+
+@media (max-width: 920px) {
+  .annotation-comment-editor-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .annotation-comment-editor-tools {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .annotation-panel button {

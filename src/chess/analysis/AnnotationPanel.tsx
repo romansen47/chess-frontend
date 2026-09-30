@@ -132,48 +132,50 @@ export default function AnnotationPanel({
       <section className="annotation-section annotation-comment-editor">
         <div className="annotation-comment-editor-header">
           <span className="annotation-section-title">{t("annotations.comment")}</span>
-          <AnnotationNagPicker
-            value={value.nag}
-            catAnnotation={catAnnotation}
-            onChange={(nag) => update({ nag })}
-          />
+          <div className="annotation-comment-editor-tools">
+            <AnnotationNagPicker
+              value={value.nag}
+              catAnnotation={catAnnotation}
+              onChange={(nag) => update({ nag })}
+            />
+            <div className="annotation-evaluation-inline">
+              <span className="annotation-evaluation-label">{t("annotations.evaluation")}</span>
+              <output
+                className={[
+                  "annotation-evaluation-value",
+                  value.evaluation ? "" : "annotation-evaluation-value-empty",
+                ].filter(Boolean).join(" ")}
+              >
+                {value.evaluation ?? "—"}
+              </output>
+              <button
+                type="button"
+                className="annotation-evaluation-action"
+                disabled={currentEvaluation == null}
+                onClick={() => currentEvaluation != null
+                  && update({ evaluation: evaluationText(currentEvaluation) })}
+              >
+                {t("annotations.useCurrentEvaluation")}
+              </button>
+              {value.evaluation && (
+                <button
+                  type="button"
+                  className="annotation-icon-button annotation-evaluation-clear"
+                  aria-label={t("common.delete")}
+                  title={t("common.delete")}
+                  onClick={() => update({ evaluation: null })}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         <AnnotationComment
           comment={value.comment}
           hideTitle
           onChange={(comment) => update({ comment })}
         />
-        <div className="annotation-evaluation-inline">
-          <span className="annotation-evaluation-label">{t("annotations.evaluation")}</span>
-          <output
-            className={[
-              "annotation-evaluation-value",
-              value.evaluation ? "" : "annotation-evaluation-value-empty",
-            ].filter(Boolean).join(" ")}
-          >
-            {value.evaluation ?? "—"}
-          </output>
-          <button
-            type="button"
-            className="annotation-evaluation-action"
-            disabled={currentEvaluation == null}
-            onClick={() => currentEvaluation != null
-              && update({ evaluation: evaluationText(currentEvaluation) })}
-          >
-            {t("annotations.useCurrentEvaluation")}
-          </button>
-          {value.evaluation && (
-            <button
-              type="button"
-              className="annotation-icon-button annotation-evaluation-clear"
-              aria-label={t("common.delete")}
-              title={t("common.delete")}
-              onClick={() => update({ evaluation: null })}
-            >
-              ×
-            </button>
-          )}
-        </div>
       </section>
       <AnnotationTiming annotation={value} />
 
