@@ -26,7 +26,7 @@ export default function AnalysisProfilePanel({ state, actions }: AnalysisProfile
   const height = 560;
   const paddingX = 12;
   const paddingY = 18;
-  const maxAbsEval = 5;
+  const maxAbsEval = 10;
   const points = analysisProfile.length > 0
     ? analysisProfile
     : [{
