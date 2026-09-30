@@ -98,6 +98,8 @@ export const frenchTranslations = {
   "annotations.noEngineAlternatives": "Aucune variante du moteur n’est disponible pour ce coup.",
   "annotations.added": "Ajoutée",
   "annotations.addVariation": "Ajouter la variante",
+  "annotations.played": "Joué",
+  "annotations.engineLineMeta": "{evaluation} · profondeur {depth}",
   "annotations.saving": "Enregistrement…",
   "annotations.saveChanges": "Enregistrer les modifications",
   "annotations.savedAnnotation": "Annotation enregistrée",

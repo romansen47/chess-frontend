@@ -65,6 +65,23 @@ function evaluationText(value: number): string {
   return value.toFixed(2);
 }
 
+function engineLineEvaluationText(line: EngineLine): string {
+  if (line.mateDistance !== undefined && line.mateDistance !== null) {
+    const sign = line.eval < 0 ? "-" : "";
+    const distance = Math.abs(line.mateDistance);
+    return distance > 0 ? `${sign}M${distance}` : `${sign}M`;
+  }
+
+  if (!Number.isFinite(line.eval)) return "—";
+  return line.eval > 0 ? `+${line.eval.toFixed(2)}` : line.eval.toFixed(2);
+}
+
+function isPlayedLine(line: EngineLine, selectedSan: string | null): boolean {
+  if (!selectedSan) return false;
+  const firstMove = normalizeEngineLineForPgn(line.moves).split(/\s+/)[0] ?? "";
+  return firstMove === normalizeEngineLineForPgn(selectedSan);
+}
+
 export default function AnnotationPanel({
   selectedPly,
   selectedSan,
@@ -203,20 +220,29 @@ export default function AnnotationPanel({
           {alternatives.map((line, index) => {
             const variation = variationFromLine(line, selectedPly);
             const alreadyStored = variation !== "" && value.variations.includes(variation);
+            const played = isPlayedLine(line, selectedSan);
+            const evaluation = engineLineEvaluationText(line);
             return (
               <div className="annotation-engine-row" key={`${index}-${line.depth}-${line.moves}`}>
                 <strong>#{index + 1}</strong>
-                <span>{line.moves || "—"}</span>
-                <button
-                  type="button"
-                  className="annotation-icon-button"
-                  disabled={!variation || alreadyStored}
-                  aria-label={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
-                  title={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
-                  onClick={() => addVariation(line)}
-                >
-                  {alreadyStored ? "✓" : "+"}
-                </button>
+                <span className="annotation-engine-moves">{line.moves || "—"}</span>
+                <span className="annotation-engine-meta">
+                  {t("annotations.engineLineMeta", { evaluation, depth: line.depth })}
+                </span>
+                {played ? (
+                  <span className="annotation-engine-played">{t("annotations.played")}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="annotation-icon-button"
+                    disabled={!variation || alreadyStored}
+                    aria-label={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
+                    title={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
+                    onClick={() => addVariation(line)}
+                  >
+                    {alreadyStored ? "✓" : "+"}
+                  </button>
+                )}
               </div>
             );
           })}

@@ -98,6 +98,8 @@ export const germanTranslations = {
   "annotations.noEngineAlternatives": "Für diesen Zug sind keine Engine-Alternativen verfügbar.",
   "annotations.added": "Übernommen",
   "annotations.addVariation": "Variante übernehmen",
+  "annotations.played": "Gespielt",
+  "annotations.engineLineMeta": "{evaluation} · Tiefe {depth}",
   "annotations.saving": "Wird gespeichert…",
   "annotations.saveChanges": "Änderungen speichern",
   "annotations.savedAnnotation": "Gespeicherte Partieannotation",

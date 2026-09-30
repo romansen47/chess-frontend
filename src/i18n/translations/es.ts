@@ -390,6 +390,8 @@ export const spanishTranslations = {
   "annotations.noEngineAlternatives": "No hay variantes del motor disponibles para esta jugada.",
   "annotations.added": "Añadida",
   "annotations.addVariation": "Añadir variante",
+  "annotations.played": "Jugada",
+  "annotations.engineLineMeta": "{evaluation} · profundidad {depth}",
   "annotations.saving": "Guardando…",
   "annotations.saveChanges": "Guardar cambios",
   "annotations.savedAnnotation": "Anotación de partida guardada",

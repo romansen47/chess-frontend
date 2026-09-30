@@ -156,11 +156,11 @@
 }
 
 .annotation-engine-row {
-  grid-template-columns: 26px minmax(0, 1fr) 30px;
+  grid-template-columns: 26px minmax(0, 1fr) max-content 58px;
 }
 
 .annotation-variation-row code,
-.annotation-engine-row span {
+.annotation-engine-moves {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -180,8 +180,26 @@
   color: #f5f5f5;
 }
 
-.annotation-engine-row span {
+.annotation-engine-moves {
   color: #c7cede;
+}
+
+.annotation-engine-meta {
+  color: #9aa3b8;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.annotation-engine-played {
+  justify-self: end;
+  color: #8fb3f4;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.annotation-engine-row > .annotation-icon-button {
+  justify-self: end;
 }
 
 .annotation-variation-index {
