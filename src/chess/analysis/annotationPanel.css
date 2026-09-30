@@ -54,10 +54,26 @@
   color: #c9d0df;
 }
 
-.annotation-rating-header {
+.annotation-comment-editor {
+  gap: 8px;
+}
+
+.annotation-comment-editor-header,
+.mobile-comment-editor-header,
+.hover-comment-editor-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.annotation-rating-inline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
 }
 
 .annotation-cat-badge {
@@ -71,30 +87,50 @@
 }
 
 .annotation-nag-grid {
-  display: flex;
+  display: inline-flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 5px;
 }
 
 .annotation-nag-button {
-  width: 38px;
-  min-width: 38px;
-  height: 27px;
-  min-height: 27px !important;
-  padding: 2px 4px;
-  border-radius: 4px;
-  color: #111111;
-  font-weight: 700;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px !important;
+  padding: 0;
+  border: 1px solid rgba(169, 137, 231, 0.72);
+  border-radius: 50%;
+  background: rgba(118, 89, 184, 0.08);
+  color: #d9cafa;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: none;
 }
 
-.annotation-nag-active {
-  outline: 2px solid rgba(112, 164, 255, 0.9);
-  background: #4a70b5;
+.annotation-nag-button:hover:not(:disabled),
+.annotation-nag-button:focus-visible:not(:disabled) {
+  border-color: #c7aef5;
+  background: rgba(118, 89, 184, 0.28);
+  color: #ffffff;
+}
+
+.annotation-nag-button:focus-visible {
+  outline: 2px solid rgba(202, 178, 248, 0.85);
+  outline-offset: 2px;
+}
+
+.annotation-nag-active,
+.annotation-nag-active:hover:not(:disabled) {
+  border-color: #a989e7;
+  background: #7659b8;
   color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(118, 89, 184, 0.22);
 }
 
 .annotation-nag-suggested:not(.annotation-nag-active) {
-  box-shadow: inset 0 -2px 0 #d6c26a;
+  border-color: #d6c26a;
+  box-shadow: inset 0 0 0 1px rgba(214, 194, 106, 0.42);
 }
 
 .annotation-field {
@@ -263,4 +299,27 @@
 .annotation-selected-move {
   font-weight: 600;
   margin-bottom: 8px;
+}
+
+.annotation-comment-section {
+  gap: 0;
+}
+
+.annotation-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.annotation-autosave-status {
+  min-height: 14px;
+  color: #9aa3b8;
+  font-size: 10px;
+  text-align: right;
 }

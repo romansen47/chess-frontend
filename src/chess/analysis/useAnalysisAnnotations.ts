@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import { saveGameAnnotations } from "../api/gameApi";
 import { getAnalysisBlackPlayerName, getAnalysisWhitePlayerName } from "../game/gameFormatters";
@@ -10,14 +10,36 @@ import type { AnalysisState } from "./useAnalysisState";
 
 export function useAnalysisAnnotations(state: AnalysisState, options: UseAnalysisControllerOptions) {
   const { t } = useI18n();
+  const annotationRevisionRef = useRef(0);
+  const failedRevisionRef = useRef<number | null>(null);
+  const gameAnnotationsRef = useRef(state.gameAnnotations);
+  const annotationsDirtyRef = useRef(state.annotationsDirty);
+  const annotationsSavingRef = useRef(state.annotationsSaving);
+  const {
+    setGameAnnotations,
+    setAnnotationsDirty,
+    setAnnotationSaveError,
+    setAnnotationsSaving,
+  } = state;
+
+  gameAnnotationsRef.current = state.gameAnnotations;
+  annotationsDirtyRef.current = state.annotationsDirty;
+  annotationsSavingRef.current = state.annotationsSaving;
 
   function resetAnnotations() {
+    annotationRevisionRef.current += 1;
+    failedRevisionRef.current = null;
+    gameAnnotationsRef.current = {};
+    annotationsDirtyRef.current = false;
     state.setGameAnnotations({});
     state.setAnnotationsDirty(false);
     state.setAnnotationSaveError(null);
   }
 
   function updateGameAnnotation(annotation: GameAnnotation) {
+    annotationRevisionRef.current += 1;
+    failedRevisionRef.current = null;
+    annotationsDirtyRef.current = true;
     state.setGameAnnotations((previous) => {
       const next = { ...previous };
       if (isEmptyGameAnnotation(annotation)) {
@@ -34,30 +56,67 @@ export function useAnalysisAnnotations(state: AnalysisState, options: UseAnalysi
     state.setAnnotationSaveError(null);
   }
 
-  async function persistGameAnnotations() {
-    if (!state.annotationsDirty || state.annotationsSaving) return;
-    state.setAnnotationsSaving(true);
-    state.setAnnotationSaveError(null);
+  const persistGameAnnotations = useCallback(async () => {
+    if (annotationsSavingRef.current || !annotationsDirtyRef.current) return;
+
+    const revision = annotationRevisionRef.current;
+    const annotations = (Object.values(gameAnnotationsRef.current) as GameAnnotation[])
+      .filter((annotation) => !isEmptyGameAnnotation(annotation))
+      .sort((left, right) => left.ply - right.ply);
+
+    annotationsSavingRef.current = true;
+    setAnnotationsSaving(true);
+    setAnnotationSaveError(null);
     try {
-      const annotations = (Object.values(state.gameAnnotations) as GameAnnotation[])
-        .filter((annotation) => !isEmptyGameAnnotation(annotation))
-        .sort((left, right) => left.ply - right.ply);
       const saved = await saveGameAnnotations(
         annotations,
         options.whiteComputerEnabled,
         options.blackComputerEnabled,
       );
-      state.setGameAnnotations(gameAnnotationRecord(saved));
-      state.setAnnotationsDirty(false);
+      if (annotationRevisionRef.current === revision) {
+        const savedRecord = gameAnnotationRecord(saved);
+        gameAnnotationsRef.current = savedRecord;
+        annotationsDirtyRef.current = false;
+        setGameAnnotations(savedRecord);
+        setAnnotationsDirty(false);
+      }
     } catch (error) {
       console.error("[persistGameAnnotations] error", error);
-      state.setAnnotationSaveError(
+      failedRevisionRef.current = revision;
+      setAnnotationSaveError(
         error instanceof Error ? error.message : t("annotations.saveFailed"),
       );
     } finally {
-      state.setAnnotationsSaving(false);
+      annotationsSavingRef.current = false;
+      setAnnotationsSaving(false);
     }
-  }
+  }, [
+    options.whiteComputerEnabled,
+    options.blackComputerEnabled,
+    setAnnotationSaveError,
+    setAnnotationsDirty,
+    setAnnotationsSaving,
+    setGameAnnotations,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (
+      !state.annotationsDirty
+      || state.annotationsSaving
+      || failedRevisionRef.current === annotationRevisionRef.current
+    ) return;
+
+    const timeout = window.setTimeout(() => {
+      void persistGameAnnotations();
+    }, 600);
+    return () => window.clearTimeout(timeout);
+  }, [
+    state.annotationsDirty,
+    state.annotationsSaving,
+    state.gameAnnotations,
+    persistGameAnnotations,
+  ]);
 
   function saveAnalysisPgn() {
     try {
@@ -84,7 +143,12 @@ export function useAnalysisAnnotations(state: AnalysisState, options: UseAnalysi
   }
 
   function restoreAnnotations(annotations: GameAnnotation[] | null | undefined) {
-    state.setGameAnnotations(gameAnnotationRecord(annotations));
+    const restored = gameAnnotationRecord(annotations);
+    annotationRevisionRef.current += 1;
+    failedRevisionRef.current = null;
+    gameAnnotationsRef.current = restored;
+    annotationsDirtyRef.current = false;
+    state.setGameAnnotations(restored);
     state.setAnnotationsDirty(false);
     state.setAnnotationSaveError(null);
   }

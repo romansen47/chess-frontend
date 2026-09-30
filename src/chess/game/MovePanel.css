@@ -280,12 +280,22 @@
     min-height: 90px;
   }
 
-  .mobile-move-comment .annotation-actions {
-    flex-wrap: wrap;
+  .mobile-comment-editor-header {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 8px;
   }
 
-  .mobile-move-comment .annotation-actions button {
-    min-height: 44px;
-    white-space: normal;
+  .mobile-comment-editor-header .annotation-rating-inline {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .mobile-move-comment .annotation-nag-button {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px !important;
+    font-size: 0.78rem;
   }
 }

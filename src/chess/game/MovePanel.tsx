@@ -7,6 +7,7 @@ import "./MovePanel.css";
 import "../analysis/annotationPanel.css";
 import AnnotationComment from "../analysis/AnnotationComment";
 import AnnotationTiming from "../analysis/AnnotationTiming";
+import AnnotationNagPicker from "../analysis/AnnotationNagPicker";
 import { getAnalysisMoveSelectionForPly } from "../analysis/analysisSelectionUtils";
 
 interface MovePanelState {
@@ -53,6 +54,20 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
   const pgnImportProblem = isPgnImportProblem(state.error);
   const selected = state.selectedPly == null ? null : getAnalysisMoveSelectionForPly(state.moves, state.selectedPly);
   const stored = state.selectedPly == null ? null : state.storedAnnotations[state.selectedPly];
+  const automatic = state.selectedPly == null ? null : state.annotations[state.selectedPly];
+
+  function updateSelectedAnnotation(patch: Partial<GameAnnotation>) {
+    if (state.selectedPly == null) return;
+    actions.updateGameAnnotation({
+      nag: null,
+      comment: null,
+      evaluation: null,
+      variations: [],
+      ...stored,
+      ...patch,
+      ply: state.selectedPly,
+    });
+  }
 
   function renderAnnotations(ply: number) {
     const stored = state.storedAnnotations[ply];
@@ -233,25 +248,27 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
             {state.selectedPly === 0 ? t("annotations.introduction")
               : `${Math.ceil(state.selectedPly / 2)}${state.selectedPly % 2 ? "." : "..."} ${selected?.san ?? ""}`}
           </div>
-          <AnnotationComment comment={stored?.comment} disabled={state.annotationsSaving} onChange={(comment) => {
-            if (state.selectedPly == null) return;
-            actions.updateGameAnnotation({
-              nag: null, evaluation: null, variations: [],
-              ...stored, ply: state.selectedPly, comment,
-            });
-          }} />
+          <div className="mobile-comment-editor-header">
+            <span className="annotation-section-title">{t("annotations.comment")}</span>
+            <AnnotationNagPicker
+              value={stored?.nag ?? null}
+              catAnnotation={automatic}
+              onChange={(nag) => updateSelectedAnnotation({ nag })}
+            />
+          </div>
+          <AnnotationComment
+            comment={stored?.comment}
+            hideTitle
+            onChange={(comment) => updateSelectedAnnotation({ comment })}
+          />
+          <div className="annotation-autosave-status" role="status">
+            {state.annotationsSaving
+              ? t("annotations.saving")
+              : state.annotationsDirty ? t("annotations.unsaved") : ""}
+          </div>
           {state.annotationSaveError && <div className="annotation-error" role="alert">
             {state.annotationSaveError}
           </div>}
-          <div className="annotation-actions">
-            <span className="annotation-dirty" role="status">
-              {state.annotationsDirty ? t("annotations.unsaved") : ""}
-            </span>
-            <button type="button" onClick={actions.persistGameAnnotations}
-              disabled={!state.annotationsDirty || state.annotationsSaving}>
-              {state.annotationsSaving ? t("annotations.saving") : t("annotations.saveChanges")}
-            </button>
-          </div>
           <AnnotationTiming annotation={stored} />
         </>}
       </div>

@@ -4,11 +4,11 @@ import type {
   EngineLine,
   GameAnnotation,
   MoveAnnotation,
-  PgnNagSymbol,
 } from "../types";
 import "./annotationPanel.css";
 import AnnotationComment from "./AnnotationComment";
 import AnnotationTiming from "./AnnotationTiming";
+import AnnotationNagPicker from "./AnnotationNagPicker";
 
 interface AnnotationPanelProps {
   selectedPly: number | null;
@@ -21,10 +21,7 @@ interface AnnotationPanelProps {
   saving: boolean;
   error: string | null;
   onChange: (annotation: GameAnnotation) => void;
-  onSave: () => void;
 }
-
-const NAGS: Array<PgnNagSymbol | null> = ["!!", "!", "!?", "?!", "?", "??", null];
 
 function emptyAnnotation(
   ply: number,
@@ -93,7 +90,6 @@ export default function AnnotationPanel({
   saving,
   error,
   onChange,
-  onSave,
 }: AnnotationPanelProps) {
   const { t } = useI18n();
 
@@ -101,8 +97,6 @@ export default function AnnotationPanel({
     if (selectedPly == null) return null;
     return annotation ?? emptyAnnotation(selectedPly);
   }, [annotation, selectedPly]);
-
-  const saveEnabled = dirty;
 
   if (selectedPly == null || value == null) {
     return (
@@ -129,40 +123,26 @@ export default function AnnotationPanel({
           <strong>{t("annotations.title")}</strong>
           <span>{selectedSan ? `${selectedPly}. ${selectedSan}` : `Ply ${selectedPly}`}</span>
         </div>
-        {dirty && <span className="annotation-dirty">{t("annotations.unsaved")}</span>}
+        {saving
+          ? <span className="annotation-dirty">{t("annotations.saving")}</span>
+          : dirty && <span className="annotation-dirty">{t("annotations.unsaved")}</span>}
       </div>
 
-      <section className="annotation-section annotation-rating-section">
-        <div className="annotation-rating-header">
-          <span className="annotation-section-title">{t("annotations.moveAnnotation")}</span>
-          <span className="annotation-cat-badge">
-            {t("annotations.catAssessment")}: <strong>{catAnnotation?.symbol ?? "–"}</strong>
-          </span>
+      <section className="annotation-section annotation-comment-editor">
+        <div className="annotation-comment-editor-header">
+          <span className="annotation-section-title">{t("annotations.comment")}</span>
+          <AnnotationNagPicker
+            value={value.nag}
+            catAnnotation={catAnnotation}
+            onChange={(nag) => update({ nag })}
+          />
         </div>
-        <div className="annotation-nag-grid">
-          {NAGS.map((nag) => {
-            const active = value.nag === nag;
-            const suggested = catAnnotation?.symbol === nag;
-            return (
-              <button
-                type="button"
-                key={nag ?? "none"}
-                className={[
-                  "annotation-nag-button",
-                  active ? "annotation-nag-active" : "",
-                  suggested ? "annotation-nag-suggested" : "",
-                ].filter(Boolean).join(" ")}
-                onClick={() => update({ nag })}
-                title={suggested ? `${t("annotations.catAssessment")}: ${nag}` : undefined}
-              >
-                {nag ?? "–"}
-              </button>
-            );
-          })}
-        </div>
+        <AnnotationComment
+          comment={value.comment}
+          hideTitle
+          onChange={(comment) => update({ comment })}
+        />
       </section>
-
-      <AnnotationComment comment={value.comment} onChange={(comment) => update({ comment })} />
       <AnnotationTiming annotation={value} />
 
       <section className="annotation-section">
@@ -251,18 +231,7 @@ export default function AnnotationPanel({
 
       {error && <div className="annotation-error">{error}</div>}
 
-      <div className="annotation-actions">
-        <span className={dirty ? "annotation-dirty" : "annotation-actions-status"}>
-          {dirty ? t("annotations.unsaved") : ""}
-        </span>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!saveEnabled || saving}
-        >
-          {saving ? t("annotations.saving") : t("annotations.saveChanges")}
-        </button>
-      </div>
+
     </div>
   );
 }

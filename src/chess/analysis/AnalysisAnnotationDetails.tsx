@@ -21,6 +21,6 @@ export default function AnalysisAnnotationDetails({ state, actions }: Props) {
       catAnnotation={ply == null ? null : moveAnnotations[ply] ?? null}
       currentEvaluation={currentEvaluation} alternatives={previousPoint?.lines ?? []}
       dirty={annotationsDirty} saving={annotationsSaving} error={annotationSaveError}
-      onChange={actions.updateGameAnnotation} onSave={() => void actions.persistGameAnnotations()} />
+      onChange={actions.updateGameAnnotation} />
   </div>;
 }
