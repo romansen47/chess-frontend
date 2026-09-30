@@ -4,6 +4,7 @@ import type {
   EngineLine,
   GameAnnotation,
   MoveAnnotation,
+  PgnNagSymbol,
 } from "../types";
 import "./annotationPanel.css";
 import AnnotationComment from "./AnnotationComment";
