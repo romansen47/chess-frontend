@@ -25,12 +25,24 @@ interface MovePanelState {
   annotationsDirty: boolean;
   annotationsSaving: boolean;
   annotationSaveError: string | null;
+  annotationEditingEnabled: boolean;
 }
 
 interface MovePanelActions {
   updateGameAnnotation: (annotation: GameAnnotation) => void;
   persistGameAnnotations: () => void;
-  showPreview: (event: MouseEvent<HTMLElement>, position: string | undefined) => void;
+  showPreview: (
+    event: MouseEvent<HTMLElement>,
+    position: string | undefined,
+    ply: number,
+    san: string | undefined,
+  ) => void;
+  pinPreview: (
+    event: MouseEvent<HTMLElement>,
+    position: string | undefined,
+    ply: number,
+    san: string | undefined,
+  ) => void;
   movePreview: (event: MouseEvent<HTMLElement>) => void;
   hidePreview: () => void;
   showAnnotationTooltip: (text: string) => void;
@@ -194,16 +206,29 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
               ]
                 .filter(Boolean)
                 .join(" ")}
-              onMouseEnter={(event) => actions.showPreview(event, row.whitePosition)}
+              onMouseEnter={(event) => actions.showPreview(
+                event,
+                row.whitePosition,
+                (row.moveNumber - 1) * 2 + 1,
+                row.white,
+              )}
               onMouseMove={actions.movePreview}
               onMouseLeave={actions.hidePreview}
-              onClick={() =>
+              onClick={(event) => {
+                if (state.annotationEditingEnabled) {
+                  actions.pinPreview(
+                    event,
+                    row.whitePosition,
+                    (row.moveNumber - 1) * 2 + 1,
+                    row.white,
+                  );
+                }
                 actions.selectPosition(
                   row.whitePosition,
                   row.white,
-                  (row.moveNumber - 1) * 2 + 1
-                )
-              }
+                  (row.moveNumber - 1) * 2 + 1,
+                );
+              }}
             >
               {row.white ?? ""}{renderAnnotations((row.moveNumber - 1) * 2 + 1)}
               {renderStoredIndicators((row.moveNumber - 1) * 2 + 1)}
@@ -219,16 +244,29 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
               ]
                 .filter(Boolean)
                 .join(" ")}
-              onMouseEnter={(event) => actions.showPreview(event, row.blackPosition)}
+              onMouseEnter={(event) => actions.showPreview(
+                event,
+                row.blackPosition,
+                row.moveNumber * 2,
+                row.black,
+              )}
               onMouseMove={actions.movePreview}
               onMouseLeave={actions.hidePreview}
-              onClick={() =>
+              onClick={(event) => {
+                if (state.annotationEditingEnabled) {
+                  actions.pinPreview(
+                    event,
+                    row.blackPosition,
+                    row.moveNumber * 2,
+                    row.black,
+                  );
+                }
                 actions.selectPosition(
                   row.blackPosition,
                   row.black,
-                  row.moveNumber * 2
-                )
-              }
+                  row.moveNumber * 2,
+                );
+              }}
             >
               {row.black ?? ""}{renderAnnotations(row.moveNumber * 2)}
               {renderStoredIndicators(row.moveNumber * 2)}

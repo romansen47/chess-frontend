@@ -23,7 +23,7 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
     analysisReplayActive, uciAnalysisLoaded, clock, clockError, historicalClock,
     whiteComputerEnabled, blackComputerEnabled, toggleWhiteComputer, toggleBlackComputer,
     engine, engineActions, mobileDeepAnalysisContent, mobileEvalEngineContent,
-    hoverPreview, hoverAnnotationText, dialogs, dialogActions,
+    hoverBoardProps, dialogs, dialogActions,
   } = props;
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
           </>
         )}
 
-        <HoverBoard preview={hoverPreview} annotationText={hoverAnnotationText} orientation={engine.boardOrientation} />
+        <HoverBoard {...hoverBoardProps} />
         <ChessBoardDialogs dialogs={dialogs} actions={dialogActions} />
       </div>
     </main>

@@ -8,7 +8,6 @@ import type {
   ClockState,
   EngineEvaluation,
   GameSettings,
-  HoverPreview,
   PieceType,
   PromotionContext,
 } from "../types";
@@ -17,6 +16,7 @@ import type NewGameDialog from "../game/NewGameDialog";
 import type MovePanel from "../game/MovePanel";
 import type ChessHeader from "../header/ChessHeader";
 import type Board from "./Board";
+import type HoverBoard from "./HoverBoard";
 import type { BoardOrientation } from "./boardOrientation";
 
 export interface EnginePanelState {
@@ -103,8 +103,7 @@ export interface ChessBoardViewProps {
   engineActions: EnginePanelActions;
   mobileDeepAnalysisContent: ReactNode;
   mobileEvalEngineContent: ReactNode;
-  hoverPreview: HoverPreview | null;
-  hoverAnnotationText: string | null;
+  hoverBoardProps: ComponentProps<typeof HoverBoard>;
   dialogs: DialogState;
   dialogActions: DialogActions;
 }

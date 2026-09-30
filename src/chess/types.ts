@@ -139,6 +139,9 @@ export interface HoverPreview {
   position: string;
   x: number;
   y: number;
+  ply?: number | null;
+  san?: string | null;
+  pinned?: boolean;
 }
 
 export interface DragState {

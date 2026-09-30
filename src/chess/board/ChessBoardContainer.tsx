@@ -122,8 +122,41 @@ export default function ChessBoardContainer({
       )
     : null;
 
-  function showMovePreview(event: MouseEvent<HTMLElement>, position: string | undefined) {
-    if (position?.length === 64) board.setHoverPreview({ position, x: event.clientX, y: event.clientY });
+  function showMovePreview(
+    event: MouseEvent<HTMLElement>,
+    position: string | undefined,
+    ply: number,
+    san: string | undefined,
+  ) {
+    if (position?.length !== 64) return;
+    board.setHoverPreview((previous) => previous?.pinned ? previous : {
+      position,
+      x: event.clientX,
+      y: event.clientY,
+      ply,
+      san: san ?? null,
+      pinned: false,
+    });
+  }
+
+  function pinMovePreview(
+    event: MouseEvent<HTMLElement>,
+    position: string | undefined,
+    ply: number,
+    san: string | undefined,
+  ) {
+    if (
+      position?.length !== 64
+      || window.matchMedia("(max-width: 820px)").matches
+    ) return;
+    board.setHoverPreview({
+      position,
+      x: event.clientX,
+      y: event.clientY,
+      ply,
+      san: san ?? null,
+      pinned: true,
+    });
   }
 
   return <ChessBoardView
@@ -176,11 +209,19 @@ export default function ChessBoardContainer({
         annotationsDirty: analysis.annotationsDirty,
         annotationsSaving: analysis.annotationsSaving,
         annotationSaveError: analysis.annotationSaveError,
+        annotationEditingEnabled: analysis.analysisReplayActive,
       },
       actions: {
         showPreview: showMovePreview,
-        movePreview: (event) => board.setHoverPreview((previous) => previous ? { ...previous, x: event.clientX, y: event.clientY } : previous),
-        hidePreview: () => { board.setHoverPreview(null); board.setHoverAnnotationText(null); },
+        pinPreview: pinMovePreview,
+        movePreview: (event) => board.setHoverPreview((previous) =>
+          previous && !previous.pinned
+            ? { ...previous, x: event.clientX, y: event.clientY }
+            : previous),
+        hidePreview: () => {
+          board.setHoverPreview((previous) => previous?.pinned ? previous : null);
+          board.setHoverAnnotationText(null);
+        },
         showAnnotationTooltip: board.setHoverAnnotationText,
         hideAnnotationTooltip: () => board.setHoverAnnotationText(null),
         flipBoard: flipBoardOrientation,
@@ -223,7 +264,22 @@ export default function ChessBoardContainer({
       closeSettings: () => engine.setShowSettings(false) }}
     mobileDeepAnalysisContent={mobileDeepAnalysisContent}
     mobileEvalEngineContent={mobileEvalEngineContent}
-    hoverPreview={board.hoverPreview} hoverAnnotationText={board.hoverAnnotationText}
+    hoverBoardProps={{
+      preview: board.hoverPreview,
+      annotationText: board.hoverAnnotationText,
+      orientation: board.boardOrientation,
+      storedAnnotations: analysis.gameAnnotations,
+      catAnnotations: analysis.moveAnnotations,
+      dirty: analysis.annotationsDirty,
+      saving: analysis.annotationsSaving,
+      error: analysis.annotationSaveError,
+      editingEnabled: analysis.analysisReplayActive,
+      onChange: analysis.updateGameAnnotation,
+      onClose: () => {
+        board.setHoverPreview(null);
+        board.setHoverAnnotationText(null);
+      },
+    }}
     dialogs={{
       promotionContext: interaction.promotionContext, showGameSettingsDialog: game.showGameSettingsDialog,
       gameSettings: game.gameSettings, gameSettingsError: game.gameSettingsError,
