@@ -50,10 +50,6 @@ export default function AnnotationNagPicker({
           );
         })}
       </div>
-      <span className="annotation-cat-badge">
-        {t("annotations.catAssessment")}:{" "}
-        <strong>{catAnnotation?.symbol ?? "–"}</strong>
-      </span>
     </div>
   );
 }

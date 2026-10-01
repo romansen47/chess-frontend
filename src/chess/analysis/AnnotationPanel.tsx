@@ -139,8 +139,8 @@ export default function AnnotationPanel({
               onChange={(nag) => update({ nag })}
             />
             <div className="annotation-evaluation-inline">
-              <span className="annotation-evaluation-label">{t("annotations.evaluation")}</span>
               <output
+                aria-label={t("annotations.evaluation")}
                 className={[
                   "annotation-evaluation-value",
                   value.evaluation ? "" : "annotation-evaluation-value-empty",

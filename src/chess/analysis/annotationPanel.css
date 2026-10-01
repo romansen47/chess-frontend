@@ -73,7 +73,7 @@
   flex: 1 1 auto;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px 10px;
   min-width: 0;
 }
@@ -249,6 +249,7 @@
   .annotation-comment-editor-tools {
     flex-basis: 100%;
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
 
