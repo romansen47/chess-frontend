@@ -25,8 +25,8 @@ export function useAnalysisDerived(state: AnalysisState, options: UseAnalysisCon
     [options.engineConfigOverview, selectedAnalysisProfile?.engineId],
   );
   const moveAnnotations = useMemo(
-    () => buildMoveAnnotations(state.analysisProfile),
-    [state.analysisProfile],
+    () => buildMoveAnnotations(state.analysisProfile, options.debugMode),
+    [state.analysisProfile, options.debugMode],
   );
   const selectedBoardAnnotations = useMemo(
     () => buildSelectedBoardAnnotations({
@@ -41,6 +41,7 @@ export function useAnalysisDerived(state: AnalysisState, options: UseAnalysisCon
       gameAnnotations: state.gameAnnotations,
       savedAnnotationLabel: t("annotations.savedAnnotation"),
       getMoveAnnotationTooltip,
+      debugMode: options.debugMode,
     }),
     [
       state.analysisReplayActive,
@@ -53,6 +54,7 @@ export function useAnalysisDerived(state: AnalysisState, options: UseAnalysisCon
       moveAnnotations,
       state.gameAnnotations,
       getMoveAnnotationTooltip,
+      options.debugMode,
       t,
     ],
   );

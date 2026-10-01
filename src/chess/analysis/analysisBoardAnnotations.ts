@@ -6,6 +6,7 @@ import type {
   MoveAnnotation,
 } from "../types";
 import type { BoardAnnotation } from "../board/Board";
+import { isMoveAnnotationVisible } from "./moveAnnotations";
 
 interface BuildSelectedBoardAnnotationsOptions {
   analysisReplayActive: boolean;
@@ -19,6 +20,7 @@ interface BuildSelectedBoardAnnotationsOptions {
   gameAnnotations: Record<number, GameAnnotation>;
   savedAnnotationLabel: string;
   getMoveAnnotationTooltip: (annotation: MoveAnnotation) => string;
+  debugMode: boolean;
 }
 
 export function buildSelectedBoardAnnotations({
@@ -33,6 +35,7 @@ export function buildSelectedBoardAnnotations({
   gameAnnotations,
   savedAnnotationLabel,
   getMoveAnnotationTooltip,
+  debugMode,
 }: BuildSelectedBoardAnnotationsOptions): BoardAnnotation[] {
   if (!analysisReplayActive || !analysisReplayFinished || !analysisSelectedPosition) {
     return [];
@@ -44,6 +47,10 @@ export function buildSelectedBoardAnnotations({
       || !analysisEvaluation?.moveAnnotationReady
       || !analysisEvaluation.moveAnnotation
     ) {
+      return [];
+    }
+
+    if (!isMoveAnnotationVisible(analysisEvaluation.moveAnnotation, debugMode)) {
       return [];
     }
 

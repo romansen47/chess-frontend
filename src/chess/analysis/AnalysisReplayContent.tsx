@@ -20,38 +20,81 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
   const engineTabActive = state.analysisDetailsTab === "engine";
   const databaseTabActive = state.analysisDetailsTab === "database";
   const annotationsTabActive = state.analysisDetailsTab === "annotations";
+  const activePrimaryTabId = `analysis-primary-tab-${state.analysisDetailsTab}`;
 
-  const sourceTabs = !variationMode && (
-    <div className="analysis-detail-tabs" role="tablist" aria-label={t("analysis.source")}>
-      <button type="button" role="tab" aria-selected={engineTabActive}
-        className={["analysis-detail-tab", engineTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")}
-        onClick={() => actions.setDetailsTab("engine")}>{t("analysis.engineSource")}</button>
-      <button type="button" role="tab" aria-selected={databaseTabActive}
-        className={["analysis-detail-tab", databaseTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")}
-        onClick={() => actions.setDetailsTab("database")}>{t("analysis.databaseSource")}</button>
-      <button type="button" role="tab" aria-selected={annotationsTabActive}
-        className={["analysis-detail-tab", annotationsTabActive ? "analysis-detail-tab-active" : ""].filter(Boolean).join(" ")}
-        onClick={() => actions.setDetailsTab("annotations")}>{t("annotations.title")}</button>
+  const primaryTabs = !variationMode && (
+    <div className="analysis-primary-tabs" role="tablist" aria-label={t("analysis.source")}>
+      <button
+        id="analysis-primary-tab-engine"
+        type="button"
+        role="tab"
+        aria-selected={engineTabActive}
+        aria-controls="analysis-primary-tabpanel"
+        className={[
+          "analysis-primary-tab",
+          engineTabActive ? "analysis-primary-tab-active" : "",
+        ].filter(Boolean).join(" ")}
+        onClick={() => actions.setDetailsTab("engine")}
+      >
+        {t("analysis.engineSource")}
+      </button>
+      <button
+        id="analysis-primary-tab-database"
+        type="button"
+        role="tab"
+        aria-selected={databaseTabActive}
+        aria-controls="analysis-primary-tabpanel"
+        className={[
+          "analysis-primary-tab",
+          databaseTabActive ? "analysis-primary-tab-active" : "",
+        ].filter(Boolean).join(" ")}
+        onClick={() => actions.setDetailsTab("database")}
+      >
+        {t("analysis.databaseSource")}
+      </button>
+      <button
+        id="analysis-primary-tab-annotations"
+        type="button"
+        role="tab"
+        aria-selected={annotationsTabActive}
+        aria-controls="analysis-primary-tabpanel"
+        className={[
+          "analysis-primary-tab",
+          annotationsTabActive ? "analysis-primary-tab-active" : "",
+        ].filter(Boolean).join(" ")}
+        onClick={() => actions.setDetailsTab("annotations")}
+      >
+        {t("annotations.title")}
+      </button>
     </div>
   );
 
   return <div className="analysis-replay-content">
     <AnalysisProfilePanel state={state} actions={actions} />
-    {sourceTabs}
-    {variationMode ? <>
-      <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={actions.setEngineView} />
-      <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
-        activePly={state.analysisSelectedPosition?.ply ?? null} variationMode deepAnalysisRunning={state.isAnalysisReplayRunning} />
-    </> : state.analysisDetailsTab === "annotations" ? (
-      <AnalysisAnnotationDetails state={state} actions={actions} />
-    ) : state.analysisDetailsTab === "database" ? (
-      <AnalysisEngineDetails state={state} actions={actions} />
-    ) : <>
-      <AnalysisEngineTabs activeView={state.analysisEngineView} showDeepAnalysis onChange={actions.setEngineView} />
-      {liveViewActive ? (
-        <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
-          activePly={state.analysisSelectedPosition?.ply ?? null} variationMode={false} deepAnalysisRunning={state.isAnalysisReplayRunning} />
-      ) : <AnalysisEngineDetails state={state} actions={actions} />}
-    </>}
+    <div className="analysis-tab-stack">
+      {primaryTabs}
+      <div
+        id="analysis-primary-tabpanel"
+        className="analysis-primary-tabpanel"
+        role={variationMode ? undefined : "tabpanel"}
+        aria-labelledby={variationMode ? undefined : activePrimaryTabId}
+      >
+        {variationMode ? <>
+          <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={actions.setEngineView} />
+          <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
+            activePly={state.analysisSelectedPosition?.ply ?? null} variationMode deepAnalysisRunning={state.isAnalysisReplayRunning} />
+        </> : state.analysisDetailsTab === "annotations" ? (
+          <AnalysisAnnotationDetails state={state} actions={actions} />
+        ) : state.analysisDetailsTab === "database" ? (
+          <AnalysisEngineDetails state={state} actions={actions} />
+        ) : <>
+          <AnalysisEngineTabs activeView={state.analysisEngineView} showDeepAnalysis onChange={actions.setEngineView} />
+          {liveViewActive ? (
+            <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
+              activePly={state.analysisSelectedPosition?.ply ?? null} variationMode={false} deepAnalysisRunning={state.isAnalysisReplayRunning} />
+          ) : <AnalysisEngineDetails state={state} actions={actions} />}
+        </>}
+      </div>
+    </div>
   </div>;
 }
