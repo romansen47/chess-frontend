@@ -215,21 +215,28 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
               )}
               onMouseMove={actions.movePreview}
               onMouseLeave={actions.hidePreview}
-              onClick={(event) => {
-                if (state.annotationEditingEnabled) {
-                  actions.pinPreview(
-                    event,
-                    row.whitePosition,
-                    (row.moveNumber - 1) * 2 + 1,
-                    row.white,
-                  );
-                }
+              onContextMenu={(event) => {
+                if (!state.annotationEditingEnabled) return;
+                event.preventDefault();
+                actions.pinPreview(
+                  event,
+                  row.whitePosition,
+                  (row.moveNumber - 1) * 2 + 1,
+                  row.white,
+                );
                 actions.selectPosition(
                   row.whitePosition,
                   row.white,
                   (row.moveNumber - 1) * 2 + 1,
                 );
               }}
+              onClick={() =>
+                actions.selectPosition(
+                  row.whitePosition,
+                  row.white,
+                  (row.moveNumber - 1) * 2 + 1,
+                )
+              }
             >
               {row.white ?? ""}{renderAnnotations((row.moveNumber - 1) * 2 + 1)}
               {renderStoredIndicators((row.moveNumber - 1) * 2 + 1)}
@@ -253,21 +260,28 @@ export default function MovePanel({ state, actions }: MovePanelProps) {
               )}
               onMouseMove={actions.movePreview}
               onMouseLeave={actions.hidePreview}
-              onClick={(event) => {
-                if (state.annotationEditingEnabled) {
-                  actions.pinPreview(
-                    event,
-                    row.blackPosition,
-                    row.moveNumber * 2,
-                    row.black,
-                  );
-                }
+              onContextMenu={(event) => {
+                if (!state.annotationEditingEnabled) return;
+                event.preventDefault();
+                actions.pinPreview(
+                  event,
+                  row.blackPosition,
+                  row.moveNumber * 2,
+                  row.black,
+                );
                 actions.selectPosition(
                   row.blackPosition,
                   row.black,
                   row.moveNumber * 2,
                 );
               }}
+              onClick={() =>
+                actions.selectPosition(
+                  row.blackPosition,
+                  row.black,
+                  row.moveNumber * 2,
+                )
+              }
             >
               {row.black ?? ""}{renderAnnotations(row.moveNumber * 2)}
               {renderStoredIndicators(row.moveNumber * 2)}
