@@ -98,6 +98,7 @@ export default function ChessBoardContainer({
     liveEvaluationEnabled: analysis.analysisEvaluationEnabled,
     liveEvaluation: analysis.analysisEvaluation,
     showEvaluationArrows: uiPreferences.preferences.showAnalysisEvaluationArrows,
+    maxEvaluationArrows: uiPreferences.preferences.analysisEvaluationArrowCount,
   };
   const mainBoardArrows = buildAnalysisBoardArrows(analysisBoardDecorationOptions);
   const mainBoardMoveHighlights = buildAnalysisMoveHighlightSquares(
@@ -255,8 +256,12 @@ export default function ChessBoardContainer({
     boardProps={{
       pieces: board.pieces, selectedSquare: interaction.selectedSquare, lastMove: board.lastMove,
       possibleTargets: interaction.possibleTargets, dragState: interaction.dragState,
-      annotations: analysis.selectedBoardAnnotations, arrows: mainBoardArrows,
+      annotations: uiPreferences.preferences.showMoveAnnotationsOnBoard
+        ? analysis.selectedBoardAnnotations
+        : [],
+      arrows: mainBoardArrows,
       moveHighlightSquares: mainBoardMoveHighlights,
+      showCoordinates: uiPreferences.preferences.showBoardCoordinates,
       orientation: board.boardOrientation,
       boardContainerRef: interaction.boardContainerRef, onSquareClick: interaction.handleSquareClick,
       onPiecePointerDown: interaction.handlePiecePointerDown, onPiecePointerMove: interaction.handlePiecePointerMove,
