@@ -147,6 +147,7 @@ export const germanTranslations = {
   "program.terminateFailed": "Programm konnte nicht beendet werden.",
   "settings.loadFailed": "Engine-Einstellungen konnten nicht geladen werden.",
   "settings.defaultSaved": "Standard-Profilzuweisungen gespeichert.",
+  "settings.defaultSelection": "Standard",
   "settings.title": "Einstellungen",
   "settings.subtitle": "Engines, wiederverwendbare Profile, Zuordnungen und Laufzeitdiagnose",
   "settings.version": "Version {version}",
