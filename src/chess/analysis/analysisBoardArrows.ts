@@ -18,6 +18,7 @@ interface AnalysisBoardArrowOptions {
   liveEvaluationEnabled: boolean;
   liveEvaluation: EngineEvaluation | null;
   showEvaluationArrows: boolean;
+  maxEvaluationArrows: number;
 }
 
 function resolvePlayedMove({
@@ -69,7 +70,8 @@ export function buildAnalysisBoardArrows(
 
   const result: BoardArrowSpec[] = [];
   const engineLines = liveLines ?? deepLines;
-  engineLines.slice(0, 3).forEach((line, rank) => {
+  const arrowCount = Math.max(1, Math.min(3, Math.trunc(options.maxEvaluationArrows)));
+  engineLines.slice(0, arrowCount).forEach((line, rank) => {
     const arrow = createEvaluationArrow(line.moveArrows?.[0], rank);
     if (arrow) result.push(arrow);
   });
