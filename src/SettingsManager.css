@@ -928,12 +928,12 @@
     grid-template-rows: auto minmax(0, 1fr);
   }
 
-  .engine-config-body-defaults {
+  .engine-config-body-engine-defaults {
     display: block;
     overflow: auto;
   }
 
-  .engine-config-body-defaults .engine-config-sidebar {
+  .engine-config-body-engine-defaults .engine-config-sidebar {
     display: none;
   }
 
@@ -1019,16 +1019,16 @@
     font-size: 0.62rem !important;
   }
 
-  .engine-config-body-defaults .engine-config-details {
+  .engine-config-body-engine-defaults .engine-config-details {
     padding: 10px;
     overflow: visible;
   }
 
-  .engine-config-body-defaults .engine-config-editor {
+  .engine-config-body-engine-defaults .engine-config-editor {
     gap: 8px;
   }
 
-  .engine-config-body-defaults .engine-config-default-info {
+  .engine-config-body-engine-defaults .engine-config-default-info {
     display: none;
   }
 
@@ -1243,41 +1243,7 @@
 }
 
 
-/* Defaults contains independent engine and client-display subareas. */
-.engine-config-body-defaults {
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-.engine-config-default-subtabs {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 4px;
-  padding: 8px 10px;
-  border-bottom: 1px solid #363636;
-  background: #1d1d1d;
-}
-
-.engine-config-default-subtabs button {
-  min-width: 170px;
-  padding: 7px 12px;
-  border-color: transparent;
-  background: transparent;
-  color: #a5a5a5;
-}
-
-.engine-config-default-subtabs button:hover:not(:disabled) {
-  background: #292929;
-  color: #e4e4e4;
-}
-
-.engine-config-default-subtabs button.active {
-  border-color: #555;
-  background: #303030;
-  color: #fff;
-  font-weight: 600;
-}
-
-.engine-config-default-display-details {
+.engine-config-display-details {
   grid-column: 1 / -1;
   overflow: auto;
 }
@@ -1340,22 +1306,7 @@
 }
 
 @media (max-width: 700px) {
-  .engine-config-default-subtabs {
-    position: sticky;
-    top: 0;
-    z-index: 4;
-    padding: 7px 10px;
-  }
-
-  .engine-config-default-subtabs button {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 38px;
-    padding: 6px 8px;
-    font-size: 0.72rem;
-  }
-
-  .engine-config-default-display-details {
+  .engine-config-display-details {
     padding: 10px;
   }
 
