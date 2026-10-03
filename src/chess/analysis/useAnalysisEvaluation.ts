@@ -6,7 +6,6 @@ import {
   stopAnalysisEvaluationRequest,
 } from "../api/analysisApi";
 import { analysisEvaluationKey } from "./analysisUtils";
-import { getEffectiveAnalysisLineIndex } from "./analysisSelectionUtils";
 import type { AnalysisState } from "./useAnalysisState";
 
 export function useAnalysisEvaluation(state: AnalysisState) {
@@ -61,36 +60,6 @@ export function useAnalysisEvaluation(state: AnalysisState) {
       void stopAnalysisEvaluation();
     }
   }
-
-  useEffect(() => {
-    state.setAnalysisLineAnimationIndex(0);
-  }, [state.analysisSelectedPosition?.ply, state.analysisSelectedLineIndex]);
-
-  useEffect(() => {
-    if (!state.analysisReplayActive || !state.analysisSelectedPosition || state.analysisVariationMoves.length > 0) return;
-    const selectedPoint = state.analysisProfile.find(
-      (point) => point.ply === state.analysisSelectedPosition?.ply,
-    );
-    const lines = selectedPoint?.lines ?? [];
-    if (lines.length === 0) return;
-    const lineIndex = getEffectiveAnalysisLineIndex(
-      selectedPoint,
-      lines,
-      state.analysisSelectedLineIndex,
-    );
-    const positions = lines[lineIndex]?.positions ?? [];
-    if (positions.length <= 1) return;
-    const intervalId = window.setInterval(() => {
-      state.setAnalysisLineAnimationIndex((previous) => (previous + 1) % positions.length);
-    }, 1000);
-    return () => window.clearInterval(intervalId);
-  }, [
-    state.analysisReplayActive,
-    state.analysisSelectedPosition?.ply,
-    state.analysisSelectedLineIndex,
-    state.analysisProfile,
-    state.analysisVariationMoves.length,
-  ]);
 
   useEffect(() => {
     if (
