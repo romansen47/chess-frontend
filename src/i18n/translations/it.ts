@@ -132,6 +132,7 @@ export const italianTranslations = {
 
   "settings.loadFailed": "Impossibile caricare le impostazioni del motore.",
   "settings.defaultSaved": "Assegnazioni dei profili predefiniti salvate.",
+  "settings.defaultSelection": "Predefinito",
   "settings.title": "Impostazioni",
   "settings.subtitle": "Motori, profili riutilizzabili, assegnazioni e diagnostica di esecuzione",
   "settings.version": "Versione {version}",
