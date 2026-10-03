@@ -181,7 +181,7 @@ export default function EngineProfileContextMenu() {
             disabled={saving || !defaultProfile}
             primary={
               <>
-                {t("settings.defaults")} · {defaultProfile?.name ?? t("settings.noProfile")}
+                {t("settings.defaultSelection")} · {defaultProfile?.name ?? t("settings.noProfile")}
               </>
             }
             secondary={
