@@ -321,7 +321,6 @@ export const spanishTranslations = {
   "analysis.databaseContinuations": "Continuaciones de la base de datos",
   "analysis.engineVariations": "Variantes del motor",
   "analysis.noEngineLines": "No hay variantes del motor.",
-  "analysis.engineOutputPlaceholder": "La salida del motor aparecerá aquí.",
   "game.gameOver": "Partida terminada",
   "game.savePgn": "Guardar PGN",
   "game.loadPgn": "Cargar PGN",
