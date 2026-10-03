@@ -128,6 +128,7 @@ export default function ChessBoardContainer({
           activePly={analysis.analysisSelectedPosition?.ply ?? null}
           variationMode={analysis.analysisVariationMoves.length > 0}
           deepAnalysisRunning={analysis.isAnalysisReplayRunning}
+          orientation={board.boardOrientation}
         />
       )
     : null;

@@ -82,7 +82,8 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
           {variationMode ? <>
             <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={actions.setEngineView} />
             <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
-              activePly={state.analysisSelectedPosition?.ply ?? null} variationMode deepAnalysisRunning={false} />
+              activePly={state.analysisSelectedPosition?.ply ?? null} variationMode deepAnalysisRunning={false}
+              orientation={state.boardOrientation} />
           </> : state.analysisDetailsTab === "annotations" ? (
             <AnalysisAnnotationDetails state={state} actions={actions} />
           ) : state.analysisDetailsTab === "database" ? (
@@ -91,7 +92,8 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
             <AnalysisEngineTabs activeView={state.analysisEngineView} showDeepAnalysis onChange={actions.setEngineView} />
             {liveViewActive ? (
               <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
-                activePly={state.analysisSelectedPosition?.ply ?? null} variationMode={false} deepAnalysisRunning={false} />
+                activePly={state.analysisSelectedPosition?.ply ?? null} variationMode={false} deepAnalysisRunning={false}
+                orientation={state.boardOrientation} />
             ) : <AnalysisEngineDetails state={state} actions={actions} />}
           </>}
         </div>

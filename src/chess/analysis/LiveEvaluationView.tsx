@@ -1,5 +1,6 @@
 import { useI18n } from "../../i18n/I18nProvider";
 import EngineLineExplorer from "../engine/EngineLineExplorer";
+import type { BoardOrientation } from "../board/boardOrientation";
 import type { EngineEvaluation } from "../types";
 import "./analysisViews.css";
 
@@ -9,6 +10,7 @@ interface LiveEvaluationViewProps {
   activePly: number | null;
   variationMode: boolean;
   deepAnalysisRunning?: boolean;
+  orientation?: BoardOrientation;
 }
 
 function formatEngineScore(evaluation: number): string {
@@ -25,6 +27,7 @@ export default function LiveEvaluationView({
   activePly,
   variationMode,
   deepAnalysisRunning = false,
+  orientation = "white",
 }: LiveEvaluationViewProps) {
   const { t } = useI18n();
 
@@ -50,6 +53,7 @@ export default function LiveEvaluationView({
           engineNameFallback={t("analysis.evaluationEngine")}
           depthLabel={(depth) => t("analysis.depthInfinite", { depth })}
           boardUnavailableText={t("analysis.evaluationBoardUnavailable")}
+          orientation={orientation}
         />
       </section>
     );
