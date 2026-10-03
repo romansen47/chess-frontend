@@ -29,6 +29,7 @@ const baseOptions = {
   liveEvaluationEnabled: false,
   liveEvaluation: null,
   showEvaluationArrows: true,
+  maxEvaluationArrows: 3,
 };
 
 describe("analysis board decorations", () => {
@@ -47,6 +48,18 @@ describe("analysis board decorations", () => {
     expect(new Set(arrows.map((arrow) => arrow.color)).size).toBe(3);
     expect(arrows[0]?.shaftWidth).toBeGreaterThan(arrows[1]?.shaftWidth ?? 0);
     expect(arrows[1]?.shaftWidth).toBeGreaterThan(arrows[2]?.shaftWidth ?? 0);
+  });
+
+  it("limits the number of displayed evaluation arrows", () => {
+    const arrows = buildAnalysisBoardArrows({
+      ...baseOptions,
+      maxEvaluationArrows: 2,
+    });
+
+    expect(arrows.map(({ from, to }) => [from, to])).toEqual([
+      ["d7", "d5"],
+      ["g8", "f6"],
+    ]);
   });
 
   it("can disable evaluation arrows without disabling played-move highlights", () => {
