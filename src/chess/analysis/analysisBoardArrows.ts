@@ -1,11 +1,11 @@
 import type {
   AnalysisProfilePoint,
+  BoardArrowMove,
   EngineEvaluation,
   LastMove,
 } from "../types";
 import {
   createEvaluationArrow,
-  createMoveArrow,
   type BoardArrowSpec,
 } from "../board/boardArrows";
 
@@ -19,50 +19,58 @@ interface AnalysisBoardArrowOptions {
   liveEvaluation: EngineEvaluation | null;
 }
 
-export function buildAnalysisBoardArrows({
+function resolvePlayedMove({
   analysisReplayActive,
   selectedPly,
   analysisProfile,
   variationMoveCount,
   lastMove,
-  liveEvaluationEnabled,
-  liveEvaluation,
-}: AnalysisBoardArrowOptions): BoardArrowSpec[] {
-  if (!analysisReplayActive) return [];
+}: AnalysisBoardArrowOptions): BoardArrowMove | null {
+  if (!analysisReplayActive) return null;
 
-  const selectedPoint = selectedPly == null
+  if (variationMoveCount > 0) {
+    return lastMove?.from && lastMove?.to
+      ? { from: lastMove.from, to: lastMove.to }
+      : null;
+  }
+
+  if (selectedPly == null) return null;
+  const selectedPoint = analysisProfile.find((point) => point.ply === selectedPly);
+  return selectedPoint?.from && selectedPoint?.to
+    ? { from: selectedPoint.from, to: selectedPoint.to }
+    : null;
+}
+
+export function buildAnalysisMoveHighlightSquares(
+  options: AnalysisBoardArrowOptions,
+): string[] {
+  const move = resolvePlayedMove(options);
+  return move ? [move.from, move.to] : [];
+}
+
+export function buildAnalysisBoardArrows(
+  options: AnalysisBoardArrowOptions,
+): BoardArrowSpec[] {
+  if (!options.analysisReplayActive) return [];
+
+  const selectedPoint = options.selectedPly == null
     ? null
-    : analysisProfile.find((point) => point.ply === selectedPly) ?? null;
+    : options.analysisProfile.find((point) => point.ply === options.selectedPly) ?? null;
 
-  const playedMove = variationMoveCount > 0
-    ? lastMove
-    : selectedPoint?.from && selectedPoint?.to
-      ? { from: selectedPoint.from, to: selectedPoint.to }
+  const liveLines = options.liveEvaluationEnabled
+    && (options.liveEvaluation?.lines.length ?? 0) > 0
+      ? options.liveEvaluation?.lines ?? []
       : null;
 
-  const result: BoardArrowSpec[] = [];
-  const moveArrow = createMoveArrow(playedMove);
-  if (moveArrow) result.push(moveArrow);
-
-  const liveLines = liveEvaluationEnabled
-    && (liveEvaluation?.lines.length ?? 0) > 0
-      ? liveEvaluation?.lines ?? []
-      : null;
-
-  /*
-   * Deep-analysis lines only describe the original selected position. Once
-   * the user enters a temporary variation, showing those arrows would point
-   * to moves from the wrong position, so only live lines are valid there.
-   */
-  const deepLines = variationMoveCount === 0
+  const deepLines = options.variationMoveCount === 0
     ? selectedPoint?.lines ?? []
     : [];
 
+  const result: BoardArrowSpec[] = [];
   const engineLines = liveLines ?? deepLines;
   engineLines.slice(0, 3).forEach((line, rank) => {
     const arrow = createEvaluationArrow(line.moveArrows?.[0], rank);
     if (arrow) result.push(arrow);
   });
-
   return result;
 }

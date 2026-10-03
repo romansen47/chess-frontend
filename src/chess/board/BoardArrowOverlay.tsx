@@ -1,4 +1,3 @@
-import { useId } from "react";
 import type { BoardOrientation } from "./boardOrientation";
 import { squareToBoardOffset } from "./boardOrientation";
 import type { BoardArrowSpec } from "./boardArrows";
@@ -26,49 +25,70 @@ function squareCenter(
   };
 }
 
+function arrowPath(
+  arrow: BoardArrowSpec,
+  orientation: BoardOrientation,
+): string | null {
+  const from = squareCenter(arrow.from, orientation);
+  const to = squareCenter(arrow.to, orientation);
+  if (!from || !to) return null;
+
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  if (!Number.isFinite(length) || length <= 0) return null;
+
+  const ux = dx / length;
+  const uy = dy / length;
+  const px = -uy;
+  const py = ux;
+
+  const startInset = Math.min(arrow.startInset, length * 0.22);
+  const endInset = Math.min(arrow.endInset, length * 0.24);
+  const start = {
+    x: from.x + ux * startInset,
+    y: from.y + uy * startInset,
+  };
+  const tip = {
+    x: to.x - ux * endInset,
+    y: to.y - uy * endInset,
+  };
+
+  const usableLength = Math.hypot(tip.x - start.x, tip.y - start.y);
+  if (usableLength <= 0.08) return null;
+
+  const headLength = Math.min(arrow.headLength, usableLength * 0.46);
+  const headBase = {
+    x: tip.x - ux * headLength,
+    y: tip.y - uy * headLength,
+  };
+  const shaftHalf = arrow.shaftWidth / 2;
+  const headHalf = arrow.headWidth / 2;
+
+  const points = [
+    [start.x + px * shaftHalf, start.y + py * shaftHalf],
+    [headBase.x + px * shaftHalf, headBase.y + py * shaftHalf],
+    [headBase.x + px * headHalf, headBase.y + py * headHalf],
+    [tip.x, tip.y],
+    [headBase.x - px * headHalf, headBase.y - py * headHalf],
+    [headBase.x - px * shaftHalf, headBase.y - py * shaftHalf],
+    [start.x - px * shaftHalf, start.y - py * shaftHalf],
+  ];
+
+  return `M ${points.map(([x, y]) => `${x} ${y}`).join(" L ")} Z`;
+}
+
 export default function BoardArrowOverlay({ arrows, orientation }: Props) {
-  const idPrefix = useId().replace(/:/g, "");
-
-  const rendered = arrows.flatMap((arrow, index) => {
-    const from = squareCenter(arrow.from, orientation);
-    const to = squareCenter(arrow.to, orientation);
-    if (!from || !to) return [];
-
-    const markerId = `${idPrefix}-arrow-${index}`;
-    const width = arrow.strokeWidth ?? 0.11;
+  const rendered = [...arrows].reverse().flatMap((arrow, index) => {
+    const path = arrowPath(arrow, orientation);
+    if (!path) return [];
 
     return [
-      <g key={`${arrow.from}-${arrow.to}-${index}`}>
-        <defs>
-          <marker
-            id={markerId}
-            markerUnits="userSpaceOnUse"
-            markerWidth={0.42}
-            markerHeight={0.42}
-            refX={0.39}
-            refY={0.21}
-            orient="auto"
-            viewBox="0 0 0.42 0.42"
-          >
-            <path
-              d="M 0 0 L 0.42 0.21 L 0 0.42 Z"
-              fill={arrow.color}
-              fillOpacity={arrow.opacity}
-            />
-          </marker>
-        </defs>
-        <line
-          x1={from.x}
-          y1={from.y}
-          x2={to.x}
-          y2={to.y}
-          stroke={arrow.color}
-          strokeOpacity={arrow.opacity}
-          strokeWidth={width}
-          strokeLinecap="round"
-          markerEnd={`url(#${markerId})`}
-        />
-      </g>,
+      <path
+        key={`${arrow.from}-${arrow.to}-${index}`}
+        d={path}
+        fill={arrow.color}
+      />,
     ];
   });
 

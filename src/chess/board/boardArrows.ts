@@ -2,39 +2,35 @@ import type { BoardArrowMove } from "../types";
 
 export interface BoardArrowSpec extends BoardArrowMove {
   color: string;
-  opacity: number;
-  strokeWidth?: number;
+  shaftWidth: number;
+  headWidth: number;
+  headLength: number;
+  startInset: number;
+  endInset: number;
 }
 
-const MOVE_ARROW_COLOR = "#555555";
-const EVALUATION_ARROW_COLOR = "#a40000";
-const EVALUATION_OPACITIES = [0.9, 0.58, 0.34] as const;
-
-export function createMoveArrow(
-  move: BoardArrowMove | null | undefined,
-): BoardArrowSpec | null {
-  if (!move?.from || !move?.to || move.from === move.to) return null;
-  return {
-    from: move.from,
-    to: move.to,
-    color: MOVE_ARROW_COLOR,
-    opacity: 0.5,
-    strokeWidth: 0.11,
-  };
-}
+const EVALUATION_COLORS = [
+  "#a5161a",
+  "#c34b4f",
+  "#d98789",
+] as const;
 
 export function createEvaluationArrow(
   move: BoardArrowMove | null | undefined,
   rank: number,
 ): BoardArrowSpec | null {
   if (!move?.from || !move?.to || move.from === move.to) return null;
-  const opacity = EVALUATION_OPACITIES[rank];
-  if (opacity == null) return null;
+  const color = EVALUATION_COLORS[rank];
+  if (!color) return null;
+
   return {
     from: move.from,
     to: move.to,
-    color: EVALUATION_ARROW_COLOR,
-    opacity,
-    strokeWidth: rank === 0 ? 0.135 : rank === 1 ? 0.12 : 0.105,
+    color,
+    shaftWidth: rank === 0 ? 0.08 : rank === 1 ? 0.07 : 0.06,
+    headWidth: rank === 0 ? 0.27 : rank === 1 ? 0.24 : 0.21,
+    headLength: rank === 0 ? 0.25 : rank === 1 ? 0.23 : 0.21,
+    startInset: 0.24,
+    endInset: 0.27,
   };
 }

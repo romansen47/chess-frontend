@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { AnalysisProfilePoint, EngineEvaluation } from "../types";
-import { buildAnalysisBoardArrows } from "./analysisBoardArrows";
+import {
+  buildAnalysisBoardArrows,
+  buildAnalysisMoveHighlightSquares,
+} from "./analysisBoardArrows";
 
 const deepPoint: AnalysisProfilePoint = {
   ply: 7,
@@ -17,27 +20,32 @@ const deepPoint: AnalysisProfilePoint = {
   ],
 };
 
-describe("buildAnalysisBoardArrows", () => {
-  it("shows the played move and the top three deep-analysis moves", () => {
-    const arrows = buildAnalysisBoardArrows({
-      analysisReplayActive: true,
-      selectedPly: 7,
-      analysisProfile: [deepPoint],
-      variationMoveCount: 0,
-      lastMove: null,
-      liveEvaluationEnabled: false,
-      liveEvaluation: null,
-    });
+const baseOptions = {
+  analysisReplayActive: true,
+  selectedPly: 7,
+  analysisProfile: [deepPoint],
+  variationMoveCount: 0,
+  lastMove: null,
+  liveEvaluationEnabled: false,
+  liveEvaluation: null,
+};
+
+describe("analysis board decorations", () => {
+  it("highlights the source and target squares of the played move", () => {
+    expect(buildAnalysisMoveHighlightSquares(baseOptions)).toEqual(["g1", "f3"]);
+  });
+
+  it("shows the top three deep-analysis moves as distinct red arrows", () => {
+    const arrows = buildAnalysisBoardArrows(baseOptions);
 
     expect(arrows.map(({ from, to }) => [from, to])).toEqual([
-      ["g1", "f3"],
       ["d7", "d5"],
       ["g8", "f6"],
       ["c7", "c5"],
     ]);
-    expect(arrows[0]?.opacity).toBe(0.5);
-    expect(arrows[1]?.opacity).toBeGreaterThan(arrows[2]?.opacity ?? 0);
-    expect(arrows[2]?.opacity).toBeGreaterThan(arrows[3]?.opacity ?? 0);
+    expect(new Set(arrows.map((arrow) => arrow.color)).size).toBe(3);
+    expect(arrows[0]?.shaftWidth).toBeGreaterThan(arrows[1]?.shaftWidth ?? 0);
+    expect(arrows[1]?.shaftWidth).toBeGreaterThan(arrows[2]?.shaftWidth ?? 0);
   });
 
   it("prefers live-evaluation lines over stored deep-analysis lines", () => {
@@ -51,33 +59,25 @@ describe("buildAnalysisBoardArrows", () => {
     };
 
     const arrows = buildAnalysisBoardArrows({
-      analysisReplayActive: true,
-      selectedPly: 7,
-      analysisProfile: [deepPoint],
-      variationMoveCount: 0,
-      lastMove: null,
+      ...baseOptions,
       liveEvaluationEnabled: true,
       liveEvaluation,
     });
 
-    expect(arrows.slice(1).map(({ from, to }) => [from, to])).toEqual([
+    expect(arrows.map(({ from, to }) => [from, to])).toEqual([
       ["e7", "e5"],
       ["c7", "c5"],
     ]);
   });
 
-  it("does not reuse deep-analysis arrows inside a temporary variation", () => {
-    const arrows = buildAnalysisBoardArrows({
-      analysisReplayActive: true,
-      selectedPly: 7,
-      analysisProfile: [deepPoint],
+  it("keeps only the played-move highlight inside a variation without live evaluation", () => {
+    const options = {
+      ...baseOptions,
       variationMoveCount: 1,
       lastMove: { from: "e2", to: "e4" },
-      liveEvaluationEnabled: false,
-      liveEvaluation: null,
-    });
+    };
 
-    expect(arrows).toHaveLength(1);
-    expect(arrows[0]).toMatchObject({ from: "e2", to: "e4" });
+    expect(buildAnalysisBoardArrows(options)).toEqual([]);
+    expect(buildAnalysisMoveHighlightSquares(options)).toEqual(["e2", "e4"]);
   });
 });
