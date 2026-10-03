@@ -132,6 +132,7 @@ export const spanishTranslations = {
 
   "settings.loadFailed": "No se pudo cargar la configuración del motor.",
   "settings.defaultSaved": "Asignaciones de perfiles predeterminados guardadas.",
+  "settings.defaultSelection": "Predeterminado",
   "settings.title": "Configuración",
   "settings.subtitle": "Motores, perfiles reutilizables, asignaciones y diagnóstico de ejecución",
   "settings.version": "Versión {version}",
