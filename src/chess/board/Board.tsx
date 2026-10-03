@@ -36,6 +36,7 @@ interface BoardProps {
   annotations: BoardAnnotation[];
   arrows: BoardArrowSpec[];
   moveHighlightSquares: string[];
+  showCoordinates: boolean;
   orientation: BoardOrientation;
   boardContainerRef: RefObject<HTMLDivElement | null>;
   onSquareClick: (square: string) => void | Promise<void>;
@@ -54,6 +55,7 @@ export default function Board({
   annotations,
   arrows,
   moveHighlightSquares,
+  showCoordinates,
   orientation,
   boardContainerRef,
   onSquareClick,
@@ -109,7 +111,7 @@ export default function Board({
       ].filter(Boolean).join(" ");
       squares.push(
         <div key={name} className={squareClasses} onClick={() => onSquareClick(name)}>
-          <span className="square-label">{name}</span>
+          {showCoordinates && <span className="square-label">{name}</span>}
         </div>
       );
     }
