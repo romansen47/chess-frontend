@@ -1322,6 +1322,17 @@
   margin: 0;
 }
 
+.engine-config-preference-select {
+  min-width: 110px;
+  height: 34px;
+  background: #303030;
+  color: #f2f2f2;
+}
+
+.engine-config-preference-select:disabled {
+  opacity: 0.48;
+}
+
 .engine-config-display-note {
   max-width: 720px;
   color: #858585;
