@@ -336,7 +336,6 @@ export const germanTranslations = {
   "analysis.databaseContinuations": "Datenbankfortsetzungen",
   "analysis.engineVariations": "Engine-Varianten",
   "analysis.noEngineLines": "Keine Engine-Varianten.",
-  "analysis.engineOutputPlaceholder": "Die Engine-Ausgabe erscheint hier.",
   "game.gameOver": "Partie beendet",
   "game.savePgn": "PGN speichern",
   "game.loadPgn": "PGN laden",
