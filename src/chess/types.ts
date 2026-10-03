@@ -159,12 +159,18 @@ export interface DragState {
   hasMoved: boolean;
 }
 
+export interface BoardArrowMove {
+  from: string;
+  to: string;
+}
+
 export interface EngineLine {
   eval: number;
   depth: number;
   mateDistance?: number | null;
   moves: string;
   positions?: string[];
+  moveArrows?: BoardArrowMove[];
 }
 
 export interface EngineEvaluation {

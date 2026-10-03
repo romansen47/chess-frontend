@@ -1,4 +1,6 @@
 import { useEffect, useState, type CSSProperties, type PointerEvent, type RefObject } from "react";
+import BoardArrowOverlay from "./BoardArrowOverlay";
+import type { BoardArrowSpec } from "./boardArrows";
 import type {
   DragState,
   LastMove,
@@ -32,6 +34,7 @@ interface BoardProps {
   possibleTargets: string[];
   dragState: DragState | null;
   annotations: BoardAnnotation[];
+  arrows: BoardArrowSpec[];
   orientation: BoardOrientation;
   boardContainerRef: RefObject<HTMLDivElement | null>;
   onSquareClick: (square: string) => void | Promise<void>;
@@ -48,6 +51,7 @@ export default function Board({
   possibleTargets,
   dragState,
   annotations,
+  arrows,
   orientation,
   boardContainerRef,
   onSquareClick,
@@ -165,6 +169,7 @@ export default function Board({
     <div className="board-container" ref={boardContainerRef} style={boardStyle}>
       <div className="board">{squares}</div>
       <div className="pieces-layer">{renderedPieces}</div>
+      <BoardArrowOverlay arrows={arrows} orientation={orientation} />
       <div className="possible-targets-layer">{renderedPossibleTargets}</div>
       {annotations.map((annotation, index) => {
         const annotationCoords = squareToBoardOffset(

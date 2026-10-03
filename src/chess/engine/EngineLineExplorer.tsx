@@ -4,6 +4,8 @@ import {
   useMemo,
   useState,
 } from "react";
+import BoardArrowOverlay from "../board/BoardArrowOverlay";
+import { createMoveArrow } from "../board/boardArrows";
 import type { BoardOrientation } from "../board/boardOrientation";
 import { positionIndexForDisplayCell } from "../board/boardOrientation";
 import {
@@ -130,6 +132,13 @@ export default function EngineLineExplorer({
       );
     }
 
+    const moveIndex = animationIndex > 0
+      ? (animationIndex % selectedPositions.length) - 1
+      : -1;
+    const activeMoveArrow = moveIndex >= 0
+      ? createMoveArrow(selectedLine.moveArrows?.[moveIndex])
+      : null;
+
     return (
       <div className="analysis-position-board">
         {Array.from({ length: 64 }, (_, index) => {
@@ -169,6 +178,10 @@ export default function EngineLineExplorer({
             </div>
           );
         })}
+        <BoardArrowOverlay
+          arrows={activeMoveArrow ? [activeMoveArrow] : []}
+          orientation={orientation}
+        />
       </div>
     );
   };

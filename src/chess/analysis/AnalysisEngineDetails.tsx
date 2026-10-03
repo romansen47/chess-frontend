@@ -1,5 +1,7 @@
 import AnalysisDatabasePanel from "../../AnalysisDatabasePanel";
 import { useI18n } from "../../i18n/I18nProvider";
+import BoardArrowOverlay from "../board/BoardArrowOverlay";
+import { createMoveArrow } from "../board/boardArrows";
 import { positionIndexForDisplayCell } from "../board/boardOrientation";
 import { getPieceSymbolFromPositionChar, isWhitePositionPiece } from "../board/positionUtils";
 import { formatEngineLineScore } from "../engine/engineEvaluationUtils";
@@ -43,7 +45,28 @@ export default function AnalysisEngineDetails({ state, actions }: Props) {
         </div>
       );
     });
-    return <div className="analysis-position-board">{squares}</div>;
+    const lines = selectedPoint?.lines ?? [];
+    const lineIndex = getEffectiveAnalysisLineIndex(
+      selectedPoint,
+      lines,
+      analysisSelectedLineIndex,
+    );
+    const selectedLine = lines[lineIndex];
+    const positions = selectedLine?.positions ?? [];
+    const positionIndex = positions.length > 0
+      ? analysisLineAnimationIndex % positions.length
+      : 0;
+    const activeMoveArrow = positionIndex > 0
+      ? createMoveArrow(selectedLine?.moveArrows?.[positionIndex - 1])
+      : null;
+
+    return <div className="analysis-position-board">
+      {squares}
+      <BoardArrowOverlay
+        arrows={activeMoveArrow ? [activeMoveArrow] : []}
+        orientation={boardOrientation}
+      />
+    </div>;
   }
 
   function renderMoves(movesText: string, positions: string[] | undefined, selected: boolean) {

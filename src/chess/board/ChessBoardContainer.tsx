@@ -1,3 +1,4 @@
+import { buildAnalysisBoardArrows } from "../analysis/analysisBoardArrows";
 import { historicalClock } from "../analysis/historicalClock";
 import type { MouseEvent } from "react";
 import AnalysisEngineDetails from "../analysis/AnalysisEngineDetails";
@@ -82,6 +83,16 @@ export default function ChessBoardContainer({
     updateGameAnnotation: analysis.updateGameAnnotation,
     persistGameAnnotations: analysis.persistGameAnnotations,
   };
+
+  const mainBoardArrows = buildAnalysisBoardArrows({
+    analysisReplayActive: analysis.analysisReplayActive,
+    selectedPly: analysis.analysisSelectedPosition?.ply,
+    analysisProfile: analysis.analysisProfile,
+    variationMoveCount: analysis.analysisVariationMoves.length,
+    lastMove: board.lastMove,
+    liveEvaluationEnabled: analysis.analysisEvaluationEnabled,
+    liveEvaluation: analysis.analysisEvaluation,
+  });
 
   const analysisContent = (
     <AnalysisReplayContent
@@ -233,7 +244,8 @@ export default function ChessBoardContainer({
     boardProps={{
       pieces: board.pieces, selectedSquare: interaction.selectedSquare, lastMove: board.lastMove,
       possibleTargets: interaction.possibleTargets, dragState: interaction.dragState,
-      annotations: analysis.selectedBoardAnnotations, orientation: board.boardOrientation,
+      annotations: analysis.selectedBoardAnnotations, arrows: mainBoardArrows,
+      orientation: board.boardOrientation,
       boardContainerRef: interaction.boardContainerRef, onSquareClick: interaction.handleSquareClick,
       onPiecePointerDown: interaction.handlePiecePointerDown, onPiecePointerMove: interaction.handlePiecePointerMove,
       onPiecePointerUp: interaction.handlePiecePointerUp, onPiecePointerCancel: interaction.handlePiecePointerCancel,
