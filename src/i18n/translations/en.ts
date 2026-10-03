@@ -168,7 +168,6 @@ export const englishTranslations = {
   "settings.manualEngineSetup": "Manual engine setup",
   "settings.showAdvancedOptions": "Show UCI options ({count})",
   "settings.hideAdvancedOptions": "Hide UCI options",
-  "settings.defaults": "Defaults",
   "settings.engineDefaults": "Engine Defaults",
   "settings.display": "Display",
   "settings.displaySettings": "Analysis Display",
