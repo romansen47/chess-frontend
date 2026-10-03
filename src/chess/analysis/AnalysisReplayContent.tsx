@@ -1,7 +1,7 @@
 import { useI18n } from "../../i18n/I18nProvider";
 import AnalysisEngineTabs from "./AnalysisEngineTabs";
 import LiveEvaluationView from "./LiveEvaluationView";
-import AnalysisProfilePanel from "./AnalysisProfilePanel";
+import AnalysisProfileContent from "./AnalysisProfileContent";
 import AnalysisEngineDetails from "./AnalysisEngineDetails";
 import AnalysisAnnotationDetails from "./AnalysisAnnotationDetails";
 import type { AnalysisReplayContentActions, AnalysisReplayContentState } from "./analysisReplayViewTypes";
@@ -70,8 +70,7 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
   );
 
   return <div className="analysis-replay-content">
-    <AnalysisProfilePanel state={state} actions={actions} />
-    {!state.isAnalysisReplayRunning && (
+    <AnalysisProfileContent state={state} actions={actions}>
       <div className="analysis-tab-stack">
         {primaryTabs}
         <div
@@ -97,6 +96,6 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
           </>}
         </div>
       </div>
-    )}
+    </AnalysisProfileContent>
   </div>;
 }

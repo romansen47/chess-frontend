@@ -1,7 +1,7 @@
 import { historicalClock } from "../analysis/historicalClock";
 import type { MouseEvent } from "react";
 import AnalysisEngineDetails from "../analysis/AnalysisEngineDetails";
-import AnalysisProfilePanel from "../analysis/AnalysisProfilePanel";
+import AnalysisProfileContent from "../analysis/AnalysisProfileContent";
 import AnalysisReplayContent from "../analysis/AnalysisReplayContent";
 import LiveEvaluationView from "../analysis/LiveEvaluationView";
 import type { AnalysisController } from "../analysis/useAnalysisController";
@@ -97,16 +97,15 @@ export default function ChessBoardContainer({
 
   const mobileDeepAnalysisContent = analysis.analysisReplayActive
     ? (
-        <>
-          <AnalysisProfilePanel
-            state={analysisViewState}
-            actions={analysisViewActions}
-          />
+        <AnalysisProfileContent
+          state={analysisViewState}
+          actions={analysisViewActions}
+        >
           <AnalysisEngineDetails
             state={mobileDeepAnalysisState}
             actions={analysisViewActions}
           />
-        </>
+        </AnalysisProfileContent>
       )
     : null;
 
