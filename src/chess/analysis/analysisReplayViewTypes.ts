@@ -10,6 +10,7 @@ export interface AnalysisReplayContentState {
   analysisTotalPlies: number;
   analysisSelectedPosition: AnalysisPositionSelection | null;
   analysisReplayStatus: string | null;
+  analysisReplayFinished: boolean;
   isAnalysisReplayRunning: boolean;
   analysisReplayError: string | null;
   analysisEvaluationError: string | null;
@@ -28,6 +29,8 @@ export interface AnalysisReplayContentState {
   annotationsDirty: boolean;
   annotationsSaving: boolean;
   annotationSaveError: string | null;
+  animateEngineVariations: boolean;
+  engineVariationAnimationIntervalMs: number;
 }
 
 export interface AnalysisReplayContentActions {
