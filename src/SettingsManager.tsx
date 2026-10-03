@@ -10,7 +10,11 @@ import {
 import { useI18n } from "./i18n/I18nProvider";
 import EngineManager from "./EngineManager";
 import EngineProfileHierarchy from "./EngineProfileHierarchy";
-import type { UiPreferences } from "./chess/settings/useUiPreferences";
+import {
+  ANALYSIS_EVALUATION_ARROW_COUNTS,
+  ENGINE_VARIATION_ANIMATION_INTERVALS,
+  type UiPreferences,
+} from "./chess/settings/useUiPreferences";
 import "./SettingsManager.css";
 
 interface SettingsManagerProps {
@@ -514,6 +518,102 @@ export default function SettingsManager({
                           onChange={(event) =>
                             onUiPreferencesChange({
                               showAnalysisEvaluationArrows: event.target.checked,
+                            })
+                          }
+                        />
+                      </label>
+
+                      <label className="engine-config-preference-card">
+                        <div>
+                          <strong>{t("settings.engineArrowCount")}</strong>
+                          <span>{t("settings.engineArrowCountDescription")}</span>
+                        </div>
+                        <select
+                          className="engine-config-preference-select"
+                          value={uiPreferences.analysisEvaluationArrowCount}
+                          disabled={!uiPreferences.showAnalysisEvaluationArrows}
+                          onChange={(event) =>
+                            onUiPreferencesChange({
+                              analysisEvaluationArrowCount: Number(
+                                event.target.value,
+                              ) as UiPreferences["analysisEvaluationArrowCount"],
+                            })
+                          }
+                        >
+                          {ANALYSIS_EVALUATION_ARROW_COUNTS.map((count) => (
+                            <option key={count} value={count}>{count}</option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="engine-config-preference-card">
+                        <div>
+                          <strong>{t("settings.animateEngineVariations")}</strong>
+                          <span>{t("settings.animateEngineVariationsDescription")}</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={uiPreferences.animateEngineVariations}
+                          onChange={(event) =>
+                            onUiPreferencesChange({
+                              animateEngineVariations: event.target.checked,
+                            })
+                          }
+                        />
+                      </label>
+
+                      <label className="engine-config-preference-card">
+                        <div>
+                          <strong>{t("settings.animationSpeed")}</strong>
+                          <span>{t("settings.animationSpeedDescription")}</span>
+                        </div>
+                        <select
+                          className="engine-config-preference-select"
+                          value={uiPreferences.engineVariationAnimationIntervalMs}
+                          disabled={!uiPreferences.animateEngineVariations}
+                          onChange={(event) =>
+                            onUiPreferencesChange({
+                              engineVariationAnimationIntervalMs: Number(
+                                event.target.value,
+                              ) as UiPreferences["engineVariationAnimationIntervalMs"],
+                            })
+                          }
+                        >
+                          {ENGINE_VARIATION_ANIMATION_INTERVALS.map((milliseconds) => (
+                            <option key={milliseconds} value={milliseconds}>
+                              {milliseconds === 500 ? "0.5 s" : `${milliseconds / 1000} s`}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="engine-config-preference-card">
+                        <div>
+                          <strong>{t("settings.showMoveAnnotationsOnBoard")}</strong>
+                          <span>{t("settings.showMoveAnnotationsOnBoardDescription")}</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={uiPreferences.showMoveAnnotationsOnBoard}
+                          onChange={(event) =>
+                            onUiPreferencesChange({
+                              showMoveAnnotationsOnBoard: event.target.checked,
+                            })
+                          }
+                        />
+                      </label>
+
+                      <label className="engine-config-preference-card">
+                        <div>
+                          <strong>{t("settings.showBoardCoordinates")}</strong>
+                          <span>{t("settings.showBoardCoordinatesDescription")}</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={uiPreferences.showBoardCoordinates}
+                          onChange={(event) =>
+                            onUiPreferencesChange({
+                              showBoardCoordinates: event.target.checked,
                             })
                           }
                         />
