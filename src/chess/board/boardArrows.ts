@@ -27,10 +27,10 @@ export function createEvaluationArrow(
     from: move.from,
     to: move.to,
     color,
-    shaftWidth: rank === 0 ? 0.08 : rank === 1 ? 0.07 : 0.06,
-    headWidth: rank === 0 ? 0.27 : rank === 1 ? 0.24 : 0.21,
-    headLength: rank === 0 ? 0.25 : rank === 1 ? 0.23 : 0.21,
-    startInset: 0.24,
-    endInset: 0.27,
+    shaftWidth: rank === 0 ? 0.065 : rank === 1 ? 0.055 : 0.047,
+    headWidth: rank === 0 ? 0.23 : rank === 1 ? 0.205 : 0.18,
+    headLength: rank === 0 ? 0.22 : rank === 1 ? 0.20 : 0.18,
+    startInset: 0.30,
+    endInset: 0.32,
   };
 }
