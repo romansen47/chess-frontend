@@ -26,6 +26,8 @@ interface EngineLineExplorerProps {
   boardTitle?: ReactNode;
   linesTitle?: ReactNode;
   orientation?: BoardOrientation;
+  animateVariations?: boolean;
+  animationIntervalMs?: number;
 }
 
 function formatEngineScore(evaluation: number): string {
@@ -71,6 +73,8 @@ export default function EngineLineExplorer({
   boardTitle,
   linesTitle,
   orientation = "white",
+  animateVariations = true,
+  animationIntervalMs = 1000,
 }: EngineLineExplorerProps) {
   const [selectedLineIndex, setSelectedLineIndex] = useState(0);
   const [animationIndex, setAnimationIndex] = useState(0);
@@ -103,14 +107,19 @@ export default function EngineLineExplorer({
   }, [selectedLineIndex]);
 
   useEffect(() => {
+    if (!animateVariations) {
+      setAnimationIndex(0);
+      return;
+    }
     if (selectedPositions.length <= 1) return;
+
     const intervalId = window.setInterval(() => {
       setAnimationIndex((previous) =>
         (previous + 1) % selectedPositions.length
       );
-    }, 1000);
+    }, Math.max(100, animationIntervalMs));
     return () => window.clearInterval(intervalId);
-  }, [selectedPositions.length]);
+  }, [animateVariations, animationIntervalMs, selectedPositions.length]);
 
   const renderBoard = () => {
     if (!selectedLine || selectedPositions.length === 0) {
