@@ -11,6 +11,8 @@ interface LiveEvaluationViewProps {
   variationMode: boolean;
   deepAnalysisRunning?: boolean;
   orientation?: BoardOrientation;
+  animateVariations?: boolean;
+  animationIntervalMs?: number;
 }
 
 function formatEngineScore(evaluation: number): string {
@@ -28,6 +30,8 @@ export default function LiveEvaluationView({
   variationMode,
   deepAnalysisRunning = false,
   orientation = "white",
+  animateVariations = true,
+  animationIntervalMs = 1000,
 }: LiveEvaluationViewProps) {
   const { t } = useI18n();
 
@@ -54,6 +58,8 @@ export default function LiveEvaluationView({
           depthLabel={(depth) => t("analysis.depthInfinite", { depth })}
           boardUnavailableText={t("analysis.evaluationBoardUnavailable")}
           orientation={orientation}
+          animateVariations={animateVariations}
+          animationIntervalMs={animationIntervalMs}
         />
       </section>
     );
