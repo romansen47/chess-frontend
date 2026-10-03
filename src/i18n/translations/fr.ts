@@ -170,7 +170,6 @@ export const frenchTranslations = {
   "settings.manualEngineSetup": "Configuration manuelle du moteur",
   "settings.showAdvancedOptions": "Afficher les options UCI ({count})",
   "settings.hideAdvancedOptions": "Masquer les options UCI",
-  "settings.defaults": "Valeurs par défaut",
   "settings.engineDefaults": "Moteurs par défaut",
   "settings.display": "Affichage",
   "settings.displaySettings": "Affichage de l’analyse",
