@@ -43,8 +43,8 @@ function arrowPath(
   const px = -uy;
   const py = ux;
 
-  const startInset = Math.min(arrow.startInset, length * 0.22);
-  const endInset = Math.min(arrow.endInset, length * 0.24);
+  const startInset = Math.min(arrow.startInset, length * 0.27);
+  const endInset = Math.min(arrow.endInset, length * 0.29);
   const start = {
     x: from.x + ux * startInset,
     y: from.y + uy * startInset,
