@@ -145,6 +145,7 @@ export const englishTranslations = {
   "program.terminateFailed": "Could not terminate the program.",
   "settings.loadFailed": "Engine settings could not be loaded.",
   "settings.defaultSaved": "Default profile assignments saved.",
+  "settings.defaultSelection": "Default",
   "settings.title": "Settings",
   "settings.subtitle": "Engines, reusable profiles, assignments, and runtime diagnostics",
   "settings.version": "Version {version}",
