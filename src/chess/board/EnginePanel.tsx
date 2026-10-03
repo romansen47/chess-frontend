@@ -117,9 +117,6 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
                       />
                     : <div className="engine-empty">{t("analysis.noEngineLines")}</div>
                 )}
-                {engine.engineAutoUpdate && !engine.engineEval && !engine.isLoadingEval && !engine.evalError && !engine.clock?.gameState && (
-                  <div className="engine-placeholder-text">{t("analysis.engineOutputPlaceholder")}</div>
-                )}
               </>}
           </div>
         </div>
