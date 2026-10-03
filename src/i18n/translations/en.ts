@@ -334,7 +334,6 @@ export const englishTranslations = {
   "analysis.databaseContinuations": "Database continuations",
   "analysis.engineVariations": "Engine variations",
   "analysis.noEngineLines": "No engine lines.",
-  "analysis.engineOutputPlaceholder": "Engine output will appear here.",
   "game.gameOver": "Game Over",
   "game.savePgn": "Save PGN",
   "game.loadPgn": "Load PGN",
