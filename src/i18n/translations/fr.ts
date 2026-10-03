@@ -147,6 +147,7 @@ export const frenchTranslations = {
   "program.terminateFailed": "Impossible d’arrêter le programme.",
   "settings.loadFailed": "Impossible de charger les paramètres du moteur.",
   "settings.defaultSaved": "Affectations de profils par défaut enregistrées.",
+  "settings.defaultSelection": "Par défaut",
   "settings.title": "Paramètres",
   "settings.subtitle": "Moteurs, profils réutilisables, affectations et diagnostic d’exécution",
   "settings.version": "Version {version}",
