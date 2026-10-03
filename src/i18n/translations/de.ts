@@ -170,7 +170,6 @@ export const germanTranslations = {
   "settings.manualEngineSetup": "Engine manuell einrichten",
   "settings.showAdvancedOptions": "UCI-Optionen anzeigen ({count})",
   "settings.hideAdvancedOptions": "UCI-Optionen ausblenden",
-  "settings.defaults": "Standards",
   "settings.engineDefaults": "Engine-Vorbelegungen",
   "settings.display": "Darstellung",
   "settings.displaySettings": "Analysedarstellung",
