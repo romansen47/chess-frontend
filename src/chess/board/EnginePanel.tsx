@@ -110,6 +110,10 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
                         engineNameFallback={t("analysis.evaluationEngine")}
                         depthLabel={(depth) => t("analysis.searchDepth", { depth })}
                         boardUnavailableText={t("analysis.evaluationBoardUnavailable")}
+                        animateVariations={engine.uiPreferences.animateEngineVariations}
+                        animationIntervalMs={
+                          engine.uiPreferences.engineVariationAnimationIntervalMs
+                        }
                       />
                     : <div className="engine-empty">{t("analysis.noEngineLines")}</div>
                 )}
