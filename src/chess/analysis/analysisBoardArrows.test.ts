@@ -28,6 +28,7 @@ const baseOptions = {
   lastMove: null,
   liveEvaluationEnabled: false,
   liveEvaluation: null,
+  showEvaluationArrows: true,
 };
 
 describe("analysis board decorations", () => {
@@ -46,6 +47,16 @@ describe("analysis board decorations", () => {
     expect(new Set(arrows.map((arrow) => arrow.color)).size).toBe(3);
     expect(arrows[0]?.shaftWidth).toBeGreaterThan(arrows[1]?.shaftWidth ?? 0);
     expect(arrows[1]?.shaftWidth).toBeGreaterThan(arrows[2]?.shaftWidth ?? 0);
+  });
+
+  it("can disable evaluation arrows without disabling played-move highlights", () => {
+    const options = {
+      ...baseOptions,
+      showEvaluationArrows: false,
+    };
+
+    expect(buildAnalysisBoardArrows(options)).toEqual([]);
+    expect(buildAnalysisMoveHighlightSquares(options)).toEqual(["g1", "f3"]);
   });
 
   it("prefers live-evaluation lines over stored deep-analysis lines", () => {

@@ -17,6 +17,7 @@ interface AnalysisBoardArrowOptions {
   lastMove: LastMove | null;
   liveEvaluationEnabled: boolean;
   liveEvaluation: EngineEvaluation | null;
+  showEvaluationArrows: boolean;
 }
 
 function resolvePlayedMove({
@@ -51,7 +52,7 @@ export function buildAnalysisMoveHighlightSquares(
 export function buildAnalysisBoardArrows(
   options: AnalysisBoardArrowOptions,
 ): BoardArrowSpec[] {
-  if (!options.analysisReplayActive) return [];
+  if (!options.analysisReplayActive || !options.showEvaluationArrows) return [];
 
   const selectedPoint = options.selectedPly == null
     ? null

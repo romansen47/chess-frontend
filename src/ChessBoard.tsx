@@ -9,11 +9,13 @@ import { useChessMoveFlow } from "./chess/board/useChessMoveFlow";
 import { useChessGameLifecycle } from "./chess/board/useChessGameLifecycle";
 import { useChessRuntimeBridges } from "./chess/board/useChessRuntimeBridges";
 import ChessBoardContainer from "./chess/board/ChessBoardContainer";
+import { useUiPreferences } from "./chess/settings/useUiPreferences";
 
 export const ChessBoard: React.FC = () => {
   const board = useChessBoardState();
   const engine = useChessEngineState();
   const game = useChessGameState();
+  const uiPreferences = useUiPreferences();
 
   const {
     moveRuntimeRef,
@@ -169,6 +171,7 @@ export const ChessBoard: React.FC = () => {
     move={move}
     lifecycle={lifecycle}
     computer={computer}
+    uiPreferences={uiPreferences}
     flipBoardOrientation={flipBoardOrientation}
   />;
 };

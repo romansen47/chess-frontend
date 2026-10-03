@@ -23,6 +23,7 @@ import type { ChessGameLifecycle } from "./useChessGameLifecycle";
 import type { ChessGameState } from "./useChessGameState";
 import type { ChessLiveEvaluation } from "./useChessLiveEvaluation";
 import type { ChessMoveFlow } from "./useChessMoveFlow";
+import type { UiPreferencesController } from "../settings/useUiPreferences";
 
 interface ComputerState {
   whiteComputerEnabled: boolean;
@@ -42,11 +43,12 @@ interface Props {
   move: ChessMoveFlow;
   lifecycle: ChessGameLifecycle;
   computer: ComputerState;
+  uiPreferences: UiPreferencesController;
   flipBoardOrientation: () => void;
 }
 
 export default function ChessBoardContainer({
-  board, engine, game, analysis, interaction, live, move, lifecycle, computer, flipBoardOrientation,
+  board, engine, game, analysis, interaction, live, move, lifecycle, computer, uiPreferences, flipBoardOrientation,
 }: Props) {
   const analysisViewState = {
     boardOrientation: board.boardOrientation,
@@ -95,6 +97,7 @@ export default function ChessBoardContainer({
     lastMove: board.lastMove,
     liveEvaluationEnabled: analysis.analysisEvaluationEnabled,
     liveEvaluation: analysis.analysisEvaluation,
+    showEvaluationArrows: uiPreferences.preferences.showAnalysisEvaluationArrows,
   };
   const mainBoardArrows = buildAnalysisBoardArrows(analysisBoardDecorationOptions);
   const mainBoardMoveHighlights = buildAnalysisMoveHighlightSquares(
@@ -278,10 +281,12 @@ export default function ChessBoardContainer({
       analysisSelectedPosition: analysis.analysisSelectedPosition, analysisVariationMoves: analysis.analysisVariationMoves,
       analysisEvaluation: analysis.analysisEvaluation, engineEval: engine.engineEval, evalError: engine.evalError,
       isLoadingEval: engine.isLoadingEval, boardOrientation: board.boardOrientation, clock: game.clock, analysisContent,
+      uiPreferences: uiPreferences.preferences,
     }}
     engineActions={{ toggleEngineAutoUpdate: live.toggleEngineAutoUpdate,
       toggleAnalysisEvaluation: analysis.toggleAnalysisEvaluation,
       onEngineConfigOverviewChange: live.handleEngineConfigOverviewChange,
+      updateUiPreferences: uiPreferences.updatePreferences,
       closeSettings: () => engine.setShowSettings(false) }}
     mobileDeepAnalysisContent={mobileDeepAnalysisContent}
     mobileEvalEngineContent={mobileEvalEngineContent}

@@ -83,9 +83,13 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
 
         <div className="engine-content-column">
           {engine.showSettings && <>
-            <SettingsManager overview={engine.engineConfigOverview}
+            <SettingsManager
+              overview={engine.engineConfigOverview}
+              uiPreferences={engine.uiPreferences}
               onOverviewChange={actions.onEngineConfigOverviewChange}
-              onClose={actions.closeSettings} />
+              onUiPreferencesChange={actions.updateUiPreferences}
+              onClose={actions.closeSettings}
+            />
             {engine.engineConfigLoadError && <div className="engine-error">{engine.engineConfigLoadError}</div>}
           </>}
 

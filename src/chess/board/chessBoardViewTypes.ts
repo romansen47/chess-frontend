@@ -18,6 +18,7 @@ import type ChessHeader from "../header/ChessHeader";
 import type Board from "./Board";
 import type HoverBoard from "./HoverBoard";
 import type { BoardOrientation } from "./boardOrientation";
+import type { UiPreferences } from "../settings/useUiPreferences";
 
 export interface EnginePanelState {
   showSettings: boolean;
@@ -38,12 +39,14 @@ export interface EnginePanelState {
   boardOrientation: BoardOrientation;
   clock: ClockState | null;
   analysisContent: ReactNode;
+  uiPreferences: UiPreferences;
 }
 
 export interface EnginePanelActions {
   toggleEngineAutoUpdate: () => void;
   toggleAnalysisEvaluation: () => void;
   onEngineConfigOverviewChange: (data: EngineConfigOverview) => void;
+  updateUiPreferences: (patch: Partial<UiPreferences>) => void;
   closeSettings: () => void;
 }
 
