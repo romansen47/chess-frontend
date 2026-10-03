@@ -4,10 +4,11 @@ import {
   useMemo,
   useState,
 } from "react";
-import BoardArrowOverlay from "../board/BoardArrowOverlay";
-import { createMoveArrow } from "../board/boardArrows";
 import type { BoardOrientation } from "../board/boardOrientation";
-import { positionIndexForDisplayCell } from "../board/boardOrientation";
+import {
+  displayCellToSquare,
+  positionIndexForDisplayCell,
+} from "../board/boardOrientation";
 import {
   getPieceSymbolFromPositionChar,
   isWhitePositionPiece,
@@ -135,8 +136,8 @@ export default function EngineLineExplorer({
     const moveIndex = animationIndex > 0
       ? (animationIndex % selectedPositions.length) - 1
       : -1;
-    const activeMoveArrow = moveIndex >= 0
-      ? createMoveArrow(selectedLine.moveArrows?.[moveIndex])
+    const activeMove = moveIndex >= 0
+      ? selectedLine.moveArrows?.[moveIndex] ?? null
       : null;
 
     return (
@@ -144,6 +145,11 @@ export default function EngineLineExplorer({
         {Array.from({ length: 64 }, (_, index) => {
           const rankFromTop = Math.floor(index / 8);
           const fileFromLeft = index % 8;
+          const square = displayCellToSquare(
+            rankFromTop,
+            fileFromLeft,
+            orientation,
+          );
           const positionIndex = positionIndexForDisplayCell(
             rankFromTop,
             fileFromLeft,
@@ -152,6 +158,8 @@ export default function EngineLineExplorer({
           const pieceChar = position.charAt(positionIndex);
           const pieceSymbol = getPieceSymbolFromPositionChar(pieceChar);
           const isLight = (rankFromTop + fileFromLeft) % 2 === 0;
+          const isMoveSquare = activeMove != null
+            && (activeMove.from === square || activeMove.to === square);
 
           return (
             <div
@@ -161,7 +169,8 @@ export default function EngineLineExplorer({
                 isLight
                   ? "analysis-position-square-light"
                   : "analysis-position-square-dark",
-              ].join(" ")}
+                isMoveSquare ? "analysis-position-square-move" : "",
+              ].filter(Boolean).join(" ")}
             >
               {pieceSymbol && (
                 <span
@@ -178,10 +187,6 @@ export default function EngineLineExplorer({
             </div>
           );
         })}
-        <BoardArrowOverlay
-          arrows={activeMoveArrow ? [activeMoveArrow] : []}
-          orientation={orientation}
-        />
       </div>
     );
   };

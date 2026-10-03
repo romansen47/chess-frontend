@@ -1,8 +1,6 @@
 import AnalysisDatabasePanel from "../../AnalysisDatabasePanel";
 import { useI18n } from "../../i18n/I18nProvider";
-import BoardArrowOverlay from "../board/BoardArrowOverlay";
-import { createMoveArrow } from "../board/boardArrows";
-import { positionIndexForDisplayCell } from "../board/boardOrientation";
+import { displayCellToSquare, positionIndexForDisplayCell } from "../board/boardOrientation";
 import { getPieceSymbolFromPositionChar, isWhitePositionPiece } from "../board/positionUtils";
 import { formatEngineLineScore } from "../engine/engineEvaluationUtils";
 import { splitAnalysisMoveText } from "./analysisUtils";
@@ -33,18 +31,7 @@ export default function AnalysisEngineDetails({ state, actions }: Props) {
   function renderBoard() {
     const position = animatedPosition();
     if (!position) return <div className="analysis-detail-placeholder">{t("analysis.clickMoveContinuation")}</div>;
-    const squares = Array.from({ length: 64 }, (_, index) => {
-      const rank = Math.floor(index / 8);
-      const file = index % 8;
-      const positionIndex = positionIndexForDisplayCell(rank, file, boardOrientation);
-      const pieceChar = position.charAt(positionIndex);
-      const symbol = getPieceSymbolFromPositionChar(pieceChar);
-      return (
-        <div key={index} className={["analysis-position-square", (rank + file) % 2 === 0 ? "analysis-position-square-light" : "analysis-position-square-dark"].join(" ")}>
-          {symbol && <span className={["analysis-position-piece", isWhitePositionPiece(pieceChar) ? "analysis-position-piece-white" : "analysis-position-piece-black"].join(" ")}>{symbol}</span>}
-        </div>
-      );
-    });
+
     const lines = selectedPoint?.lines ?? [];
     const lineIndex = getEffectiveAnalysisLineIndex(
       selectedPoint,
@@ -53,20 +40,39 @@ export default function AnalysisEngineDetails({ state, actions }: Props) {
     );
     const selectedLine = lines[lineIndex];
     const positions = selectedLine?.positions ?? [];
-    const positionIndex = positions.length > 0
+    const animatedPositionIndex = positions.length > 0
       ? analysisLineAnimationIndex % positions.length
       : 0;
-    const activeMoveArrow = positionIndex > 0
-      ? createMoveArrow(selectedLine?.moveArrows?.[positionIndex - 1])
+    const activeMove = animatedPositionIndex > 0
+      ? selectedLine?.moveArrows?.[animatedPositionIndex - 1] ?? null
       : null;
 
-    return <div className="analysis-position-board">
-      {squares}
-      <BoardArrowOverlay
-        arrows={activeMoveArrow ? [activeMoveArrow] : []}
-        orientation={boardOrientation}
-      />
-    </div>;
+    const squares = Array.from({ length: 64 }, (_, index) => {
+      const rank = Math.floor(index / 8);
+      const file = index % 8;
+      const square = displayCellToSquare(rank, file, boardOrientation);
+      const positionIndex = positionIndexForDisplayCell(rank, file, boardOrientation);
+      const pieceChar = position.charAt(positionIndex);
+      const symbol = getPieceSymbolFromPositionChar(pieceChar);
+      const isMoveSquare = activeMove != null
+        && (activeMove.from === square || activeMove.to === square);
+      return (
+        <div
+          key={index}
+          className={[
+            "analysis-position-square",
+            (rank + file) % 2 === 0
+              ? "analysis-position-square-light"
+              : "analysis-position-square-dark",
+            isMoveSquare ? "analysis-position-square-move" : "",
+          ].filter(Boolean).join(" ")}
+        >
+          {symbol && <span className={["analysis-position-piece", isWhitePositionPiece(pieceChar) ? "analysis-position-piece-white" : "analysis-position-piece-black"].join(" ")}>{symbol}</span>}
+        </div>
+      );
+    });
+
+    return <div className="analysis-position-board">{squares}</div>;
   }
 
   function renderMoves(movesText: string, positions: string[] | undefined, selected: boolean) {
