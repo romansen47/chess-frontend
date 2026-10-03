@@ -155,7 +155,6 @@ export const italianTranslations = {
   "settings.manualEngineSetup": "Configurazione manuale del motore",
   "settings.showAdvancedOptions": "Mostra opzioni UCI ({count})",
   "settings.hideAdvancedOptions": "Nascondi opzioni UCI",
-  "settings.defaults": "Predefiniti",
   "settings.engineDefaults": "Motori predefiniti",
   "settings.display": "Visualizzazione",
   "settings.displaySettings": "Visualizzazione analisi",
