@@ -336,7 +336,6 @@ export const frenchTranslations = {
   "analysis.databaseContinuations": "Suites de la base",
   "analysis.engineVariations": "Variantes du moteur",
   "analysis.noEngineLines": "Aucune variante moteur.",
-  "analysis.engineOutputPlaceholder": "La sortie du moteur apparaîtra ici.",
   "game.gameOver": "Partie terminée",
   "game.savePgn": "Enregistrer le PGN",
   "game.loadPgn": "Charger un PGN",
