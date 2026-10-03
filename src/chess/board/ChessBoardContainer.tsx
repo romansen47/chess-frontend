@@ -9,6 +9,7 @@ import AnalysisProfileContent from "../analysis/AnalysisProfileContent";
 import AnalysisReplayContent from "../analysis/AnalysisReplayContent";
 import LiveEvaluationView from "../analysis/LiveEvaluationView";
 import type { AnalysisController } from "../analysis/useAnalysisController";
+import { useAnalysisLineAnimation } from "../analysis/useAnalysisLineAnimation";
 import {
   getAnalysisBlackPlayerName,
   getAnalysisWhitePlayerName,
@@ -50,12 +51,24 @@ interface Props {
 export default function ChessBoardContainer({
   board, engine, game, analysis, interaction, live, move, lifecycle, computer, uiPreferences, flipBoardOrientation,
 }: Props) {
+  useAnalysisLineAnimation({
+    replayActive: analysis.analysisReplayActive,
+    selectedPly: analysis.analysisSelectedPosition?.ply,
+    selectedLineIndex: analysis.analysisSelectedLineIndex,
+    profile: analysis.analysisProfile,
+    variationMoveCount: analysis.analysisVariationMoves.length,
+    enabled: uiPreferences.preferences.animateEngineVariations,
+    intervalMs: uiPreferences.preferences.engineVariationAnimationIntervalMs,
+    setAnimationIndex: analysis.setAnalysisLineAnimationIndex,
+  });
+
   const analysisViewState = {
     boardOrientation: board.boardOrientation,
     analysisProfile: analysis.analysisProfile,
     analysisTotalPlies: analysis.analysisTotalPlies,
     analysisSelectedPosition: analysis.analysisSelectedPosition,
     analysisReplayStatus: analysis.analysisReplayStatus,
+    analysisReplayFinished: analysis.analysisReplayFinished,
     isAnalysisReplayRunning: analysis.isAnalysisReplayRunning,
     analysisReplayError: analysis.analysisReplayError,
     analysisEvaluationError: analysis.analysisEvaluationError,
@@ -74,6 +87,9 @@ export default function ChessBoardContainer({
     annotationsDirty: analysis.annotationsDirty,
     annotationsSaving: analysis.annotationsSaving,
     annotationSaveError: analysis.annotationSaveError,
+    animateEngineVariations: uiPreferences.preferences.animateEngineVariations,
+    engineVariationAnimationIntervalMs:
+      uiPreferences.preferences.engineVariationAnimationIntervalMs,
   };
 
   const analysisViewActions = {
@@ -140,6 +156,10 @@ export default function ChessBoardContainer({
           variationMode={analysis.analysisVariationMoves.length > 0}
           deepAnalysisRunning={analysis.isAnalysisReplayRunning}
           orientation={board.boardOrientation}
+          animateVariations={uiPreferences.preferences.animateEngineVariations}
+          animationIntervalMs={
+            uiPreferences.preferences.engineVariationAnimationIntervalMs
+          }
         />
       )
     : null;
