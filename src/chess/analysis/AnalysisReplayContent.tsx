@@ -71,30 +71,32 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
 
   return <div className="analysis-replay-content">
     <AnalysisProfilePanel state={state} actions={actions} />
-    <div className="analysis-tab-stack">
-      {primaryTabs}
-      <div
-        id="analysis-primary-tabpanel"
-        className="analysis-primary-tabpanel"
-        role={variationMode ? undefined : "tabpanel"}
-        aria-labelledby={variationMode ? undefined : activePrimaryTabId}
-      >
-        {variationMode ? <>
-          <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={actions.setEngineView} />
-          <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
-            activePly={state.analysisSelectedPosition?.ply ?? null} variationMode deepAnalysisRunning={state.isAnalysisReplayRunning} />
-        </> : state.analysisDetailsTab === "annotations" ? (
-          <AnalysisAnnotationDetails state={state} actions={actions} />
-        ) : state.analysisDetailsTab === "database" ? (
-          <AnalysisEngineDetails state={state} actions={actions} />
-        ) : <>
-          <AnalysisEngineTabs activeView={state.analysisEngineView} showDeepAnalysis onChange={actions.setEngineView} />
-          {liveViewActive ? (
+    {!state.isAnalysisReplayRunning && (
+      <div className="analysis-tab-stack">
+        {primaryTabs}
+        <div
+          id="analysis-primary-tabpanel"
+          className="analysis-primary-tabpanel"
+          role={variationMode ? undefined : "tabpanel"}
+          aria-labelledby={variationMode ? undefined : activePrimaryTabId}
+        >
+          {variationMode ? <>
+            <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={actions.setEngineView} />
             <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
-              activePly={state.analysisSelectedPosition?.ply ?? null} variationMode={false} deepAnalysisRunning={state.isAnalysisReplayRunning} />
-          ) : <AnalysisEngineDetails state={state} actions={actions} />}
-        </>}
+              activePly={state.analysisSelectedPosition?.ply ?? null} variationMode deepAnalysisRunning={false} />
+          </> : state.analysisDetailsTab === "annotations" ? (
+            <AnalysisAnnotationDetails state={state} actions={actions} />
+          ) : state.analysisDetailsTab === "database" ? (
+            <AnalysisEngineDetails state={state} actions={actions} />
+          ) : <>
+            <AnalysisEngineTabs activeView={state.analysisEngineView} showDeepAnalysis onChange={actions.setEngineView} />
+            {liveViewActive ? (
+              <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
+                activePly={state.analysisSelectedPosition?.ply ?? null} variationMode={false} deepAnalysisRunning={false} />
+            ) : <AnalysisEngineDetails state={state} actions={actions} />}
+          </>}
+        </div>
       </div>
-    </div>
+    )}
   </div>;
 }
