@@ -1,4 +1,7 @@
-import { buildAnalysisBoardArrows } from "../analysis/analysisBoardArrows";
+import {
+  buildAnalysisBoardArrows,
+  buildAnalysisMoveHighlightSquares,
+} from "../analysis/analysisBoardArrows";
 import { historicalClock } from "../analysis/historicalClock";
 import type { MouseEvent } from "react";
 import AnalysisEngineDetails from "../analysis/AnalysisEngineDetails";
@@ -84,7 +87,7 @@ export default function ChessBoardContainer({
     persistGameAnnotations: analysis.persistGameAnnotations,
   };
 
-  const mainBoardArrows = buildAnalysisBoardArrows({
+  const analysisBoardDecorationOptions = {
     analysisReplayActive: analysis.analysisReplayActive,
     selectedPly: analysis.analysisSelectedPosition?.ply,
     analysisProfile: analysis.analysisProfile,
@@ -92,7 +95,11 @@ export default function ChessBoardContainer({
     lastMove: board.lastMove,
     liveEvaluationEnabled: analysis.analysisEvaluationEnabled,
     liveEvaluation: analysis.analysisEvaluation,
-  });
+  };
+  const mainBoardArrows = buildAnalysisBoardArrows(analysisBoardDecorationOptions);
+  const mainBoardMoveHighlights = buildAnalysisMoveHighlightSquares(
+    analysisBoardDecorationOptions,
+  );
 
   const analysisContent = (
     <AnalysisReplayContent
@@ -246,6 +253,7 @@ export default function ChessBoardContainer({
       pieces: board.pieces, selectedSquare: interaction.selectedSquare, lastMove: board.lastMove,
       possibleTargets: interaction.possibleTargets, dragState: interaction.dragState,
       annotations: analysis.selectedBoardAnnotations, arrows: mainBoardArrows,
+      moveHighlightSquares: mainBoardMoveHighlights,
       orientation: board.boardOrientation,
       boardContainerRef: interaction.boardContainerRef, onSquareClick: interaction.handleSquareClick,
       onPiecePointerDown: interaction.handlePiecePointerDown, onPiecePointerMove: interaction.handlePiecePointerMove,

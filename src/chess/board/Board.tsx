@@ -35,6 +35,7 @@ interface BoardProps {
   dragState: DragState | null;
   annotations: BoardAnnotation[];
   arrows: BoardArrowSpec[];
+  moveHighlightSquares: string[];
   orientation: BoardOrientation;
   boardContainerRef: RefObject<HTMLDivElement | null>;
   onSquareClick: (square: string) => void | Promise<void>;
@@ -52,6 +53,7 @@ export default function Board({
   dragState,
   annotations,
   arrows,
+  moveHighlightSquares,
   orientation,
   boardContainerRef,
   onSquareClick,
@@ -103,6 +105,7 @@ export default function Board({
         (file + rank) % 2 !== 0 ? "square-light" : "square-dark",
         selectedSquare === name ? "square-selected" : "",
         lastMove && (lastMove.from === name || lastMove.to === name) ? "square-last-move" : "",
+        moveHighlightSquares.includes(name) ? "square-analysis-move" : "",
       ].filter(Boolean).join(" ");
       squares.push(
         <div key={name} className={squareClasses} onClick={() => onSquareClick(name)}>

@@ -40,6 +40,10 @@
   box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.6);
 }
 
+.square-analysis-move {
+  box-shadow: inset 0 0 0 3px rgba(70, 70, 70, 0.68);
+}
+
 .possible-targets-layer {
   position: absolute;
   inset: 0;
@@ -72,6 +76,9 @@
 }
 
 .pieces-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
   pointer-events: none;
 }
 
