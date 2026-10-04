@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ChessDatabaseDialog from "../../ChessDatabaseDialog";
 import { useI18n } from "../../i18n/I18nProvider";
+import AnnotationTiming from "../analysis/AnnotationTiming";
 import ChessHeader from "../header/ChessHeader";
 import MovePanel from "../game/MovePanel";
 import Board from "./Board";
@@ -23,6 +24,7 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
     analysisReplayActive, uciAnalysisLoaded, clock, clockError, historicalClock,
     whiteComputerEnabled, blackComputerEnabled, toggleWhiteComputer, toggleBlackComputer,
     engine, engineActions, mobileDeepAnalysisContent, mobileEvalEngineContent,
+    mobileAnalysisTimingAnnotation,
     hoverBoardProps, dialogs, dialogActions,
   } = props;
 
@@ -90,9 +92,19 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
             </div>
 
             <section className="mobile-analysis-pane mobile-analysis-deep">
+              {mobileAnalysisTimingAnnotation && (
+                <div className="mobile-analysis-timing">
+                  <AnnotationTiming annotation={mobileAnalysisTimingAnnotation} />
+                </div>
+              )}
               {mobileDeepAnalysisContent}
             </section>
             <section className="mobile-analysis-pane mobile-analysis-eval">
+              {mobileAnalysisTimingAnnotation && (
+                <div className="mobile-analysis-timing">
+                  <AnnotationTiming annotation={mobileAnalysisTimingAnnotation} />
+                </div>
+              )}
               {mobileEvalEngineContent}
             </section>
           </>
