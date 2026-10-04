@@ -147,6 +147,16 @@ export default function ChessBoardContainer({
       )
     : null;
 
+  const selectedAnalysisTimingAnnotation = (() => {
+    const ply = analysis.analysisSelectedPosition?.ply;
+    if (ply == null) return null;
+    const annotation = analysis.gameAnnotations[ply] ?? null;
+    return annotation
+      && (annotation.clockMillis != null || annotation.elapsedMoveMillis != null)
+      ? annotation
+      : null;
+  })();
+
   const mobileEvalEngineContent = analysis.analysisReplayActive
     ? (
         <LiveEvaluationView
@@ -315,6 +325,7 @@ export default function ChessBoardContainer({
       closeSettings: () => engine.setShowSettings(false) }}
     mobileDeepAnalysisContent={mobileDeepAnalysisContent}
     mobileEvalEngineContent={mobileEvalEngineContent}
+    mobileAnalysisTimingAnnotation={selectedAnalysisTimingAnnotation}
     hoverBoardProps={{
       preview: board.hoverPreview,
       annotationText: board.hoverAnnotationText,
