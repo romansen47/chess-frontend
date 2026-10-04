@@ -20,6 +20,7 @@ interface AnalysisBridge {
   selectedPosition: { ply: number } | null;
   variationMovesRef: { current: string[] };
   performVariationMove: (from: string, to: string, promotion?: PieceType) => Promise<void>;
+  restoreAnnotations: (annotations: import("../types").GameAnnotation[] | null | undefined) => void;
 }
 
 interface Options {
@@ -91,6 +92,7 @@ export function useChessMoveFlow(options: Options) {
         const snapshot = await fetchGameSnapshot();
         if (snapshot.importedAnalysisGame) return null;
         const projection = projectGameState(snapshot.game);
+        analysis.restoreAnnotations(snapshot.game.annotations);
         board.liveEvaluationPositionRef.current = projection.liveEvaluationPosition;
         board.latestMovePlyRef.current = Math.max(
           board.latestMovePlyRef.current,
