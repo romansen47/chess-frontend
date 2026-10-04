@@ -117,6 +117,7 @@ export const ChessBoard: React.FC = () => {
       selectedPosition: analysis.analysisSelectedPosition,
       variationMovesRef: analysis.analysisVariationMovesRef,
       performVariationMove: analysis.performAnalysisVariationMove,
+      restoreAnnotations: analysis.restoreAnnotations,
     },
     requestComputerMoveIfEnabled: computer.requestComputerMoveIfEnabled,
     loadClock: () => lifecycleRuntimeRef.current.loadClock(),
