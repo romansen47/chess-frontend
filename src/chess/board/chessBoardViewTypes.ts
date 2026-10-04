@@ -7,6 +7,7 @@ import type {
   AnalysisReplaySettings,
   ClockState,
   EngineEvaluation,
+  GameAnnotation,
   GameSettings,
   PieceType,
   PromotionContext,
@@ -106,6 +107,7 @@ export interface ChessBoardViewProps {
   engineActions: EnginePanelActions;
   mobileDeepAnalysisContent: ReactNode;
   mobileEvalEngineContent: ReactNode;
+  mobileAnalysisTimingAnnotation: GameAnnotation | null;
   hoverBoardProps: ComponentProps<typeof HoverBoard>;
   dialogs: DialogState;
   dialogActions: DialogActions;
