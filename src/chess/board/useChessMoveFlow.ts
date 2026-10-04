@@ -9,7 +9,7 @@ import { applyLocalMoveTransition, reconcilePieceSnapshot } from "./pieceTransit
 import { mapBackendPiecesToLocalPieces } from "./positionUtils";
 import { projectGameState } from "../game/gameStateProjection";
 import { appendMoveResultToRows, mergeAuthoritativeMoveRows } from "../game/moveListUtils";
-import type { ClockState, MoveResult, PerformMoveOptions, PieceType } from "../types";
+import type { ClockState, GameAnnotation, MoveResult, PerformMoveOptions, PieceType } from "../types";
 import type { ChessBoardState } from "./useChessBoardState";
 import type { ChessEngineState } from "./useChessEngineState";
 import type { ChessGameState } from "./useChessGameState";
@@ -20,7 +20,7 @@ interface AnalysisBridge {
   selectedPosition: { ply: number } | null;
   variationMovesRef: { current: string[] };
   performVariationMove: (from: string, to: string, promotion?: PieceType) => Promise<void>;
-  restoreAnnotations: (annotations: import("../types").GameAnnotation[] | null | undefined) => void;
+  restoreAnnotations: (annotations: GameAnnotation[] | null | undefined) => void;
 }
 
 interface Options {
