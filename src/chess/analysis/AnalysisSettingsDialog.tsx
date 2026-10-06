@@ -3,12 +3,11 @@ import { useI18n } from "../../i18n/I18nProvider";
 import type { EngineDefinition, EngineProfile } from "../../engineConfigTypes";
 import { fetchEngineCapabilities } from "../api/engineCapabilitiesApi";
 import EngineProfilePicker from "../engine/EngineProfilePicker";
-import NumericStepper from "../ui/NumericStepper";
 import "./AnalysisSettingsDialog.css";
 import type { AnalysisReplaySettings } from "../types";
 
-const MOBILE_ANALYSIS_TIME_PRESETS = [1, 2, 3, 5, 10, 15, 30, 60];
-const MOBILE_ANALYSIS_DEPTH_PRESETS = [8, 10, 12, 14, 16, 18, 20, 24, 30];
+const ANALYSIS_TIME_PRESETS = [1, 2, 3, 5, 10, 15, 30, 60];
+const ANALYSIS_DEPTH_PRESETS = [8, 10, 12, 14, 16, 18, 20, 24, 30];
 
 function analysisPresetValues(values: number[], current: number): number[] {
   return Array.from(new Set([...values, current])).sort((left, right) => left - right);
@@ -55,12 +54,12 @@ export default function AnalysisSettingsDialog({
 
   const unavailable = deepAnalysisAvailable === false;
   const timeSearch = settings.depth <= 0;
-  const mobileTimeValues = analysisPresetValues(
-    MOBILE_ANALYSIS_TIME_PRESETS,
+  const timeValues = analysisPresetValues(
+    ANALYSIS_TIME_PRESETS,
     Math.max(1, settings.moveTimeSeconds),
   );
-  const mobileDepthValues = analysisPresetValues(
-    MOBILE_ANALYSIS_DEPTH_PRESETS,
+  const depthValues = analysisPresetValues(
+    ANALYSIS_DEPTH_PRESETS,
     settings.depth > 0 ? settings.depth : 12,
   );
 
@@ -99,49 +98,25 @@ export default function AnalysisSettingsDialog({
             })}
           />
 
-          <div className="analysis-settings-desktop-steppers analysis-settings-field-wide">
-            <NumericStepper
-              variant="card"
-              active={settings.depth > 0}
-              label={t("analysis.depth")}
-              value={settings.depth}
-              min={0}
-              disabled={running}
-              hint={<>0 = {t("analysis.timePerPosition")}</>}
-              onChange={(depth) => onSettingsChange({ ...settings, depth })}
-            />
-            <NumericStepper
-              variant="card"
-              active={settings.depth <= 0}
-              label={t("analysis.timePerPosition")}
-              value={settings.moveTimeSeconds}
-              unit="s"
-              min={1}
-              disabled={running}
-              onChange={(moveTimeSeconds) => onSettingsChange({
-                ...settings,
-                moveTimeSeconds,
-              })}
-            />
-          </div>
-
-          <div className="analysis-settings-mobile-search">
-            <div className="analysis-settings-mobile-search-mode" role="group">
+          <div className="analysis-settings-search analysis-settings-field-wide">
+            <div className="analysis-settings-search-mode" role="group" aria-label={t("analysis.search")}>
               <button
                 type="button"
                 className={timeSearch ? "active" : ""}
+                aria-pressed={timeSearch}
                 onClick={selectTimeSearch}
                 disabled={running}
               >
-                {t("analysis.timePerPosition")}
+                {t("analysis.searchByTime")}
               </button>
               <button
                 type="button"
                 className={!timeSearch ? "active" : ""}
+                aria-pressed={!timeSearch}
                 onClick={selectDepthSearch}
                 disabled={running}
               >
-                {t("analysis.depth")}
+                {t("analysis.searchByDepth")}
               </button>
             </div>
 
@@ -157,14 +132,14 @@ export default function AnalysisSettingsDialog({
                   })}
                   disabled={running}
                 >
-                  {mobileTimeValues.map((seconds) => (
+                  {timeValues.map((seconds) => (
                     <option key={seconds} value={seconds}>{seconds} s</option>
                   ))}
                 </select>
               </label>
             ) : (
               <label className="analysis-settings-field">
-                <span>{t("analysis.depth")}</span>
+                <span>{t("analysis.searchByDepth")}</span>
                 <select
                   value={settings.depth > 0 ? settings.depth : 12}
                   onChange={(event) => onSettingsChange({
@@ -173,7 +148,7 @@ export default function AnalysisSettingsDialog({
                   })}
                   disabled={running}
                 >
-                  {mobileDepthValues.map((depth) => (
+                  {depthValues.map((depth) => (
                     <option key={depth} value={depth}>{depth}</option>
                   ))}
                 </select>
