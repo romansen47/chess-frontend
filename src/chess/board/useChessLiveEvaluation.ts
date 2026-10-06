@@ -58,6 +58,7 @@ export function useChessLiveEvaluation(options: Options) {
     engine.setLiveEvaluationBar(null);
     if (!nextValue) {
       engine.setEngineEval(null);
+      engine.setEngineEvaluationPly(null);
       engine.setEvalError(null);
       engine.setIsLoadingEval(false);
       void stopLiveEvaluation();
@@ -92,6 +93,7 @@ export function useChessLiveEvaluation(options: Options) {
       return { ...previous, engineProfileId: preferred?.id ?? data.profiles[0]?.id ?? null };
     });
     engine.setEngineEval(null);
+    engine.setEngineEvaluationPly(null);
     engine.setLiveEvaluationBar(null);
     if (engine.engineAutoUpdateRef.current) {
       void ensureLiveEvaluationPosition().then((position) => {
@@ -107,7 +109,13 @@ export function useChessLiveEvaluation(options: Options) {
     if (!controller) return;
     return controller.subscribe((event) => {
       switch (event.type) {
-        case "evaluation": engine.setEngineEval(event.evaluation); break;
+        case "evaluation":
+          engine.setEngineEvaluationPly(
+            board.liveEvaluationPositionRef.current?.uciMoves.length
+              ?? board.latestMovePlyRef.current,
+          );
+          engine.setEngineEval(event.evaluation);
+          break;
         case "bar": engine.setLiveEvaluationBar(event.bar); break;
         case "loading": engine.setIsLoadingEval(event.loading); break;
         case "error":
