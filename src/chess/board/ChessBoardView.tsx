@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ChessDatabaseDialog from "../../ChessDatabaseDialog";
 import { useI18n } from "../../i18n/I18nProvider";
 import AnnotationTiming from "../analysis/AnnotationTiming";
+import { boardThemeCssVariables } from "../settings/boardThemes";
 import ChessHeader from "../header/ChessHeader";
 import MovePanel from "../game/MovePanel";
 import Board from "./Board";
@@ -22,6 +23,7 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
     showChessDatabaseDialog, closeChessDatabaseDialog, onDatabaseGameLoaded,
     uciFileInputRef, onUciFileSelected,
     analysisReplayActive, uciAnalysisLoaded, clock, clockError, historicalClock,
+    boardTheme,
     whiteComputerEnabled, blackComputerEnabled, toggleWhiteComputer, toggleBlackComputer,
     engine, engineActions, mobileDeepAnalysisContent, mobileEvalEngineContent,
     mobileAnalysisTimingAnnotation,
@@ -40,7 +42,7 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
     <input ref={uciFileInputRef} type="file" accept=".pgn,.txt,application/x-chess-pgn,text/plain"
       style={{ display: "none" }} onChange={(event) => void onUciFileSelected(event)} />
 
-    <main className="app-main">
+    <main className="app-main" style={boardThemeCssVariables(boardTheme)}>
       <div
         className={`board-layout${analysisReplayActive ? " board-layout-analysis" : ""}`}
         data-mobile-analysis-tab={analysisReplayActive ? mobileAnalysisTab : undefined}
