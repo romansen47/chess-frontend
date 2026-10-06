@@ -11,13 +11,7 @@ import {
   ANALYSIS_PROFILE_MIN_MAX_ABS_EVAL,
   adjustAnalysisProfileScale,
 } from "../analysis/analysisProfileScale";
-
-export interface EvaluationHistoryPoint {
-  ply: number;
-  evaluation: number;
-  depth?: number | null;
-  label?: string | null;
-}
+import type { EvaluationHistoryPoint } from "./evaluationHistory";
 
 interface EvaluationHistoryChartProps {
   title: ReactNode;
