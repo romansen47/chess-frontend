@@ -1,6 +1,7 @@
 import SettingsManager from "../../SettingsManager";
 import { useI18n } from "../../i18n/I18nProvider";
 import EngineLineExplorer from "../engine/EngineLineExplorer";
+import EvaluationHistoryChart from "../evaluation/EvaluationHistoryChart";
 import { activeEvaluationBarValue } from "../evaluation/evaluationBar";
 import type { EnginePanelActions, EnginePanelState } from "./chessBoardViewTypes";
 import "./EnginePanel.css";
@@ -98,24 +99,37 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
             : engine.uciAnalysisLoaded ? <div className="engine-placeholder-text">{t("analysis.analyzeTitle")}</div>
               : <>
                 {engine.evalError && <div className="engine-error">{t("common.error")}: {engine.evalError}</div>}
-                {engine.engineAutoUpdate && engine.engineEval && !engine.clock?.gameState && (
-                  engine.engineEval.lines.length > 0
-                    ? <EngineLineExplorer
-                        evaluation={engine.engineEval}
-                        resetKey={engine.engineEval.lines[0]?.positions?.[0] ?? null}
-                        variant="game"
-                        orientation={engine.boardOrientation}
-                        boardTitle={t("analysis.evaluationContinuation")}
-                        linesTitle={t("analysis.variationsInfinite")}
-                        engineNameFallback={t("analysis.evaluationEngine")}
-                        depthLabel={(depth) => t("analysis.searchDepth", { depth })}
-                        boardUnavailableText={t("analysis.evaluationBoardUnavailable")}
-                        animateVariations={engine.uiPreferences.animateEngineVariations}
-                        animationIntervalMs={
-                          engine.uiPreferences.engineVariationAnimationIntervalMs
-                        }
-                      />
-                    : <div className="engine-empty">{t("analysis.noEngineLines")}</div>
+                {engine.engineAutoUpdate && !engine.clock?.gameState && (
+                  <div className="game-evaluation-content">
+                    <EvaluationHistoryChart
+                      title={t("evaluation.history")}
+                      points={engine.engineEvaluationHistory}
+                      totalPlies={engine.gameEvaluationTotalPlies}
+                      minimumVisiblePlies={40}
+                      resetScale={engine.engineEvaluationHistory.length === 0}
+                      ariaLabel={t("evaluation.history")}
+                      className="game-evaluation-history"
+                    />
+                    {engine.engineEval?.lines.length
+                      ? <EngineLineExplorer
+                          evaluation={engine.engineEval}
+                          resetKey={engine.engineEval.lines[0]?.positions?.[0] ?? null}
+                          variant="game"
+                          orientation={engine.boardOrientation}
+                          boardTitle={t("analysis.evaluationContinuation")}
+                          linesTitle={t("analysis.variationsInfinite")}
+                          engineNameFallback={t("analysis.evaluationEngine")}
+                          depthLabel={(depth) => t("analysis.searchDepth", { depth })}
+                          boardUnavailableText={t("analysis.evaluationBoardUnavailable")}
+                          animateVariations={engine.uiPreferences.animateEngineVariations}
+                          animationIntervalMs={
+                            engine.uiPreferences.engineVariationAnimationIntervalMs
+                          }
+                        />
+                      : <div className="engine-empty game-evaluation-empty">
+                          {t("analysis.noEngineLines")}
+                        </div>}
+                  </div>
                 )}
               </>}
           </div>
