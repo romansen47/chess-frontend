@@ -304,6 +304,7 @@ export default function ChessBoardContainer({
     clock={game.clock} clockError={game.clockError}
     historicalClock={historicalClock(analysis.gameAnnotations,
       analysis.analysisSelectedPosition?.ply ?? null, analysis.analysisVariationMoves.length)}
+    boardTheme={uiPreferences.preferences.boardTheme}
     whiteComputerEnabled={computer.whiteComputerEnabled} blackComputerEnabled={computer.blackComputerEnabled}
     toggleWhiteComputer={() => computer.updateWhiteComputerEnabled(!computer.whiteComputerEnabled)}
     toggleBlackComputer={() => computer.updateBlackComputerEnabled(!computer.blackComputerEnabled)}
