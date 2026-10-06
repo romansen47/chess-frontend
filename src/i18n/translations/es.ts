@@ -83,6 +83,7 @@ export const spanishTranslations = {
   "engine.noCommunication": "Todavía no se ha registrado ninguna comunicación.",
 
   "evaluation.failed": "No se pudo cargar la evaluación del motor.",
+  "evaluation.history": "Historial de evaluación",
   "evaluation.analysisFailed": "No se pudo cargar la evaluación del análisis.",
 
   "analysis.complete": "Análisis completado",
