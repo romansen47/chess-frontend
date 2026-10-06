@@ -26,6 +26,7 @@ export class BackendLiveEvaluationSource implements LiveEvaluationSource {
   private active = false;
   private fastPolling = true;
   private requestInFlight = false;
+  private generation = 0;
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private eventSource: EventSource | null = null;
 
@@ -68,6 +69,7 @@ export class BackendLiveEvaluationSource implements LiveEvaluationSource {
   start(_position?: LiveEvaluationPosition): void {
     if (this.active) return;
     this.active = true;
+    this.generation++;
     this.fastPolling = true;
     this.connectEventSource();
     this.restartPolling();
@@ -79,11 +81,13 @@ export class BackendLiveEvaluationSource implements LiveEvaluationSource {
       return;
     }
     this.active = false;
+    this.generation++;
     this.disconnectEventSource();
     this.clearPolling();
   }
 
   updatePosition(_position: LiveEvaluationPosition): void {
+    this.generation++;
     this.refresh();
   }
 
@@ -148,13 +152,14 @@ export class BackendLiveEvaluationSource implements LiveEvaluationSource {
 
   private async requestEvaluation(): Promise<void> {
     if (!this.active || this.requestInFlight) return;
+    const generation = this.generation;
     this.requestInFlight = true;
     this.emit({ type: "loading", loading: true });
     this.emit({ type: "error", error: null });
 
     try {
       const data = await this.dependencies.fetchEvaluation();
-      if (!this.active) return;
+      if (!this.active || generation !== this.generation) return;
       const hasLines = Boolean(data.lines && data.lines.length > 0);
       this.setFastPolling(!hasLines);
       if (hasLines) {
