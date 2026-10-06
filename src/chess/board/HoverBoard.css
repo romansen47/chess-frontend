@@ -40,11 +40,11 @@
 }
 
 .hover-board-square-light {
-  background: #f0d9b5;
+  background: var(--board-light-square, #f0d9b5);
 }
 
 .hover-board-square-dark {
-  background: #769656;
+  background: var(--board-dark-square, #769656);
 }
 
 .hover-board-piece {
