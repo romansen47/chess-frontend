@@ -48,6 +48,9 @@ describe("analysis board decorations", () => {
     expect(new Set(arrows.map((arrow) => arrow.color)).size).toBe(3);
     expect(arrows[0]?.shaftWidth).toBeGreaterThan(arrows[1]?.shaftWidth ?? 0);
     expect(arrows[1]?.shaftWidth).toBeGreaterThan(arrows[2]?.shaftWidth ?? 0);
+    expect(arrows[0]?.opacity).toBeGreaterThan(arrows[1]?.opacity ?? 0);
+    expect(arrows[1]?.opacity).toBeGreaterThan(arrows[2]?.opacity ?? 0);
+    expect(arrows.every((arrow) => arrow.opacity < 1)).toBe(true);
   });
 
   it("limits the number of displayed evaluation arrows", () => {
