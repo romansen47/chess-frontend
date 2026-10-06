@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MoveResult } from "../types";
-import { appendMoveResultToRows } from "./moveListUtils";
+import { appendMoveResultToRows, latestPlyFromMoveRows } from "./moveListUtils";
 
 function result(partial: Partial<MoveResult>): MoveResult {
   return {
@@ -59,5 +59,19 @@ describe("appendMoveResultToRows", () => {
         whitePosition: undefined,
       },
     ]);
+  });
+});
+
+
+describe("latestPlyFromMoveRows", () => {
+  it("returns the latest occupied half-move", () => {
+    expect(latestPlyFromMoveRows([
+      { moveNumber: 1, white: "e4", black: "e5" },
+      { moveNumber: 2, white: "Nf3" },
+    ])).toBe(3);
+  });
+
+  it("returns zero for an empty game", () => {
+    expect(latestPlyFromMoveRows([])).toBe(0);
   });
 });
