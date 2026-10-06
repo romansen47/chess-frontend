@@ -55,6 +55,7 @@ export function useAnalysisReplay(
           state.setAnalysisReplayStatus(`Analyzing ${activePly} / ${currentStep.totalPlies}…`);
         }
         const step = await fetchNextAnalysisReplayStep();
+        if (state.analysisReplayCancelledRef.current) break;
         applyAnalysisReplayStep(step);
         currentStep = step;
         const progressText = `${step.currentPly} / ${step.totalPlies}`;
