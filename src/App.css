@@ -367,6 +367,7 @@
   display: block;
   background: #303030;
   border-radius: 5px;
+  cursor: ns-resize;
 }
 
 
@@ -522,7 +523,7 @@
 }
 
 .analysis-position-square-move {
-  box-shadow: inset 0 0 0 2px rgba(70, 70, 70, 0.68);
+  box-shadow: inset 0 0 0 2px rgba(214, 194, 106, 0.92);
 }
 
 
