@@ -10,6 +10,7 @@ import {
 import { useI18n } from "./i18n/I18nProvider";
 import EngineManager from "./EngineManager";
 import EngineProfileHierarchy from "./EngineProfileHierarchy";
+import { BOARD_THEMES, type BoardThemeId } from "./chess/settings/boardThemes";
 import {
   ANALYSIS_EVALUATION_ARROW_COUNTS,
   ENGINE_VARIATION_ANIMATION_INTERVALS,
@@ -483,6 +484,32 @@ export default function SettingsManager({
                         })
                       }
                     />
+                  </label>
+
+                  <label className="engine-config-preference-card">
+                    <div>
+                      <strong>{t("settings.boardTheme")}</strong>
+                      <span>{t("settings.boardThemeDescription")}</span>
+                    </div>
+                    <select
+                      className="engine-config-preference-select"
+                      value={uiPreferences.boardTheme}
+                      onChange={(event) =>
+                        onUiPreferencesChange({
+                          boardTheme: event.target.value as BoardThemeId,
+                        })
+                      }
+                    >
+                      {BOARD_THEMES.map((theme) => (
+                        <option key={theme.id} value={theme.id}>
+                          {theme.id === "green"
+                            ? t("settings.boardThemeGreen")
+                            : theme.id === "brown"
+                              ? t("settings.boardThemeBrown")
+                              : t("settings.boardThemeSlate")}
+                        </option>
+                      ))}
+                    </select>
                   </label>
 
                   <label className="engine-config-preference-card">
