@@ -75,6 +75,7 @@ export const englishTranslations = {
   "engine.protocol": "UCI protocol",
   "engine.noCommunication": "No communication has been logged yet.",
   "evaluation.failed": "Failed to load the engine evaluation.",
+  "evaluation.history": "Evaluation history",
   "evaluation.analysisFailed": "Failed to load the analysis evaluation.",
   "annotations.title": "Annotations",
   "annotations.selectMove": "Select a move to view or edit its annotations.",
