@@ -5,6 +5,7 @@ export interface BoardArrowSpec extends BoardArrowMove {
   shaftWidth: number;
   headWidth: number;
   headLength: number;
+  opacity: number;
   startInset: number;
   endInset: number;
 }
@@ -27,9 +28,10 @@ export function createEvaluationArrow(
     from: move.from,
     to: move.to,
     color,
-    shaftWidth: rank === 0 ? 0.065 : rank === 1 ? 0.055 : 0.047,
-    headWidth: rank === 0 ? 0.23 : rank === 1 ? 0.205 : 0.18,
+    shaftWidth: rank === 0 ? 0.08 : rank === 1 ? 0.07 : 0.06,
+    headWidth: rank === 0 ? 0.25 : rank === 1 ? 0.225 : 0.20,
     headLength: rank === 0 ? 0.22 : rank === 1 ? 0.20 : 0.18,
+    opacity: rank === 0 ? 0.72 : rank === 1 ? 0.60 : 0.50,
     startInset: 0.30,
     endInset: 0.32,
   };
