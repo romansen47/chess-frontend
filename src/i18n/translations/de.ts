@@ -77,6 +77,7 @@ export const germanTranslations = {
   "engine.protocol": "UCI-Protokoll",
   "engine.noCommunication": "Noch keine Kommunikation protokolliert.",
   "evaluation.failed": "Engine-Bewertung konnte nicht geladen werden.",
+  "evaluation.history": "Bewertungsverlauf",
   "evaluation.analysisFailed": "Analysebewertung konnte nicht geladen werden.",
   "annotations.title": "Kommentare",
   "annotations.selectMove": "Wähle einen Zug, um seine Kommentare und Varianten zu bearbeiten.",
