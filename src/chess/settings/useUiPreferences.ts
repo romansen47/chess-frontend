@@ -1,4 +1,9 @@
 import { useEffect, useState } from "react";
+import {
+  DEFAULT_BOARD_THEME_ID,
+  isBoardThemeId,
+  type BoardThemeId,
+} from "./boardThemes";
 
 const STORAGE_KEY = "chess.uiPreferences";
 
@@ -19,6 +24,7 @@ export interface UiPreferences {
   engineVariationAnimationIntervalMs: EngineVariationAnimationIntervalMs;
   showMoveAnnotationsOnBoard: boolean;
   showBoardCoordinates: boolean;
+  boardTheme: BoardThemeId;
 }
 
 export const DEFAULT_UI_PREFERENCES: UiPreferences = {
@@ -28,6 +34,7 @@ export const DEFAULT_UI_PREFERENCES: UiPreferences = {
   engineVariationAnimationIntervalMs: 1000,
   showMoveAnnotationsOnBoard: true,
   showBoardCoordinates: true,
+  boardTheme: DEFAULT_BOARD_THEME_ID,
 };
 
 function isAnalysisEvaluationArrowCount(
@@ -84,6 +91,9 @@ function loadUiPreferences(): UiPreferences {
         parsed.showBoardCoordinates,
         DEFAULT_UI_PREFERENCES.showBoardCoordinates,
       ),
+      boardTheme: isBoardThemeId(parsed.boardTheme)
+        ? parsed.boardTheme
+        : DEFAULT_UI_PREFERENCES.boardTheme,
     };
   } catch {
     return DEFAULT_UI_PREFERENCES;
