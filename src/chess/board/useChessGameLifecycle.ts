@@ -89,6 +89,7 @@ export function useChessGameLifecycle(options: Options) {
         game.setClock(null);
         engine.setEngineAutoUpdate(false);
         engine.setEngineEval(null);
+        engine.resetEngineEvaluationHistory();
         engine.setLiveEvaluationBar(null);
         analysis.setImportedPlayers(
           formatPlayerDisplayName(gameData.whitePlayerName, "White"),
@@ -172,6 +173,7 @@ export function useChessGameLifecycle(options: Options) {
       await stopActiveGameRuntime();
       engine.setEngineAutoUpdate(false);
       engine.setEngineEval(null);
+      engine.resetEngineEvaluationHistory();
       engine.setLiveEvaluationBar(null);
       analysis.resetState();
       const projection = applyBoardProjection(imported);
@@ -234,6 +236,7 @@ export function useChessGameLifecycle(options: Options) {
       game.setGameEndState(null);
       game.setShowGameSettingsDialog(false);
       engine.setEngineEval(null);
+      engine.resetEngineEvaluationHistory();
       engine.setLiveEvaluationBar(null);
       game.setClock({
         whiteTime: applied.timeForEachPlayerSeconds,
