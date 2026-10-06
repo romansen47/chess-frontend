@@ -93,7 +93,7 @@ export function useChessLiveEvaluation(options: Options) {
       return { ...previous, engineProfileId: preferred?.id ?? data.profiles[0]?.id ?? null };
     });
     engine.setEngineEval(null);
-    engine.setEngineEvaluationPly(null);
+    engine.resetEngineEvaluationHistory();
     engine.setLiveEvaluationBar(null);
     if (engine.engineAutoUpdateRef.current) {
       void ensureLiveEvaluationPosition().then((position) => {
@@ -109,13 +109,13 @@ export function useChessLiveEvaluation(options: Options) {
     if (!controller) return;
     return controller.subscribe((event) => {
       switch (event.type) {
-        case "evaluation":
-          engine.setEngineEvaluationPly(
+        case "evaluation": {
+          const ply =
             board.liveEvaluationPositionRef.current?.uciMoves.length
-              ?? board.latestMovePlyRef.current,
-          );
-          engine.setEngineEval(event.evaluation);
+              ?? board.latestMovePlyRef.current;
+          engine.recordEngineEvaluation(ply, event.evaluation);
           break;
+        }
         case "bar": engine.setLiveEvaluationBar(event.bar); break;
         case "loading": engine.setIsLoadingEval(event.loading); break;
         case "error":
