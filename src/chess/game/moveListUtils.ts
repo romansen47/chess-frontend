@@ -108,3 +108,19 @@ export function appendMoveResultToRows(
 
   return copy;
 }
+
+
+export function latestPlyFromMoveRows(rows: readonly MoveRow[]): number {
+  let latestPly = 0;
+  for (const row of rows) {
+    const whitePly = row.moveNumber * 2 - 1;
+    const blackPly = row.moveNumber * 2;
+    if (row.white || row.whiteUci || row.whitePosition) {
+      latestPly = Math.max(latestPly, whitePly);
+    }
+    if (row.black || row.blackUci || row.blackPosition) {
+      latestPly = Math.max(latestPly, blackPly);
+    }
+  }
+  return latestPly;
+}
