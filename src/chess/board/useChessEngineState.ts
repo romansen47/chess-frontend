@@ -11,6 +11,7 @@ import { ENGINE_RUNTIME_ASSIGNMENTS_CHANGED_EVENT } from "../engine/engineRuntim
 
 export function useChessEngineState() {
   const [engineEval, setEngineEval] = useState<EngineEvaluation | null>(null);
+  const [engineEvaluationPly, setEngineEvaluationPly] = useState<number | null>(null);
   const [liveEvaluationBar, setLiveEvaluationBar] = useState<number | null>(null);
   const [isLoadingEval, setIsLoadingEval] = useState(false);
   const [evalError, setEvalError] = useState<string | null>(null);
@@ -66,7 +67,8 @@ export function useChessEngineState() {
   }, []);
 
   return {
-    engineEval, setEngineEval, liveEvaluationBar, setLiveEvaluationBar,
+    engineEval, setEngineEval, engineEvaluationPly, setEngineEvaluationPly,
+    liveEvaluationBar, setLiveEvaluationBar,
     isLoadingEval, setIsLoadingEval, evalError, setEvalError,
     engineAutoUpdate, setEngineAutoUpdate, engineAutoUpdateRef, liveEvaluationControllerRef,
     showSettings, setShowSettings, engineConfigOverview, setEngineConfigOverview,
