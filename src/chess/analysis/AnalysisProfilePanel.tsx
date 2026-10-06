@@ -1,6 +1,11 @@
+import { useEffect, useState, type WheelEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import type { AnalysisProfilePoint } from "../types";
 import { formatEngineScore } from "../engine/engineEvaluationUtils";
+import {
+  ANALYSIS_PROFILE_MIN_MAX_ABS_EVAL,
+  adjustAnalysisProfileScale,
+} from "./analysisProfileScale";
 import { getAnalysisMoveSelectionForPly } from "./analysisSelectionUtils";
 import type { AnalysisReplayContentActions, AnalysisReplayContentState } from "./analysisReplayViewTypes";
 
@@ -11,6 +16,9 @@ interface AnalysisProfilePanelProps {
 
 export default function AnalysisProfilePanel({ state, actions }: AnalysisProfilePanelProps) {
   const { t } = useI18n();
+  const [maxAbsEval, setMaxAbsEval] = useState(
+    ANALYSIS_PROFILE_MIN_MAX_ABS_EVAL,
+  );
   const {
     analysisProfile,
     analysisTotalPlies,
@@ -22,11 +30,23 @@ export default function AnalysisProfilePanel({ state, actions }: AnalysisProfile
     moves,
   } = state;
 
+  useEffect(() => {
+    if (isAnalysisReplayRunning) {
+      setMaxAbsEval(ANALYSIS_PROFILE_MIN_MAX_ABS_EVAL);
+    }
+  }, [isAnalysisReplayRunning]);
+
+  function handleVerticalZoom(event: WheelEvent<SVGSVGElement>) {
+    event.preventDefault();
+    setMaxAbsEval((current) =>
+      adjustAnalysisProfileScale(current, event.deltaY)
+    );
+  }
+
   const width = 860;
   const height = 560;
   const paddingX = 12;
   const paddingY = 18;
-  const maxAbsEval = 10;
   const points = analysisProfile.length > 0
     ? analysisProfile
     : [{
@@ -80,6 +100,7 @@ export default function AnalysisProfilePanel({ state, actions }: AnalysisProfile
         <span>
           {latest?.ply ?? 0} plies · {formatEngineScore(latest?.evaluation ?? 0)}
           {latest?.depth ? ` · depth ${latest.depth}` : ""}
+          {` · ±${maxAbsEval}`}
         </span>
       </div>
       <svg
@@ -87,7 +108,8 @@ export default function AnalysisProfilePanel({ state, actions }: AnalysisProfile
         viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label="Evaluation history of the analyzed game"
+        aria-label={`Evaluation history of the analyzed game, vertical scale ±${maxAbsEval}`}
+        onWheel={handleVerticalZoom}
       >
         <line className="analysis-profile-zero-line" x1={paddingX} y1={zeroY} x2={width - paddingX} y2={zeroY} />
         {chartPoints.map((point) => {
