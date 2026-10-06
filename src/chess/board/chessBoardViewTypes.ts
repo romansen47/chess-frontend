@@ -19,6 +19,7 @@ import type ChessHeader from "../header/ChessHeader";
 import type Board from "./Board";
 import type HoverBoard from "./HoverBoard";
 import type { BoardOrientation } from "./boardOrientation";
+import type { BoardThemeId } from "../settings/boardThemes";
 import type { UiPreferences } from "../settings/useUiPreferences";
 
 export interface EnginePanelState {
@@ -99,6 +100,7 @@ export interface ChessBoardViewProps {
   clock: ClockState | null;
   clockError: string | null;
   historicalClock: HistoricalClock | null;
+  boardTheme: BoardThemeId;
   whiteComputerEnabled: boolean;
   blackComputerEnabled: boolean;
   toggleWhiteComputer: () => void;
