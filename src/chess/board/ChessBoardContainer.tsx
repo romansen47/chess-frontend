@@ -315,7 +315,11 @@ export default function ChessBoardContainer({
       engineAutoUpdate: engine.engineAutoUpdate, liveEvaluationBar: engine.liveEvaluationBar,
       analysisEvaluationEnabled: analysis.analysisEvaluationEnabled,
       analysisSelectedPosition: analysis.analysisSelectedPosition, analysisVariationMoves: analysis.analysisVariationMoves,
-      analysisEvaluation: analysis.analysisEvaluation, engineEval: engine.engineEval, evalError: engine.evalError,
+      analysisEvaluation: analysis.analysisEvaluation,
+      engineEval: engine.engineEval,
+      engineEvaluationHistory: engine.engineEvaluationHistory,
+      gameEvaluationTotalPlies: board.latestMovePlyRef.current,
+      evalError: engine.evalError,
       isLoadingEval: engine.isLoadingEval, boardOrientation: board.boardOrientation, clock: game.clock, analysisContent,
       uiPreferences: uiPreferences.preferences,
     }}
