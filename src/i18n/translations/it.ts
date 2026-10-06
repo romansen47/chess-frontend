@@ -83,6 +83,7 @@ export const italianTranslations = {
   "engine.noCommunication": "Non è stata ancora registrata alcuna comunicazione.",
 
   "evaluation.failed": "Impossibile caricare la valutazione del motore.",
+  "evaluation.history": "Cronologia della valutazione",
   "evaluation.analysisFailed": "Impossibile caricare la valutazione dell’analisi.",
 
   "analysis.complete": "Analisi completata",
