@@ -224,9 +224,10 @@
 }
 
 @media (max-width: 820px) {
-.game-evaluation-content {
+  .game-evaluation-content {
     display: none;
   }
+}
 
 @media (max-width: 820px) {
 .engine-panel {
