@@ -20,6 +20,7 @@ import type Board from "./Board";
 import type HoverBoard from "./HoverBoard";
 import type { BoardOrientation } from "./boardOrientation";
 import type { BoardThemeId } from "../settings/boardThemes";
+import type { EvaluationHistoryPoint } from "../evaluation/evaluationHistory";
 import type { UiPreferences } from "../settings/useUiPreferences";
 
 export interface EnginePanelState {
@@ -36,6 +37,8 @@ export interface EnginePanelState {
   analysisVariationMoves: string[];
   analysisEvaluation: EngineEvaluation | null;
   engineEval: EngineEvaluation | null;
+  engineEvaluationHistory: EvaluationHistoryPoint[];
+  gameEvaluationTotalPlies: number;
   evalError: string | null;
   isLoadingEval: boolean;
   boardOrientation: BoardOrientation;
