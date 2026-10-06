@@ -4,6 +4,10 @@ import type {
   EngineRuntimeAssignments,
 } from "../../engineConfigTypes";
 import type { EngineEvaluation } from "../types";
+import {
+  recordEvaluationHistoryPoint,
+  type EvaluationHistoryPoint,
+} from "../evaluation/evaluationHistory";
 import { fetchProgramFeatures } from "../api/programApi";
 import { BackendLiveEvaluationSource } from "../evaluation/BackendLiveEvaluationSource";
 import { LiveEvaluationController } from "../evaluation/LiveEvaluationController";
@@ -12,6 +16,8 @@ import { ENGINE_RUNTIME_ASSIGNMENTS_CHANGED_EVENT } from "../engine/engineRuntim
 export function useChessEngineState() {
   const [engineEval, setEngineEval] = useState<EngineEvaluation | null>(null);
   const [engineEvaluationPly, setEngineEvaluationPly] = useState<number | null>(null);
+  const [engineEvaluationHistory, setEngineEvaluationHistory] =
+    useState<EvaluationHistoryPoint[]>([]);
   const [liveEvaluationBar, setLiveEvaluationBar] = useState<number | null>(null);
   const [isLoadingEval, setIsLoadingEval] = useState(false);
   const [evalError, setEvalError] = useState<string | null>(null);
@@ -34,6 +40,19 @@ export function useChessEngineState() {
   const [showChessDatabaseDialog, setShowChessDatabaseDialog] = useState(false);
   const [isTerminatingProgram, setIsTerminatingProgram] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
+
+  function recordEngineEvaluation(ply: number, evaluation: EngineEvaluation) {
+    setEngineEvaluationPly(ply);
+    setEngineEval(evaluation);
+    setEngineEvaluationHistory((current) =>
+      recordEvaluationHistoryPoint(current, ply, evaluation)
+    );
+  }
+
+  function resetEngineEvaluationHistory() {
+    setEngineEvaluationHistory([]);
+    setEngineEvaluationPly(null);
+  }
 
   function setEngineAutoUpdate(value: boolean | ((previous: boolean) => boolean)) {
     const nextValue = typeof value === "function" ? value(engineAutoUpdateRef.current) : value;
@@ -68,6 +87,7 @@ export function useChessEngineState() {
 
   return {
     engineEval, setEngineEval, engineEvaluationPly, setEngineEvaluationPly,
+    engineEvaluationHistory, recordEngineEvaluation, resetEngineEvaluationHistory,
     liveEvaluationBar, setLiveEvaluationBar,
     isLoadingEval, setIsLoadingEval, evalError, setEvalError,
     engineAutoUpdate, setEngineAutoUpdate, engineAutoUpdateRef, liveEvaluationControllerRef,
