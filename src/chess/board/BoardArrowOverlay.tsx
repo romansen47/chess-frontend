@@ -88,6 +88,7 @@ export default function BoardArrowOverlay({ arrows, orientation }: Props) {
         key={`${arrow.from}-${arrow.to}-${index}`}
         d={path}
         fill={arrow.color}
+        fillOpacity={arrow.opacity}
       />,
     ];
   });
