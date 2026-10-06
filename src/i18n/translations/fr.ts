@@ -77,6 +77,7 @@ export const frenchTranslations = {
   "engine.protocol": "Protocole UCI",
   "engine.noCommunication": "Aucune communication n’a encore été enregistrée.",
   "evaluation.failed": "Impossible de charger l’évaluation du moteur.",
+  "evaluation.history": "Historique de l’évaluation",
   "evaluation.analysisFailed": "Impossible de charger l’évaluation de l’analyse.",
   "annotations.title": "Annotations",
   "annotations.selectMove": "Sélectionnez un coup pour afficher ou modifier ses annotations.",
