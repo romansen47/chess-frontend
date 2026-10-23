@@ -192,6 +192,12 @@
 
 
 .board-layout {
+  --board-square-size: 88px;
+  --board-frame-padding: 13px;
+  --desktop-board-size: calc(8 * var(--board-square-size));
+  --desktop-board-row-height:
+    calc(var(--desktop-board-size) + 2 * var(--board-frame-padding));
+
   width: 100%;
   min-width: 0;
   display: flex;
@@ -218,7 +224,7 @@
 
   background: #2b2b2b;
   border-radius: 8px;
-  padding: 13px;
+  padding: var(--board-frame-padding);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
 }
 
@@ -314,17 +320,6 @@
 
 
 /* Game-Settings-Dialog */
-
-/* Analyse-Replay: nutzt im Analysemodus die rechte Content-Spalte */
-.analysis-replay-content {
-  width: 100%;
-  height: 730px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-}
-
 
 .analysis-profile-panel {
   width: 100%;
@@ -754,7 +749,7 @@
     --mobile-eval-width: 22px;
     --mobile-board-gap: 6px;
     --mobile-board-size: min(
-      704px,
+      var(--desktop-board-size),
       calc(100vw - 20px - var(--mobile-eval-width) - var(--mobile-board-gap))
     );
 

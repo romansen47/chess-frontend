@@ -8,9 +8,9 @@ import {
 } from "react";
 import { formatEngineScore } from "../engine/engineEvaluationUtils";
 import {
-  ANALYSIS_PROFILE_MIN_MAX_ABS_EVAL,
-  adjustAnalysisProfileScale,
-} from "../analysis/analysisProfileScale";
+  EVALUATION_HISTORY_MIN_MAX_ABS_EVAL,
+  adjustEvaluationHistoryScale,
+} from "./evaluationHistoryScale";
 import type { EvaluationHistoryPoint } from "./evaluationHistory";
 
 interface EvaluationHistoryChartProps {
@@ -52,12 +52,12 @@ export default function EvaluationHistoryChart({
   className,
 }: EvaluationHistoryChartProps) {
   const [maxAbsEval, setMaxAbsEval] = useState(
-    ANALYSIS_PROFILE_MIN_MAX_ABS_EVAL,
+    EVALUATION_HISTORY_MIN_MAX_ABS_EVAL,
   );
 
   useEffect(() => {
     if (resetScale) {
-      setMaxAbsEval(ANALYSIS_PROFILE_MIN_MAX_ABS_EVAL);
+      setMaxAbsEval(EVALUATION_HISTORY_MIN_MAX_ABS_EVAL);
     }
   }, [resetScale]);
 
@@ -102,7 +102,7 @@ export default function EvaluationHistoryChart({
   function handleVerticalZoom(event: WheelEvent<SVGSVGElement>) {
     event.preventDefault();
     setMaxAbsEval((current) =>
-      adjustAnalysisProfileScale(current, event.deltaY)
+      adjustEvaluationHistoryScale(current, event.deltaY)
     );
   }
 

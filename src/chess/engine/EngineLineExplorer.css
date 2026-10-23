@@ -83,3 +83,39 @@
     max-height: 300px;
   }
 }
+
+
+/*
+ * The game view derives the compact board from the shared desktop board-row
+ * height. This keeps the continuation board aligned with the main board
+ * without duplicating the 730px layout constant here.
+ */
+.game-evaluation-content .game-engine-explorer-board-panel {
+  flex-basis: var(--game-evaluation-board-size);
+  width: var(--game-evaluation-board-size);
+  min-width: var(--game-evaluation-board-size);
+  max-width: var(--game-evaluation-board-size);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-evaluation-content
+  .game-engine-explorer-board-panel
+  > .analysis-detail-title {
+  flex: 0 0 var(--game-evaluation-board-title-height);
+  height: var(--game-evaluation-board-title-height);
+  line-height: var(--game-evaluation-board-title-height);
+}
+
+.game-evaluation-content
+  .game-engine-explorer-board-panel
+  .analysis-position-board {
+  flex: 0 0 var(--game-evaluation-board-size);
+  width: var(--game-evaluation-board-size);
+  height: var(--game-evaluation-board-size);
+  min-width: var(--game-evaluation-board-size);
+  min-height: var(--game-evaluation-board-size);
+  max-width: var(--game-evaluation-board-size);
+  max-height: var(--game-evaluation-board-size);
+}

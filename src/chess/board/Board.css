@@ -1,8 +1,8 @@
 /* Chess board grid, pieces, targets and on-board annotations. */
 .board-container {
   position: relative;
-  width: calc(8 * 88px);
-  height: calc(8 * 88px);
+  width: calc(8 * var(--board-square-size, 88px));
+  height: calc(8 * var(--board-square-size, 88px));
 }
 
 .board {
