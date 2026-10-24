@@ -10,6 +10,7 @@ import {
 import { useI18n } from "./i18n/I18nProvider";
 import EngineManager from "./EngineManager";
 import EngineProfileHierarchy from "./EngineProfileHierarchy";
+import OpeningManager from "./chess/openings/OpeningManager";
 import { BOARD_THEMES, type BoardThemeId } from "./chess/settings/boardThemes";
 import {
   ANALYSIS_EVALUATION_ARROW_COUNTS,
@@ -26,7 +27,7 @@ interface SettingsManagerProps {
   onClose: () => void;
 }
 
-type SettingsMode = "ENGINE_DEFAULTS" | "DISPLAY" | "ENGINES" | "ENGINE_LOG";
+type SettingsMode = "ENGINE_DEFAULTS" | "OPENINGS" | "DISPLAY" | "ENGINES" | "ENGINE_LOG";
 type AssignmentKey = keyof EngineProfileAssignments;
 
 const EMPTY_ASSIGNMENTS: EngineProfileAssignments = {
@@ -310,6 +311,16 @@ export default function SettingsManager({
           <button
             type="button"
             role="tab"
+            aria-selected={mode === "OPENINGS"}
+            className={mode === "OPENINGS" ? "active" : ""}
+            onClick={() => changeMode("OPENINGS")}
+            disabled={busy}
+          >
+            {t("openings.title")}
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={mode === "DISPLAY"}
             className={mode === "DISPLAY" ? "active" : ""}
             onClick={() => changeMode("DISPLAY")}
@@ -352,6 +363,7 @@ export default function SettingsManager({
             disabled={busy}
           >
             <option value="ENGINE_DEFAULTS">{t("settings.engineDefaults")}</option>
+            <option value="OPENINGS">{t("openings.title")}</option>
             <option value="DISPLAY">{t("settings.display")}</option>
             <option value="ENGINES">
               {t("settings.enginesAndProfiles")} ({engines.length}/{profiles.length})
@@ -376,6 +388,8 @@ export default function SettingsManager({
               overview={overview}
               onOverviewChange={onOverviewChange}
             />
+          ) : mode === "OPENINGS" ? (
+            <OpeningManager />
           ) : mode === "DISPLAY" ? (
             <main className="engine-config-details engine-config-display-details">
               <div className="engine-config-editor">
