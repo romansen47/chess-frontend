@@ -197,6 +197,19 @@ export interface ClockState {
   blackPlayerEngineName: string | null;
 }
 
+export interface Opening {
+  id: string;
+  name: string;
+  eco: string | null;
+  startingPositionId: number;
+  initialFen: string | null;
+  moves: string[];
+  sanMoves: string[];
+  position: string;
+  sideToMove: PieceColor | null;
+  playable: boolean;
+}
+
 export interface GameSettings {
   timeForEachPlayerSeconds: number;
   incrementForWhiteSeconds: number;
@@ -204,6 +217,7 @@ export interface GameSettings {
   additionalTimeAfter40MovesSeconds: number;
   startingColor: string;
   startingPositionId?: number;
+  openingId?: string | null;
   version: number;
 }
 
