@@ -4,6 +4,7 @@ import type { EngineLine } from "../types";
 import {
   isPlayedLine,
   normalizeEngineLineForPgn,
+  toggleStoredVariation,
   variationFromLine,
 } from "./engineVariationUtils";
 
@@ -28,6 +29,19 @@ describe("engine variation utilities", () => {
   it("normalizes figurines and castling for PGN storage", () => {
     expect(normalizeEngineLineForPgn("♘f3 0-0 ♛xd1"))
       .toBe("Nf3 O-O Qxd1");
+  });
+
+  it("adds and removes the same variation symmetrically", () => {
+    const variation = "3... Be6 4. Qxe6";
+
+    expect(toggleStoredVariation([], variation))
+      .toEqual([variation]);
+    expect(toggleStoredVariation([variation], variation))
+      .toEqual([]);
+    expect(toggleStoredVariation(
+      ["3... a6", variation, "3... Nf6"],
+      variation,
+    )).toEqual(["3... a6", "3... Nf6"]);
   });
 
   it("detects when an engine line starts with the played SAN move", () => {
