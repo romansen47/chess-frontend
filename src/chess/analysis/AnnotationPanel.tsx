@@ -8,6 +8,10 @@ import type {
 } from "../types";
 import "./annotationPanel.css";
 import AnnotationComment from "./AnnotationComment";
+import {
+  isPlayedLine,
+  variationFromLine,
+} from "./engineVariationUtils";
 import AnnotationTiming from "./AnnotationTiming";
 import AnnotationNagPicker from "./AnnotationNagPicker";
 
@@ -21,6 +25,7 @@ interface AnnotationPanelProps {
   dirty: boolean;
   saving: boolean;
   error: string | null;
+  onAddEngineVariation: (line: EngineLine) => void;
   onChange: (annotation: GameAnnotation) => void;
 }
 
@@ -35,27 +40,6 @@ function emptyAnnotation(
     evaluation: null,
     variations: [],
   };
-}
-
-function normalizeEngineLineForPgn(moves: string): string {
-  return moves
-    .replace(/[♔♚]/g, "K")
-    .replace(/[♕♛]/g, "Q")
-    .replace(/[♖♜]/g, "R")
-    .replace(/[♗♝]/g, "B")
-    .replace(/[♘♞]/g, "N")
-    .replace(/0-0-0/g, "O-O-O")
-    .replace(/0-0/g, "O-O")
-    .trim();
-}
-
-function variationFromLine(line: EngineLine, ply: number): string {
-  const moves = normalizeEngineLineForPgn(line.moves);
-  if (!moves) return "";
-  const moveNumber = Math.ceil(ply / 2);
-  return ply % 2 === 1
-    ? `${moveNumber}. ${moves}`
-    : `${moveNumber}... ${moves}`;
 }
 
 function evaluationText(value: number): string {
@@ -74,12 +58,6 @@ function engineLineEvaluationText(line: EngineLine): string {
   return line.eval > 0 ? `+${line.eval.toFixed(2)}` : line.eval.toFixed(2);
 }
 
-function isPlayedLine(line: EngineLine, selectedSan: string | null): boolean {
-  if (!selectedSan) return false;
-  const firstMove = normalizeEngineLineForPgn(line.moves).split(/\s+/)[0] ?? "";
-  return firstMove === normalizeEngineLineForPgn(selectedSan);
-}
-
 export default function AnnotationPanel({
   selectedPly,
   selectedSan,
@@ -90,6 +68,7 @@ export default function AnnotationPanel({
   dirty,
   saving,
   error,
+  onAddEngineVariation,
   onChange,
 }: AnnotationPanelProps) {
   const { t } = useI18n();
@@ -109,12 +88,6 @@ export default function AnnotationPanel({
 
   function update(patch: Partial<GameAnnotation>) {
     onChange({ ...value!, ...patch, ply: selectedPly! });
-  }
-
-  function addVariation(line: EngineLine) {
-    const variation = variationFromLine(line, selectedPly!);
-    if (!variation || value!.variations.includes(variation)) return;
-    update({ variations: [...value!.variations, variation] });
   }
 
   return (
@@ -232,7 +205,7 @@ export default function AnnotationPanel({
                     disabled={!variation || alreadyStored}
                     aria-label={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
                     title={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
-                    onClick={() => addVariation(line)}
+                    onClick={() => onAddEngineVariation(line)}
                   >
                     {alreadyStored ? "✓" : "+"}
                   </button>
