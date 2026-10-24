@@ -3,13 +3,17 @@ import type { BoardOrientation } from "../board/boardOrientation";
 import { formatEngineLineScore } from "../engine/engineEvaluationUtils";
 import type { BoardArrowMove, EngineLine } from "../types";
 import AnalysisStaticBoard from "./AnalysisStaticBoard";
+import { variationFromLine } from "./engineVariationUtils";
 
 interface Props {
+  ply: number;
   playedSan: string | null;
   playedMoveUci: string | null;
   playedPosition: string | null;
   alternatives: EngineLine[];
+  savedVariations: string[];
   orientation: BoardOrientation;
+  onAddVariation: (line: EngineLine) => void;
 }
 
 function moveArrowFromUci(
@@ -48,11 +52,14 @@ function matchesPlayedMove(
  * are useful for every move, not only for mistakes or remarkable moves.
  */
 export default function AnalysisMoveAlternatives({
+  ply,
   playedSan,
   playedMoveUci,
   playedPosition,
   alternatives,
+  savedVariations,
   orientation,
+  onAddVariation,
 }: Props) {
   const { t } = useI18n();
 
@@ -99,6 +106,10 @@ export default function AnalysisMoveAlternatives({
 
       {candidates.map(({ line, rank, position, arrow, move }) => {
         const played = matchesPlayedMove(arrow, playedMoveUci);
+        const variation = variationFromLine(line, ply);
+        const alreadyStored =
+          variation !== "" && savedVariations.includes(variation);
+
         return (
           <div
             key={`${rank}-${move}-${line.eval}`}
@@ -119,12 +130,48 @@ export default function AnalysisMoveAlternatives({
                   : ""}
               </span>
             </div>
-            <AnalysisStaticBoard
-              position={position!}
-              orientation={orientation}
-              highlightedMove={arrow}
-              className="analysis-move-alternative-board"
-            />
+            {played ? (
+              <AnalysisStaticBoard
+                position={position!}
+                orientation={orientation}
+                highlightedMove={arrow}
+                className="analysis-move-alternative-board"
+              />
+            ) : (
+              <button
+                type="button"
+                className={[
+                  "analysis-move-alternative-board-button",
+                  alreadyStored
+                    ? "analysis-move-alternative-board-button-added"
+                    : "",
+                ].filter(Boolean).join(" ")}
+                disabled={!variation || alreadyStored}
+                aria-label={
+                  alreadyStored
+                    ? t("annotations.added")
+                    : t("annotations.addVariation")
+                }
+                title={
+                  alreadyStored
+                    ? t("annotations.added")
+                    : t("annotations.addVariation")
+                }
+                onClick={() => onAddVariation(line)}
+              >
+                <AnalysisStaticBoard
+                  position={position!}
+                  orientation={orientation}
+                  highlightedMove={arrow}
+                  className="analysis-move-alternative-board"
+                />
+                {alreadyStored && (
+                  <span className="analysis-move-alternative-added-badge">
+                    ✓
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         );
       })}
