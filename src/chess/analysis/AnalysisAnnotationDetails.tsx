@@ -48,6 +48,7 @@ export default function AnalysisAnnotationDetails({ state, actions }: Props) {
   return <div className="analysis-annotation-container">
     {ply != null && (
       <AnalysisMoveAlternatives
+        ply={ply}
         playedSan={selectedSan}
         playedMoveUci={selection?.uci ?? null}
         playedPosition={analysisSelectedPosition?.position ?? null}
