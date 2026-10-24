@@ -24,9 +24,14 @@ export default function AnalysisProfileContent({
   actions,
   children,
 }: Props) {
+  const showProfile = !(
+    state.analysisVariationAnchorPly != null
+    && state.analysisProfile.length <= 1
+  );
+
   return (
     <>
-      <AnalysisProfilePanel state={state} actions={actions} />
+      {showProfile && <AnalysisProfilePanel state={state} actions={actions} />}
       {state.analysisReplayFinished && !state.isAnalysisReplayRunning && children}
     </>
   );

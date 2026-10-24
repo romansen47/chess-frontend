@@ -136,6 +136,7 @@ export const ChessBoard: React.FC = () => {
       restoreAnnotations: analysis.restoreAnnotations,
       restoreReplayAfterReload: analysis.restoreAnalysisReplayAfterReload,
       setImportedPlayers: analysis.setImportedPlayers,
+      setContinuationAvailable: analysis.setAnalysisContinuationAvailable,
       setShowSettingsDialog: analysis.setShowAnalysisSettingsDialog,
       stopEvaluation: analysis.stopAnalysisEvaluation,
       resetState: analysis.resetAnalysisState,

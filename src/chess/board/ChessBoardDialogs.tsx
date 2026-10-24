@@ -71,7 +71,9 @@ export default function ChessBoardDialogs({ dialogs, actions }: Props) {
       engines={dialogs.analysisEngines}
       selectedProfile={dialogs.selectedAnalysisProfile} selectedEngine={dialogs.selectedAnalysisEngine}
       error={dialogs.analysisReplayError} running={dialogs.isAnalysisReplayRunning}
+      canContinue={dialogs.analysisContinuationAvailable}
       onSettingsChange={actions.setAnalysisSettings} onCancel={actions.closeAnalysisSettings}
+      onContinue={actions.continueImportedGame}
       onStart={() => void actions.startAnalysisReplay()} />}
 
     {dialogs.showGameEndDialog && dialogs.gameEndState && <div className="game-end-dialog">

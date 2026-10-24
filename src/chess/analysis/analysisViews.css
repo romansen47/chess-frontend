@@ -333,3 +333,44 @@
     min-height: 128px;
   }
 }
+
+
+.analysis-variation-move-list {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #242424;
+}
+
+.analysis-variation-move-list-title {
+  margin-bottom: 8px;
+  color: #f0f0f0;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.analysis-variation-move-list-empty {
+  color: #aaa;
+  font-size: 0.78rem;
+}
+
+.analysis-variation-move-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  min-height: 24px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.analysis-variation-move-number {
+  color: #999;
+  text-align: right;
+}
+
+.analysis-variation-move {
+  min-width: 0;
+  color: #eee;
+  overflow-wrap: anywhere;
+}

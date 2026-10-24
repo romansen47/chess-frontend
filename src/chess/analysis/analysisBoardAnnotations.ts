@@ -1,6 +1,7 @@
 import type {
   AnalysisPositionSelection,
   AnalysisProfilePoint,
+  AnalysisVariationMove,
   EngineEvaluation,
   GameAnnotation,
   MoveAnnotation,
@@ -13,7 +14,7 @@ interface BuildSelectedBoardAnnotationsOptions {
   analysisReplayFinished: boolean;
   analysisSelectedPosition: AnalysisPositionSelection | null;
   analysisProfile: AnalysisProfilePoint[];
-  analysisVariationMoves: string[];
+  analysisVariationMoves: AnalysisVariationMove[];
   analysisEvaluationEnabled: boolean;
   analysisEvaluation: EngineEvaluation | null;
   moveAnnotations: Record<number, MoveAnnotation>;
@@ -55,7 +56,7 @@ export function buildSelectedBoardAnnotations({
     }
 
     const latestVariationMove = analysisVariationMoves[analysisVariationMoves.length - 1];
-    const destination = latestVariationMove?.substring(2, 4);
+    const destination = latestVariationMove?.uci.substring(2, 4);
     if (!destination || destination.length !== 2) return [];
 
     return [{

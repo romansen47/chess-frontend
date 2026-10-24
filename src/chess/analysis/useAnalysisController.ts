@@ -42,6 +42,7 @@ export function useAnalysisController(options: UseAnalysisControllerOptions) {
     state.analysisEvaluationPlyRef.current = null;
     state.analysisEvaluationKeyRef.current = null;
     variation.resetAnalysisVariation();
+    state.setAnalysisContinuationAvailable(false);
     state.setAnalysisDetailsTab("engine");
     state.setAnalysisProfile(EMPTY_ANALYSIS_PROFILE);
   }
@@ -80,9 +81,12 @@ export function useAnalysisController(options: UseAnalysisControllerOptions) {
     analysisEvaluation: state.analysisEvaluation,
     analysisEvaluationError: state.analysisEvaluationError,
     analysisEvaluationKeyRef: state.analysisEvaluationKeyRef,
+    analysisVariationAnchorPly: state.analysisVariationAnchorPly,
     analysisVariationMoves: state.analysisVariationMoves,
     analysisVariationMovesRef: state.analysisVariationMovesRef,
     analysisVariationGameState: state.analysisVariationGameState,
+    analysisContinuationAvailable: state.analysisContinuationAvailable,
+    setAnalysisContinuationAvailable: state.setAnalysisContinuationAvailable,
     ...derived,
     resetAnalysisState,
     resetAnnotations: annotations.resetAnnotations,
@@ -97,6 +101,7 @@ export function useAnalysisController(options: UseAnalysisControllerOptions) {
     updateGameAnnotation: annotations.updateGameAnnotation,
     persistGameAnnotations: annotations.persistGameAnnotations,
     saveAnalysisPgn: annotations.saveAnalysisPgn,
+    startImportedGameContinuation: variation.startImportedGameContinuation,
     performAnalysisVariationMove: variation.performAnalysisVariationMove,
     restoreAnnotations: annotations.restoreAnnotations,
     setImportedPlayers: annotations.setImportedPlayers,

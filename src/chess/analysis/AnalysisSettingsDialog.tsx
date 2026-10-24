@@ -21,8 +21,10 @@ interface AnalysisSettingsDialogProps {
   selectedEngine: EngineDefinition | null;
   error: string | null;
   running: boolean;
+  canContinue: boolean;
   onSettingsChange: (settings: AnalysisReplaySettings) => void;
   onCancel: () => void;
+  onContinue: () => void;
   onStart: () => void;
 }
 
@@ -34,8 +36,10 @@ export default function AnalysisSettingsDialog({
   selectedEngine,
   error,
   running,
+  canContinue,
   onSettingsChange,
   onCancel,
+  onContinue,
   onStart,
 }: AnalysisSettingsDialogProps) {
   const { t } = useI18n();
@@ -193,6 +197,16 @@ export default function AnalysisSettingsDialog({
           >
             {t("common.cancel")}
           </button>
+          {canContinue && (
+            <button
+              type="button"
+              className="analysis-settings-dialog-button"
+              onClick={onContinue}
+              disabled={running}
+            >
+              {t("analysis.continueGame")}
+            </button>
+          )}
           <button
             type="button"
             className="analysis-settings-dialog-button"

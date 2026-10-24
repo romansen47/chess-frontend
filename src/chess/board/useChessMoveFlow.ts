@@ -9,7 +9,7 @@ import { applyLocalMoveTransition, reconcilePieceSnapshot } from "./pieceTransit
 import { mapBackendPiecesToLocalPieces } from "./positionUtils";
 import { projectGameState } from "../game/gameStateProjection";
 import { appendMoveResultToRows, mergeAuthoritativeMoveRows } from "../game/moveListUtils";
-import type { ClockState, GameAnnotation, MoveResult, PerformMoveOptions, PieceType } from "../types";
+import type { AnalysisVariationMove, ClockState, GameAnnotation, MoveResult, PerformMoveOptions, PieceType } from "../types";
 import type { ChessBoardState } from "./useChessBoardState";
 import type { ChessEngineState } from "./useChessEngineState";
 import type { ChessGameState } from "./useChessGameState";
@@ -18,7 +18,7 @@ interface AnalysisBridge {
   replayActiveRef: { current: boolean };
   replayFinished: boolean;
   selectedPosition: { ply: number } | null;
-  variationMovesRef: { current: string[] };
+  variationMovesRef: { current: AnalysisVariationMove[] };
   performVariationMove: (from: string, to: string, promotion?: PieceType) => Promise<void>;
   restoreAnnotations: (annotations: GameAnnotation[] | null | undefined) => void;
 }
@@ -69,7 +69,11 @@ export function useChessMoveFlow(options: Options) {
       board.setIsLoadingMoves(true);
       board.setLoadError(null);
       const data = analysis.replayActiveRef.current && analysis.replayFinished && analysis.selectedPosition
-        ? await fetchAnalysisPossibleMoves({ anchorPly: analysis.selectedPosition.ply, moves: [...analysis.variationMovesRef.current], from })
+        ? await fetchAnalysisPossibleMoves({
+            anchorPly: analysis.selectedPosition.ply,
+            moves: analysis.variationMovesRef.current.map((move) => move.uci),
+            from,
+          })
         : await fetchPossibleMoves(from);
       const targets = data.targets ?? [];
       options.updatePossibleTargets(targets);

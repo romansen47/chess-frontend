@@ -4,6 +4,7 @@ import LiveEvaluationView from "./LiveEvaluationView";
 import AnalysisProfileContent from "./AnalysisProfileContent";
 import AnalysisEngineDetails from "./AnalysisEngineDetails";
 import AnalysisAnnotationDetails from "./AnalysisAnnotationDetails";
+import AnalysisVariationMoveList from "./AnalysisVariationMoveList";
 import type { AnalysisReplayContentActions, AnalysisReplayContentState } from "./analysisReplayViewTypes";
 
 export type { AnalysisDetailsTab } from "./analysisReplayViewTypes";
@@ -15,7 +16,7 @@ interface Props {
 
 export default function AnalysisReplayContent({ state, actions }: Props) {
   const { t } = useI18n();
-  const variationMode = state.analysisVariationMoves.length > 0;
+  const variationMode = state.analysisVariationAnchorPly != null;
   const liveViewActive = variationMode || state.analysisEngineView === "live";
   const engineTabActive = state.analysisDetailsTab === "engine";
   const databaseTabActive = state.analysisDetailsTab === "database";
@@ -80,6 +81,10 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
           aria-labelledby={variationMode ? undefined : activePrimaryTabId}
         >
           {variationMode ? <>
+            <AnalysisVariationMoveList
+              anchorPly={state.analysisVariationAnchorPly ?? 0}
+              moves={state.analysisVariationMoves}
+            />
             <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={actions.setEngineView} />
             <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
               activePly={state.analysisSelectedPosition?.ply ?? null} variationMode deepAnalysisRunning={false}

@@ -8,6 +8,7 @@ import AnalysisEngineDetails from "../analysis/AnalysisEngineDetails";
 import AnalysisProfileContent from "../analysis/AnalysisProfileContent";
 import AnalysisReplayContent from "../analysis/AnalysisReplayContent";
 import LiveEvaluationView from "../analysis/LiveEvaluationView";
+import AnalysisVariationMoveList from "../analysis/AnalysisVariationMoveList";
 import type { AnalysisController } from "../analysis/useAnalysisController";
 import { useAnalysisLineAnimation } from "../analysis/useAnalysisLineAnimation";
 import {
@@ -79,6 +80,7 @@ export default function ChessBoardContainer({
     engineEval: engine.engineEval,
     analysisEvaluation: analysis.analysisEvaluation,
     analysisEvaluationEnabled: analysis.analysisEvaluationEnabled,
+    analysisVariationAnchorPly: analysis.analysisVariationAnchorPly,
     analysisVariationMoves: analysis.analysisVariationMoves,
     analysisEngineView: analysis.analysisEngineView,
     evaluationKey: analysis.analysisEvaluationKeyRef.current,
@@ -159,11 +161,18 @@ export default function ChessBoardContainer({
 
   const mobileEvalEngineContent = analysis.analysisReplayActive
     ? (
+        <>
+        {analysis.analysisVariationAnchorPly != null && (
+          <AnalysisVariationMoveList
+            anchorPly={analysis.analysisVariationAnchorPly}
+            moves={analysis.analysisVariationMoves}
+          />
+        )}
         <LiveEvaluationView
           evaluation={analysis.analysisEvaluationEnabled ? analysis.analysisEvaluation : null}
           evaluationKey={analysis.analysisEvaluationKeyRef.current}
           activePly={analysis.analysisSelectedPosition?.ply ?? null}
-          variationMode={analysis.analysisVariationMoves.length > 0}
+          variationMode={analysis.analysisVariationAnchorPly != null}
           deepAnalysisRunning={analysis.isAnalysisReplayRunning}
           orientation={board.boardOrientation}
           animateVariations={uiPreferences.preferences.animateEngineVariations}
@@ -171,6 +180,7 @@ export default function ChessBoardContainer({
             uiPreferences.preferences.engineVariationAnimationIntervalMs
           }
         />
+        </>
       )
     : null;
 
@@ -302,8 +312,13 @@ export default function ChessBoardContainer({
     uciFileInputRef={game.uciFileInputRef} onUciFileSelected={lifecycle.handleUciFileSelected}
     analysisReplayActive={analysis.analysisReplayActive} uciAnalysisLoaded={board.uciAnalysisLoaded}
     clock={game.clock} clockError={game.clockError}
-    historicalClock={historicalClock(analysis.gameAnnotations,
-      analysis.analysisSelectedPosition?.ply ?? null, analysis.analysisVariationMoves.length)}
+    historicalClock={historicalClock(
+      analysis.gameAnnotations,
+      analysis.analysisSelectedPosition?.ply ?? null,
+      analysis.analysisVariationAnchorPly != null
+        ? Math.max(1, analysis.analysisVariationMoves.length)
+        : analysis.analysisVariationMoves.length,
+    )}
     boardTheme={uiPreferences.preferences.boardTheme}
     whiteComputerEnabled={computer.whiteComputerEnabled} blackComputerEnabled={computer.blackComputerEnabled}
     toggleWhiteComputer={() => computer.updateWhiteComputerEnabled(!computer.whiteComputerEnabled)}
@@ -314,7 +329,9 @@ export default function ChessBoardContainer({
       analysisReplayFinished: analysis.analysisReplayFinished, uciAnalysisLoaded: board.uciAnalysisLoaded,
       engineAutoUpdate: engine.engineAutoUpdate, liveEvaluationBar: engine.liveEvaluationBar,
       analysisEvaluationEnabled: analysis.analysisEvaluationEnabled,
-      analysisSelectedPosition: analysis.analysisSelectedPosition, analysisVariationMoves: analysis.analysisVariationMoves,
+      analysisSelectedPosition: analysis.analysisSelectedPosition,
+      analysisVariationAnchorPly: analysis.analysisVariationAnchorPly,
+      analysisVariationMoves: analysis.analysisVariationMoves,
       analysisEvaluation: analysis.analysisEvaluation,
       engineEval: engine.engineEval,
       engineEvaluationHistory: engine.engineEvaluationHistory,
@@ -356,7 +373,9 @@ export default function ChessBoardContainer({
       analysisEngines: engine.engineConfigOverview?.engines ?? [],
       selectedAnalysisProfile: analysis.selectedAnalysisProfile,
       selectedAnalysisEngine: analysis.selectedAnalysisEngine, analysisReplayError: analysis.analysisReplayError,
-      isAnalysisReplayRunning: analysis.isAnalysisReplayRunning, showGameEndDialog: game.showGameEndDialog,
+      isAnalysisReplayRunning: analysis.isAnalysisReplayRunning,
+      analysisContinuationAvailable: analysis.analysisContinuationAvailable,
+      showGameEndDialog: game.showGameEndDialog,
       gameEndState: game.gameEndState, clock: game.clock,
     }}
     dialogActions={{
@@ -364,7 +383,9 @@ export default function ChessBoardContainer({
       setGameSettings: game.setGameSettings, closeGameSettings: () => game.setShowGameSettingsDialog(false),
       startNewGame: lifecycle.startNewGame, setAnalysisSettings: analysis.setAnalysisSettings,
       closeAnalysisSettings: () => analysis.setShowAnalysisSettingsDialog(false),
-      startAnalysisReplay: analysis.startAnalysisReplay, saveUciGame: lifecycle.saveUciGame,
+      startAnalysisReplay: analysis.startAnalysisReplay,
+      continueImportedGame: analysis.startImportedGameContinuation,
+      saveUciGame: lifecycle.saveUciGame,
       openUciFilePicker: lifecycle.openUciFilePicker, openGameSettingsDialog: lifecycle.openGameSettingsDialog,
       openAnalysisSettingsDialog: analysis.openAnalysisSettingsDialog,
     }}
