@@ -3,7 +3,10 @@ import AnalysisMoveAlternatives from "./AnalysisMoveAlternatives";
 import { getAnalysisMoveSelectionForPly } from "./analysisSelectionUtils";
 import type { EngineLine, GameAnnotation } from "../types";
 import type { AnalysisReplayContentActions, AnalysisReplayContentState } from "./analysisReplayViewTypes";
-import { variationFromLine } from "./engineVariationUtils";
+import {
+  toggleStoredVariation,
+  variationFromLine,
+} from "./engineVariationUtils";
 
 interface Props { state: AnalysisReplayContentState; actions: AnalysisReplayContentActions; }
 
@@ -25,11 +28,11 @@ export default function AnalysisAnnotationDetails({ state, actions }: Props) {
     ? []
     : gameAnnotations[ply]?.variations ?? [];
 
-  function addEngineVariation(line: EngineLine) {
+  function toggleEngineVariation(line: EngineLine) {
     if (ply == null) return;
 
     const variation = variationFromLine(line, ply);
-    if (!variation || savedVariations.includes(variation)) return;
+    if (!variation) return;
 
     const current: GameAnnotation = gameAnnotations[ply] ?? {
       ply,
@@ -41,7 +44,10 @@ export default function AnalysisAnnotationDetails({ state, actions }: Props) {
 
     actions.updateGameAnnotation({
       ...current,
-      variations: [...current.variations, variation],
+      variations: toggleStoredVariation(
+        current.variations,
+        variation,
+      ),
     });
   }
 
@@ -55,7 +61,7 @@ export default function AnalysisAnnotationDetails({ state, actions }: Props) {
         alternatives={alternatives}
         savedVariations={savedVariations}
         orientation={state.boardOrientation}
-        onAddVariation={addEngineVariation}
+        onToggleVariation={toggleEngineVariation}
       />
     )}
     <AnnotationPanel selectedPly={ply} selectedSan={selectedSan}
@@ -63,7 +69,7 @@ export default function AnalysisAnnotationDetails({ state, actions }: Props) {
       catAnnotation={catAnnotation}
       currentEvaluation={currentEvaluation} alternatives={alternatives}
       dirty={annotationsDirty} saving={annotationsSaving} error={annotationSaveError}
-      onAddEngineVariation={addEngineVariation}
+      onToggleEngineVariation={toggleEngineVariation}
       onChange={actions.updateGameAnnotation} />
   </div>;
 }
