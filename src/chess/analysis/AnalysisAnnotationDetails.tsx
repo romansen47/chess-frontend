@@ -1,4 +1,5 @@
 import AnnotationPanel from "./AnnotationPanel";
+import AnalysisMoveAlternatives from "./AnalysisMoveAlternatives";
 import { getAnalysisMoveSelectionForPly } from "./analysisSelectionUtils";
 import type { AnalysisReplayContentActions, AnalysisReplayContentState } from "./analysisReplayViewTypes";
 
@@ -15,11 +16,24 @@ export default function AnalysisAnnotationDetails({ state, actions }: Props) {
     ? analysisEvaluation.eval
     : selectedPoint?.evaluation ?? null;
 
+  const catAnnotation = ply == null ? null : moveAnnotations[ply] ?? null;
+  const selectedSan = selection?.san ?? selectedPoint?.san ?? null;
+  const alternatives = previousPoint?.lines ?? [];
+
   return <div className="analysis-annotation-container">
-    <AnnotationPanel selectedPly={ply} selectedSan={selection?.san ?? selectedPoint?.san ?? null}
+    {ply != null && (
+      <AnalysisMoveAlternatives
+        playedSan={selectedSan}
+        playedMoveUci={selection?.uci ?? null}
+        playedPosition={analysisSelectedPosition?.position ?? null}
+        alternatives={alternatives}
+        orientation={state.boardOrientation}
+      />
+    )}
+    <AnnotationPanel selectedPly={ply} selectedSan={selectedSan}
       annotation={ply == null ? null : gameAnnotations[ply] ?? null}
-      catAnnotation={ply == null ? null : moveAnnotations[ply] ?? null}
-      currentEvaluation={currentEvaluation} alternatives={previousPoint?.lines ?? []}
+      catAnnotation={catAnnotation}
+      currentEvaluation={currentEvaluation} alternatives={alternatives}
       dirty={annotationsDirty} saving={annotationsSaving} error={annotationSaveError}
       onChange={actions.updateGameAnnotation} />
   </div>;

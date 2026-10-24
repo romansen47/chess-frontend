@@ -15,6 +15,7 @@ import type { EvaluationHistoryPoint } from "./evaluationHistory";
 
 interface EvaluationHistoryChartProps {
   title: ReactNode;
+  subtitle?: ReactNode;
   points: readonly EvaluationHistoryPoint[];
   totalPlies: number;
   minimumVisiblePlies?: number;
@@ -37,6 +38,7 @@ const PADDING_Y = 18;
 
 export default function EvaluationHistoryChart({
   title,
+  subtitle,
   points,
   totalPlies,
   minimumVisiblePlies = 1,
@@ -121,7 +123,12 @@ export default function EvaluationHistoryChart({
       className ?? "",
     ].filter(Boolean).join(" ")}>
       <div className="analysis-profile-header">
-        <strong>{title}</strong>
+        <div className="analysis-profile-heading">
+          <strong>{title}</strong>
+          {subtitle !== undefined && (
+            <span className="analysis-profile-subtitle">{subtitle}</span>
+          )}
+        </div>
         <span>
           {latest
             ? <>

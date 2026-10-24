@@ -348,6 +348,24 @@
 }
 
 
+
+.analysis-profile-heading {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.analysis-profile-subtitle {
+  min-width: 0;
+  overflow: hidden;
+  color: #9aa3b8 !important;
+  font-size: calc(0.72rem - 2px);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .analysis-profile-header span,
 .analysis-profile-footer span {
   color: #cccccc;

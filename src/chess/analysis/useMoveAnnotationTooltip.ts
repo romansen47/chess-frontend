@@ -96,13 +96,16 @@ export function useMoveAnnotationTooltip(debugMode: boolean = false) {
 
     if (annotation.kind === "onlyMove" && annotation.secondBestEvaluation != null) {
       return `${annotation.symbol} · ${t("analysis.moveAnnotationOnlyMove", {
+        bestMove: annotation.bestMove ?? "—",
         best: formatEvaluation(annotation.bestEvaluation),
+        secondMove: annotation.secondBestMove ?? "—",
         second: formatEvaluation(annotation.secondBestEvaluation),
       })}`;
     }
 
     return `${annotation.symbol} · ${t("analysis.moveAnnotationLoss", {
       loss: formatNumber(annotation.winChanceLoss ?? 0),
+      bestMove: annotation.bestMove ?? "—",
       best: formatEvaluation(annotation.bestEvaluation),
     })}`;
   };

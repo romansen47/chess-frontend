@@ -25,6 +25,7 @@ export default function AnalysisProfilePanel({
     analysisReplayError,
     analysisEvaluationError,
     moves,
+    engineEval,
   } = state;
 
   const points = analysisProfile.map((point) => ({
@@ -37,6 +38,7 @@ export default function AnalysisProfilePanel({
   return (
     <EvaluationHistoryChart
       title={t("analysis.history")}
+      subtitle={engineEval?.engineName ?? undefined}
       points={points}
       totalPlies={analysisTotalPlies}
       selectedPly={analysisSelectedPosition?.ply ?? null}

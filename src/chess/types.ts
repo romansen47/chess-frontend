@@ -255,6 +255,8 @@ export interface MoveAnnotation {
   winChanceLoss?: number | null;
   bestEvaluation: number;
   secondBestEvaluation?: number | null;
+  bestMove?: string | null;
+  secondBestMove?: string | null;
   extraordinaryReason?: ExtraordinaryReason | null;
   materialInvestment?: number | null;
   sacrificeType?: MaterialSacrificeType | null;

@@ -189,3 +189,86 @@
 .analysis-evaluation-lines-list .analysis-line-header {
   margin-bottom: 2px;
 }
+
+
+.analysis-move-alternatives {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 2px 4px 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.analysis-move-alternative-card {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.analysis-move-alternative-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-height: 16px;
+  max-width: 144px;
+  font-size: 10px;
+}
+
+.analysis-move-alternative-heading strong {
+  flex: 0 0 auto;
+  color: #c9d0df;
+}
+
+.analysis-move-alternative-heading span {
+  min-width: 0;
+  overflow: hidden;
+  color: #9aa3b8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-move-alternative-best .analysis-move-alternative-heading span {
+  color: #d9cafa;
+}
+
+.analysis-move-alternative-current .analysis-move-alternative-heading strong,
+.analysis-move-alternative-played .analysis-move-alternative-heading strong {
+  color: #8fb3f4;
+}
+
+.analysis-replay-content .analysis-move-alternative-board {
+  width: 144px;
+  height: 144px;
+  max-width: 144px;
+  max-height: 144px;
+  flex: 0 0 144px;
+  align-self: flex-start;
+}
+
+.analysis-replay-content
+  .analysis-move-alternative-board
+  .analysis-position-piece {
+  font-size: 1.15rem;
+}
+
+@media (max-width: 720px) {
+  .analysis-replay-content .analysis-move-alternative-board {
+    width: 128px;
+    height: 128px;
+    max-width: 128px;
+    max-height: 128px;
+    flex-basis: 128px;
+  }
+
+  .analysis-move-alternative-heading {
+    max-width: 128px;
+  }
+}
