@@ -97,7 +97,6 @@ export const germanTranslations = {
   "annotations.noVariations": "Keine gespeicherten Varianten.",
   "annotations.engineAlternatives": "Engine-Alternativen",
   "annotations.noEngineAlternatives": "Für diesen Zug sind keine Engine-Alternativen verfügbar.",
-  "annotations.added": "Übernommen",
   "annotations.addVariation": "Variante übernehmen",
   "annotations.removeVariation": "Variante entfernen",
   "annotations.played": "Gespielt",
