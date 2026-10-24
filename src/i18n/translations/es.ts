@@ -416,7 +416,6 @@ export const spanishTranslations = {
   "annotations.noVariations": "No hay variantes guardadas.",
   "annotations.engineAlternatives": "Variantes del motor",
   "annotations.noEngineAlternatives": "No hay variantes del motor disponibles para esta jugada.",
-  "annotations.added": "Añadida",
   "annotations.addVariation": "Añadir variante",
   "annotations.removeVariation": "Eliminar variante",
   "annotations.played": "Jugada",
