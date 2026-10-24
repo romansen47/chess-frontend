@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { ClockState, GameSettings, GameSound } from "../types";
+import type { ClockState, GameSettings, GameSound, Opening } from "../types";
 import { createDefaultGameSettings } from "../game/gameDefaults";
 
 export function useChessGameState() {
@@ -10,6 +10,7 @@ export function useChessGameState() {
   const gameEndStateRef = useRef<string | null>(null);
   const [showGameSettingsDialog, setShowGameSettingsDialog] = useState(false);
   const [gameSettings, setGameSettings] = useState<GameSettings>(() => createDefaultGameSettings());
+  const [openings, setOpenings] = useState<Opening[]>([]);
   const [isStartingNewGame, setIsStartingNewGame] = useState(false);
   const [gameSettingsError, setGameSettingsError] = useState<string | null>(null);
   const uciFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -45,6 +46,7 @@ export function useChessGameState() {
     gameEndState, setGameEndState, gameEndStateRef,
     showGameSettingsDialog, setShowGameSettingsDialog,
     gameSettings, setGameSettings,
+    openings, setOpenings,
     isStartingNewGame, setIsStartingNewGame,
     gameSettingsError, setGameSettingsError,
     uciFileInputRef, playGameSound,

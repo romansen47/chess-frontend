@@ -4,6 +4,7 @@ import type { ChessDatabaseLoadedGame } from "../database/chessDatabaseTypes";
 import { formatPlayerDisplayName, formatTimeControlFromSettings } from "../game/gameFormatters";
 import { projectGameState, type GameStateProjectionSource } from "../game/gameStateProjection";
 import { createNewGame, exportPgn, fetchClock, fetchGameSettings, fetchGameSnapshot, importPgn } from "../api/gameApi";
+import { fetchOpenings } from "../api/openingApi";
 import { terminateBackend, terminateDevelopmentFrontend } from "../api/programApi";
 import type { ClockState, GameAnnotation, GameSettings, UciGameResponse } from "../types";
 import type { ChessBoardState } from "./useChessBoardState";
@@ -117,9 +118,19 @@ export function useChessGameLifecycle(options: Options) {
     }
   }
 
+  async function loadOpenings() {
+    try {
+      game.setOpenings(await fetchOpenings());
+    } catch (error) {
+      console.error("[loadOpenings] error", error);
+      game.setGameSettingsError(t("openings.loadFailed"));
+    }
+  }
+
   function openGameSettingsDialog() {
     game.setGameSettingsError(null);
     game.setShowGameEndDialog(false);
+    void loadOpenings();
     game.setShowGameSettingsDialog(true);
   }
 
@@ -238,15 +249,16 @@ export function useChessGameLifecycle(options: Options) {
       engine.setEngineEval(null);
       engine.resetEngineEvaluationHistory();
       engine.setLiveEvaluationBar(null);
+      const initialSideToMove = freshGame.sideToMove ?? "white";
       game.setClock({
         whiteTime: applied.timeForEachPlayerSeconds,
         blackTime: applied.timeForEachPlayerSeconds,
-        sideToMove: "white", whiteRunning: false, blackRunning: false, gameState: null,
+        sideToMove: initialSideToMove, whiteRunning: false, blackRunning: false, gameState: null,
         timeControl: formatTimeControlFromSettings(applied),
         whitePlayerName: null, blackPlayerName: null,
         whitePlayerEngineName: null, blackPlayerEngineName: null,
       });
-      await options.requestComputerMoveIfEnabled("white");
+      await options.requestComputerMoveIfEnabled(initialSideToMove);
       await options.synchronizeAfterMoveSequence();
     } catch (error) {
       console.error("[startNewGame] error", error);
@@ -260,6 +272,7 @@ export function useChessGameLifecycle(options: Options) {
   useEffect(() => {
     void options.loadEngineConfigs();
     void loadGameSettings();
+    void loadOpenings();
     void loadCurrentGameSnapshot().then((snapshot) => {
       if (!snapshot?.importedAnalysisGame) void loadClock();
     });

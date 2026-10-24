@@ -8,6 +8,7 @@ export function createDefaultGameSettings(): GameSettings {
     additionalTimeAfter40MovesSeconds: 0,
     startingColor: "WHITE",
     startingPositionId: 518,
+    openingId: null,
     version: 0,
   };
 }
