@@ -4,7 +4,6 @@ import type {
   AnalysisProfilePoint,
   AnalysisReplaySettings,
   AnalysisReplayStep,
-  AnalysisVariationMove,
   EngineEvaluation,
   GameAnnotation,
 } from "../types";
@@ -49,11 +48,9 @@ export function useAnalysisState() {
   const [analysisEvaluationError, setAnalysisEvaluationError] = useState<string | null>(null);
   const analysisEvaluationPlyRef = useRef<number | null>(null);
   const analysisEvaluationKeyRef = useRef<string | null>(null);
-  const [analysisVariationAnchorPly, setAnalysisVariationAnchorPly] = useState<number | null>(null);
-  const [analysisVariationMoves, setAnalysisVariationMovesState] = useState<AnalysisVariationMove[]>([]);
-  const analysisVariationMovesRef = useRef<AnalysisVariationMove[]>([]);
+  const [analysisVariationMoves, setAnalysisVariationMovesState] = useState<string[]>([]);
+  const analysisVariationMovesRef = useRef<string[]>([]);
   const [analysisVariationGameState, setAnalysisVariationGameState] = useState<string | null>(null);
-  const [analysisContinuationAvailable, setAnalysisContinuationAvailable] = useState(false);
 
   function setAnalysisReplayActive(value: boolean) {
     analysisReplayActiveRef.current = value;
@@ -65,8 +62,8 @@ export function useAnalysisState() {
     setAnalysisEvaluationEnabledState(value);
   }
 
-  function setAnalysisVariationMoves(value: AnalysisVariationMove[]) {
-    const next = value.map((move) => ({ ...move }));
+  function setAnalysisVariationMoves(value: string[]) {
+    const next = [...value];
     analysisVariationMovesRef.current = next;
     setAnalysisVariationMovesState(next);
   }
@@ -97,10 +94,8 @@ export function useAnalysisState() {
     analysisEvaluation, setAnalysisEvaluation,
     analysisEvaluationError, setAnalysisEvaluationError,
     analysisEvaluationPlyRef, analysisEvaluationKeyRef,
-    analysisVariationAnchorPly, setAnalysisVariationAnchorPly,
     analysisVariationMoves, setAnalysisVariationMoves, analysisVariationMovesRef,
     analysisVariationGameState, setAnalysisVariationGameState,
-    analysisContinuationAvailable, setAnalysisContinuationAvailable,
   };
 }
 

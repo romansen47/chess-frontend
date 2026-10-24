@@ -6,7 +6,6 @@ import {
   stopAnalysisEvaluationRequest,
 } from "../api/analysisApi";
 import { analysisEvaluationKey } from "./analysisUtils";
-import type { AnalysisVariationMove } from "../types";
 import type { AnalysisState } from "./useAnalysisState";
 
 export function useAnalysisEvaluation(state: AnalysisState) {
@@ -22,20 +21,19 @@ export function useAnalysisEvaluation(state: AnalysisState) {
 
   async function loadAnalysisEvaluation(
     ply: number,
-    variationMoves: AnalysisVariationMove[] = state.analysisVariationMovesRef.current,
+    variationMoves: string[] = state.analysisVariationMovesRef.current,
   ) {
-    const uciMoves = variationMoves.map((move) => move.uci);
-    const key = analysisEvaluationKey(ply, uciMoves);
+    const key = analysisEvaluationKey(ply, variationMoves);
     if (!state.analysisEvaluationEnabledRef.current || state.analysisEvaluationKeyRef.current !== key) return;
 
     try {
       state.setAnalysisEvaluationError(null);
-      const data = uciMoves.length > 0
-        ? await fetchAnalysisVariationEvaluation(ply, uciMoves)
+      const data = variationMoves.length > 0
+        ? await fetchAnalysisVariationEvaluation(ply, variationMoves)
         : await fetchAnalysisEvaluationRequest(ply);
       const hasUsableLines = Boolean(data.lines && data.lines.length > 0);
       const isTerminalPosition = Math.abs(data.eval ?? 0) >= 99
-        || (uciMoves.length > 0 && Boolean(state.analysisVariationGameState));
+        || (variationMoves.length > 0 && Boolean(state.analysisVariationGameState));
       if (
         state.analysisEvaluationEnabledRef.current
         && state.analysisEvaluationKeyRef.current === key
@@ -71,8 +69,8 @@ export function useAnalysisEvaluation(state: AnalysisState) {
       || !state.analysisSelectedPosition
     ) return;
     const ply = state.analysisSelectedPosition.ply;
-    const variationSnapshot = state.analysisVariationMoves.map((move) => ({ ...move }));
-    const key = analysisEvaluationKey(ply, variationSnapshot.map((move) => move.uci));
+    const variationSnapshot = [...state.analysisVariationMoves];
+    const key = analysisEvaluationKey(ply, variationSnapshot);
     state.analysisEvaluationPlyRef.current = ply;
     state.analysisEvaluationKeyRef.current = key;
     state.setAnalysisEvaluation(null);

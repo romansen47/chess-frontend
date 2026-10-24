@@ -1,4 +1,4 @@
-import type { EngineEvaluation, GameAnnotation, MoveAnnotation, MoveRow, AnalysisPositionSelection, AnalysisProfilePoint, AnalysisVariationMove } from "../types";
+import type { EngineEvaluation, GameAnnotation, MoveAnnotation, MoveRow, AnalysisPositionSelection, AnalysisProfilePoint } from "../types";
 import type { BoardOrientation } from "../board/boardOrientation";
 import type { AnalysisEngineView } from "./AnalysisEngineTabs";
 
@@ -21,8 +21,7 @@ export interface AnalysisReplayContentState {
   engineEval: EngineEvaluation | null;
   analysisEvaluation: EngineEvaluation | null;
   analysisEvaluationEnabled: boolean;
-  analysisVariationAnchorPly: number | null;
-  analysisVariationMoves: AnalysisVariationMove[];
+  analysisVariationMoves: string[];
   analysisEngineView: AnalysisEngineView;
   evaluationKey: string | null;
   gameAnnotations: Record<number, GameAnnotation>;

@@ -71,7 +71,7 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
               ? t("game.selectMoveEvaluation")
               : engine.analysisEvaluationEnabled
                 ? t("game.disableEvaluationEngine")
-                : engine.analysisVariationAnchorPly != null
+                : engine.analysisVariationMoves.length > 0
                   ? t("game.enableEvaluationVariation")
                   : t("game.enableEvaluationSelectedMove")}
           >

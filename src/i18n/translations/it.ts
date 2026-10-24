@@ -113,9 +113,6 @@ export const italianTranslations = {
   "analysis.searchTime": "{seconds}s per posizione",
   "analysis.noEngineProfile": "Nessun profilo motore disponibile. Creane prima uno nelle Impostazioni motore.",
   "analysis.starting": "Avvio…",
-  "analysis.continueGame": "Continua la partita",
-  "analysis.continuationMoves": "Continuazione",
-  "analysis.noContinuationMoves": "Nessuna mossa nella continuazione.",
 
   "game.newGame": "Nuova partita",
   "game.startingPosition": "Posizione iniziale Chess960 (0–959; posizione classica: 518)",

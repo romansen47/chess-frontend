@@ -61,18 +61,12 @@ export interface AnalysisVariationRequest {
   promotion?: PieceType | null;
 }
 
-export interface AnalysisVariationMove {
-  uci: string;
-  san: string;
-}
-
 export interface AnalysisVariationMoveResult {
   success: boolean;
   message: string | null;
   from: string | null;
   to: string | null;
   uci: string | null;
-  san: string | null;
   sideToMove: string | null;
   position: string | null;
   gameState: string | null;
@@ -108,7 +102,6 @@ export interface UciGameResponse {
   annotations?: GameAnnotation[];
   startingPositionId?: number;
   initialFen?: string | null;
-  continuable?: boolean;
 }
 
 export interface GameSnapshotResponse {

@@ -5,7 +5,6 @@ import type { EngineConfigOverview } from "../../engineConfig";
 import type {
   AnalysisPositionSelection,
   AnalysisReplaySettings,
-  AnalysisVariationMove,
   ClockState,
   EngineEvaluation,
   GameAnnotation,
@@ -35,8 +34,7 @@ export interface EnginePanelState {
   liveEvaluationBar: number | null;
   analysisEvaluationEnabled: boolean;
   analysisSelectedPosition: AnalysisPositionSelection | null;
-  analysisVariationAnchorPly: number | null;
-  analysisVariationMoves: AnalysisVariationMove[];
+  analysisVariationMoves: string[];
   analysisEvaluation: EngineEvaluation | null;
   engineEval: EngineEvaluation | null;
   engineEvaluationHistory: EvaluationHistoryPoint[];
@@ -71,7 +69,6 @@ export interface DialogState {
   selectedAnalysisEngine: ComponentProps<typeof AnalysisSettingsDialog>["selectedEngine"];
   analysisReplayError: string | null;
   isAnalysisReplayRunning: boolean;
-  analysisContinuationAvailable: boolean;
   showGameEndDialog: boolean;
   gameEndState: string | null;
   clock: ClockState | null;
@@ -86,7 +83,6 @@ export interface DialogActions {
   setAnalysisSettings: ComponentProps<typeof AnalysisSettingsDialog>["onSettingsChange"];
   closeAnalysisSettings: () => void;
   startAnalysisReplay: () => void | Promise<void>;
-  continueImportedGame: () => void;
   saveUciGame: () => void | Promise<void>;
   openUciFilePicker: () => void;
   openGameSettingsDialog: () => void;

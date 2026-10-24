@@ -15,7 +15,6 @@ interface AnalysisBridge {
   restoreAnnotations: (annotations: GameAnnotation[] | null | undefined) => void;
   restoreReplayAfterReload: (moves: UciGameResponse["moves"]) => Promise<void>;
   setImportedPlayers: (white: string | null | undefined, black: string | null | undefined, totalPlies: number) => void;
-  setContinuationAvailable: (value: boolean) => void;
   setShowSettingsDialog: (value: boolean) => void;
   stopEvaluation: () => Promise<void>;
   resetState: () => void;
@@ -87,7 +86,6 @@ export function useChessGameLifecycle(options: Options) {
       const imported = Boolean(snapshot.importedAnalysisGame);
       board.setUciAnalysisLoaded(imported);
       if (imported) {
-        analysis.setContinuationAvailable(Boolean(gameData.continuable));
         game.setClock(null);
         engine.setEngineAutoUpdate(false);
         engine.setEngineEval(null);
@@ -98,8 +96,6 @@ export function useChessGameLifecycle(options: Options) {
           formatPlayerDisplayName(gameData.blackPlayerName, "Black"),
           gameData.totalPlies ?? projection.moves.length,
         );
-      } else {
-        analysis.setContinuationAvailable(false);
       }
       await analysis.restoreReplayAfterReload(projection.moves);
       return snapshot;
@@ -187,9 +183,6 @@ export function useChessGameLifecycle(options: Options) {
         formatPlayerDisplayName(imported.whitePlayerName, "White"),
         formatPlayerDisplayName(imported.blackPlayerName, "Black"),
         imported.totalPlies ?? projection.moves.length,
-      );
-      analysis.setContinuationAvailable(
-        "continuable" in imported && Boolean(imported.continuable),
       );
       game.setGameEndState(null);
       analysis.setShowSettingsDialog(true);
