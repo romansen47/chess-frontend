@@ -1,11 +1,13 @@
 import { useI18n } from "../../i18n/I18nProvider";
 import { createInitialPieces, getPieceSymbol, squareName } from "../board/boardUtils";
+import { mapPositionStringToLocalPieces } from "../board/positionUtils";
 import NumericStepper from "../ui/NumericStepper";
-import type { GameSettings, Piece } from "../types";
+import type { GameSettings, Opening, Piece } from "../types";
 import "./NewGameDialog.css";
 
 interface NewGameDialogProps {
   settings: GameSettings;
+  openings: Opening[];
   error: string | null;
   starting: boolean;
   onSettingsChange: (settings: GameSettings) => void;
@@ -28,11 +30,15 @@ function presetValues(values: number[], current: number): number[] {
 function StartingPositionPreview({
   positionId,
   title,
+  position,
 }: {
   positionId: number;
   title: string;
+  position?: string | null;
 }) {
-  const pieces = createInitialPieces(positionId);
+  const pieces = position?.length === 64
+    ? mapPositionStringToLocalPieces(position)
+    : createInitialPieces(positionId);
   const piecesBySquare = new Map<string, Piece>(
     pieces.map((piece) => [squareName(piece.file, piece.rank), piece]),
   );
@@ -73,6 +79,7 @@ function StartingPositionPreview({
 
 export default function NewGameDialog({
   settings,
+  openings,
   error,
   starting,
   onSettingsChange,
@@ -93,7 +100,8 @@ export default function NewGameDialog({
     onSettingsChange({ ...settings, startingPositionId: safeValue });
   };
 
-  const startingPositionId = settings.startingPositionId ?? 518;
+  const selectedOpening = openings.find((opening) => opening.id === settings.openingId) ?? null;
+  const startingPositionId = selectedOpening?.startingPositionId ?? settings.startingPositionId ?? 518;
   const timeMinutes = Math.max(1, Math.floor(settings.timeForEachPlayerSeconds / 60));
   const mobileTimeValues = presetValues(MOBILE_TIME_PRESETS_MINUTES, timeMinutes);
   const mobileWhiteIncrementValues = presetValues(
@@ -112,6 +120,33 @@ export default function NewGameDialog({
 
         <div className="game-settings-layout">
           <div className="game-settings-form">
+            <label className="game-settings-field game-settings-opening">
+              <span>{t("game.opening")}</span>
+              <select
+                value={settings.openingId ?? ""}
+                onChange={(event) => onSettingsChange({
+                  ...settings,
+                  openingId: event.target.value || null,
+                })}
+                disabled={starting}
+              >
+                <option value="">{t("game.noOpening")}</option>
+                {openings.filter((opening) => opening.playable).map((opening) => (
+                  <option key={opening.id} value={opening.id}>
+                    {opening.name}{opening.eco ? ` · ${opening.eco}` : ""}
+                  </option>
+                ))}
+              </select>
+              <small>{t("game.openingHint")}</small>
+              {selectedOpening && (
+                <small className="game-settings-opening-meta">
+                  {t("openings.plies", { count: selectedOpening.moves.length })} · {
+                    selectedOpening.sideToMove === "white" ? t("common.white") : t("common.black")
+                  } {t("openings.toMove")}
+                </small>
+              )}
+            </label>
+
             <div className="game-settings-desktop-options" aria-label={t("game.newGame")}>
               <NumericStepper
                 label={t("game.timeEachPlayerMinutes")}
@@ -131,7 +166,7 @@ export default function NewGameDialog({
                 min={0}
                 max={959}
                 editable
-                disabled={starting}
+                disabled={starting || Boolean(selectedOpening)}
                 onChange={updateStartingPosition}
               />
               <NumericStepper
@@ -221,14 +256,14 @@ export default function NewGameDialog({
                   step={1}
                   value={startingPositionId}
                   onChange={(event) => updateStartingPosition(Number(event.target.value))}
-                  disabled={starting}
+                  disabled={starting || Boolean(selectedOpening)}
                   aria-label={t("game.startingPosition")}
                 />
                 <div className="game-settings-mobile-position-actions">
                   <button
                     type="button"
                     onClick={() => updateStartingPosition(startingPositionId - 1)}
-                    disabled={starting || startingPositionId <= 0}
+                    disabled={starting || Boolean(selectedOpening) || startingPositionId <= 0}
                     aria-label="-1"
                   >
                     −1
@@ -237,14 +272,14 @@ export default function NewGameDialog({
                     type="button"
                     className={startingPositionId === 518 ? "active" : ""}
                     onClick={() => updateStartingPosition(518)}
-                    disabled={starting}
+                    disabled={starting || Boolean(selectedOpening)}
                   >
                     518
                   </button>
                   <button
                     type="button"
                     onClick={() => updateStartingPosition(startingPositionId + 1)}
-                    disabled={starting || startingPositionId >= 959}
+                    disabled={starting || Boolean(selectedOpening) || startingPositionId >= 959}
                     aria-label="+1"
                   >
                     +1
@@ -257,7 +292,8 @@ export default function NewGameDialog({
 
           <StartingPositionPreview
             positionId={startingPositionId}
-            title={t("game.startingPositionPreview")}
+            position={selectedOpening?.position}
+            title={selectedOpening?.name ?? t("game.startingPositionPreview")}
           />
         </div>
 
