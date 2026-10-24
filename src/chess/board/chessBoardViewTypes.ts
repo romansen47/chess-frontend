@@ -9,6 +9,7 @@ import type {
   EngineEvaluation,
   GameAnnotation,
   GameSettings,
+  Opening,
   PieceType,
   PromotionContext,
 } from "../types";
@@ -59,6 +60,7 @@ export interface DialogState {
   promotionContext: PromotionContext | null;
   showGameSettingsDialog: boolean;
   gameSettings: GameSettings;
+  openings: Opening[];
   gameSettingsError: string | null;
   isStartingNewGame: boolean;
   showAnalysisSettingsDialog: boolean;

@@ -63,7 +63,8 @@ export default function ChessBoardDialogs({ dialogs, actions }: Props) {
     </div>}
 
     {dialogs.showGameSettingsDialog && <NewGameDialog
-      settings={dialogs.gameSettings} error={dialogs.gameSettingsError} starting={dialogs.isStartingNewGame}
+      settings={dialogs.gameSettings} openings={dialogs.openings}
+      error={dialogs.gameSettingsError} starting={dialogs.isStartingNewGame}
       onSettingsChange={actions.setGameSettings} onCancel={actions.closeGameSettings} onStart={actions.startNewGame} />}
 
     {dialogs.showAnalysisSettingsDialog && <AnalysisSettingsDialog

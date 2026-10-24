@@ -349,7 +349,7 @@ export default function ChessBoardContainer({
     }}
     dialogs={{
       promotionContext: interaction.promotionContext, showGameSettingsDialog: game.showGameSettingsDialog,
-      gameSettings: game.gameSettings, gameSettingsError: game.gameSettingsError,
+      gameSettings: game.gameSettings, openings: game.openings, gameSettingsError: game.gameSettingsError,
       isStartingNewGame: game.isStartingNewGame,
       showAnalysisSettingsDialog: analysis.showAnalysisSettingsDialog, analysisSettings: analysis.analysisSettings,
       analysisEngineProfiles: analysis.analysisEngineProfiles,
