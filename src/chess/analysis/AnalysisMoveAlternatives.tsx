@@ -13,7 +13,7 @@ interface Props {
   alternatives: EngineLine[];
   savedVariations: string[];
   orientation: BoardOrientation;
-  onAddVariation: (line: EngineLine) => void;
+  onToggleVariation: (line: EngineLine) => void;
 }
 
 function moveArrowFromUci(
@@ -59,7 +59,7 @@ export default function AnalysisMoveAlternatives({
   alternatives,
   savedVariations,
   orientation,
-  onAddVariation,
+  onToggleVariation,
 }: Props) {
   const { t } = useI18n();
 
@@ -146,18 +146,18 @@ export default function AnalysisMoveAlternatives({
                     ? "analysis-move-alternative-board-button-added"
                     : "",
                 ].filter(Boolean).join(" ")}
-                disabled={!variation || alreadyStored}
+                disabled={!variation}
                 aria-label={
                   alreadyStored
-                    ? t("annotations.added")
+                    ? t("annotations.removeVariation")
                     : t("annotations.addVariation")
                 }
                 title={
                   alreadyStored
-                    ? t("annotations.added")
+                    ? t("annotations.removeVariation")
                     : t("annotations.addVariation")
                 }
-                onClick={() => onAddVariation(line)}
+                onClick={() => onToggleVariation(line)}
               >
                 <AnalysisStaticBoard
                   position={position!}
