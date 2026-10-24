@@ -416,7 +416,6 @@ export const italianTranslations = {
   "annotations.noVariations": "Nessuna variante salvata.",
   "annotations.engineAlternatives": "Varianti del motore",
   "annotations.noEngineAlternatives": "Nessuna variante del motore disponibile per questa mossa.",
-  "annotations.added": "Aggiunta",
   "annotations.addVariation": "Aggiungi variante",
   "annotations.removeVariation": "Rimuovi variante",
   "annotations.played": "Giocata",
