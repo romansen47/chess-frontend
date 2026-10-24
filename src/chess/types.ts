@@ -226,6 +226,29 @@ export type MaterialSacrificeType =
   | "newMaterialOffer"
   | "declinedMaterialSave";
 
+
+export type DeepDiscoveryRejectionReason =
+  | "insufficientEarlySnapshots"
+  | "earlyRegretTooSmall"
+  | "strengthGainTooSmall";
+
+export interface MoveAnnotationDiagnostics {
+  extraordinaryCandidate: boolean;
+  deepDiscoveryRejectedBy?: DeepDiscoveryRejectionReason | null;
+  earlyWindowStartDepth: number;
+  earlyWindowEndDepth: number;
+  earlySampleCount: number;
+  earlyDepth?: number | null;
+  earlyRank?: number | null;
+  finalDepth: number;
+  finalRank: number;
+  finalRegret: number;
+  earlyRegret?: number | null;
+  earlyStrength?: number | null;
+  finalStrength: number;
+  strengthGain?: number | null;
+}
+
 export interface MoveAnnotation {
   symbol: MoveAnnotationSymbol;
   kind: MoveAnnotationKind;
@@ -258,6 +281,7 @@ export interface AnalysisProfilePoint {
   depth: number;
   lines?: EngineLine[];
   annotation?: MoveAnnotation | null;
+  annotationDiagnostics?: MoveAnnotationDiagnostics | null;
 }
 
 export interface AnalysisPositionSelection {

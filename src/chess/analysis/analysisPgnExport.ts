@@ -2,6 +2,7 @@ import type {
   AnalysisProfilePoint,
   EngineLine,
   MoveAnnotation,
+  MoveAnnotationDiagnostics,
 } from "../types";
 
 export interface DiagnosticAnalysisPgnOptions {
@@ -94,6 +95,45 @@ function addAnnotationDiagnostics(
   }
 }
 
+
+function addExtraordinaryDiagnostics(
+  parts: string[],
+  diagnostics: MoveAnnotationDiagnostics | null | undefined
+) {
+  if (!diagnostics) {
+    return;
+  }
+
+  parts.push(`extraCandidate=${diagnostics.extraordinaryCandidate}`);
+  parts.push(
+    `earlyWindow=${diagnostics.earlyWindowStartDepth}-${diagnostics.earlyWindowEndDepth}`
+  );
+  parts.push(`earlySamples=${diagnostics.earlySampleCount}`);
+
+  if (diagnostics.deepDiscoveryRejectedBy) {
+    parts.push(`deepRejectedBy=${diagnostics.deepDiscoveryRejectedBy}`);
+  }
+
+  const optionalNumbers: Array<[string, number | null | undefined]> = [
+    ["diagEarlyDepth", diagnostics.earlyDepth],
+    ["diagEarlyRank", diagnostics.earlyRank],
+    ["diagFinalDepth", diagnostics.finalDepth],
+    ["diagFinalRank", diagnostics.finalRank],
+    ["diagFinalRegret", diagnostics.finalRegret],
+    ["diagEarlyRegret", diagnostics.earlyRegret],
+    ["diagEarlyStrength", diagnostics.earlyStrength],
+    ["diagFinalStrength", diagnostics.finalStrength],
+    ["diagStrengthGain", diagnostics.strengthGain],
+  ];
+
+  for (const [key, value] of optionalNumbers) {
+    const formatted = number(value);
+    if (formatted !== null) {
+      parts.push(`${key}=${formatted}`);
+    }
+  }
+}
+
 function addEngineLines(
   parts: string[],
   prefix: "prePv" | "postPv",
@@ -127,6 +167,7 @@ function diagnosticComment(
   ];
 
   addAnnotationDiagnostics(parts, point.annotation);
+  addExtraordinaryDiagnostics(parts, point.annotationDiagnostics);
   addEngineLines(parts, "prePv", previousPoint?.lines);
   addEngineLines(parts, "postPv", point.lines);
 
@@ -171,7 +212,7 @@ export function buildDiagnosticAnalysisPgn({
     `[Black "${escapeTagValue(blackPlayerName || "Black")}"]`,
     `[Result "${result}"]`,
     `[Annotator "${escapeTagValue(engineName || "ChessAnalysisTool")}"]`,
-    '[AnalysisFormat "ChessAnalysisTool-Diagnostic-v2"]',
+    '[AnalysisFormat "ChessAnalysisTool-Diagnostic-v3"]',
   ];
 
   const moveLines: string[] = [];
