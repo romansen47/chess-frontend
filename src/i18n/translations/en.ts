@@ -95,7 +95,6 @@ export const englishTranslations = {
   "annotations.noVariations": "No saved variations.",
   "annotations.engineAlternatives": "Engine alternatives",
   "annotations.noEngineAlternatives": "No engine alternatives are available for this move.",
-  "annotations.added": "Added",
   "annotations.addVariation": "Add variation",
   "annotations.removeVariation": "Remove variation",
   "annotations.played": "Played",
