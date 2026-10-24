@@ -35,3 +35,14 @@ export function isPlayedLine(
     normalizeEngineLineForPgn(line.moves).split(/\s+/)[0] ?? "";
   return firstMove === normalizeEngineLineForPgn(selectedSan);
 }
+
+
+export function toggleStoredVariation(
+  variations: readonly string[],
+  variation: string,
+): string[] {
+  if (!variation) return [...variations];
+  return variations.includes(variation)
+    ? variations.filter((candidate) => candidate !== variation)
+    : [...variations, variation];
+}
