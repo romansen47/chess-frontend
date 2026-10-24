@@ -97,6 +97,7 @@ export const englishTranslations = {
   "annotations.noEngineAlternatives": "No engine alternatives are available for this move.",
   "annotations.added": "Added",
   "annotations.addVariation": "Add variation",
+  "annotations.removeVariation": "Remove variation",
   "annotations.played": "Played",
   "annotations.engineLineMeta": "{evaluation} · depth {depth}",
   "annotations.saving": "Saving…",
