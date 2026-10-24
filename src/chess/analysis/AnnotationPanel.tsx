@@ -25,7 +25,7 @@ interface AnnotationPanelProps {
   dirty: boolean;
   saving: boolean;
   error: string | null;
-  onAddEngineVariation: (line: EngineLine) => void;
+  onToggleEngineVariation: (line: EngineLine) => void;
   onChange: (annotation: GameAnnotation) => void;
 }
 
@@ -68,7 +68,7 @@ export default function AnnotationPanel({
   dirty,
   saving,
   error,
-  onAddEngineVariation,
+  onToggleEngineVariation,
   onChange,
 }: AnnotationPanelProps) {
   const { t } = useI18n();
@@ -202,10 +202,10 @@ export default function AnnotationPanel({
                   <button
                     type="button"
                     className="annotation-icon-button"
-                    disabled={!variation || alreadyStored}
-                    aria-label={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
-                    title={alreadyStored ? t("annotations.added") : t("annotations.addVariation")}
-                    onClick={() => onAddEngineVariation(line)}
+                    disabled={!variation}
+                    aria-label={alreadyStored ? t("annotations.removeVariation") : t("annotations.addVariation")}
+                    title={alreadyStored ? t("annotations.removeVariation") : t("annotations.addVariation")}
+                    onClick={() => onToggleEngineVariation(line)}
                   >
                     {alreadyStored ? "✓" : "+"}
                   </button>
