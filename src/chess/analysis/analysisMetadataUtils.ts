@@ -59,3 +59,32 @@ export function nextCustomMetadataKey(
     index++;
   }
 }
+
+/**
+ * Present the PGN-facing variant separately from the internal Chess960 model.
+ * The core intentionally uses Scharnagl 518 (and an explicit FEN) even for
+ * classical games. Never mutate the authoritative metadata here.
+ */
+export function displayPositionMetadata(
+  tags: Readonly<Record<string, string>>,
+): Record<(typeof PROTECTED_GAME_METADATA_TAGS)[number], string> {
+  const fen = tags.FEN?.trim() ?? "";
+  const fields = fen.split(/\s+/);
+  const classicalLayout =
+    fields[0] === "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" &&
+    fields[1] === "w" &&
+    (fields[2] === "HAha" || fields[2] === "KQkq") &&
+    fields[3] === "-" &&
+    fields[4] === "0" &&
+    fields[5] === "1";
+
+  if (classicalLayout) {
+    return { Variant: "Standard", SetUp: "0", FEN: "—" };
+  }
+
+  return {
+    Variant: tags.Variant ?? "—",
+    SetUp: tags.SetUp ?? "—",
+    FEN: tags.FEN ?? "—",
+  };
+}
