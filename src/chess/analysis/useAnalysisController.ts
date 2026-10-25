@@ -80,6 +80,7 @@ export function useAnalysisController(options: UseAnalysisControllerOptions) {
     analysisBlackPlayerName: state.analysisBlackPlayerName,
     setAnalysisBlackPlayerName: state.setAnalysisBlackPlayerName,
     analysisGameMetadata: state.analysisGameMetadata,
+    analysisStandardStartingPosition: state.analysisStandardStartingPosition,
     analysisGameMetadataAvailable: state.analysisGameMetadataAvailable,
     analysisGameMetadataSaving: state.analysisGameMetadataSaving,
     analysisGameMetadataError: state.analysisGameMetadataError,
