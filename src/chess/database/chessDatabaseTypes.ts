@@ -10,6 +10,11 @@ export interface ChessDatabaseLoadedGame {
   }>;
   whitePlayerName: string | null;
   blackPlayerName: string | null;
+  databaseGameId?: number | null;
+  annotations?: import("../types").GameAnnotation[];
+  startingPositionId?: number;
+  initialFen?: string | null;
+  pgnTags?: Record<string, string>;
 }
 
 export interface DatabaseStatus {

@@ -14,6 +14,10 @@ import type { ChessGameState } from "./useChessGameState";
 interface AnalysisBridge {
   replayActiveRef: { current: boolean };
   restoreAnnotations: (annotations: GameAnnotation[] | null | undefined) => void;
+  restoreGameMetadata: (
+    tags: Record<string, string> | null | undefined,
+    available: boolean,
+  ) => void;
   restoreReplayAfterReload: (moves: UciGameResponse["moves"]) => Promise<void>;
   setImportedPlayers: (white: string | null | undefined, black: string | null | undefined, totalPlies: number) => void;
   setShowSettingsDialog: (value: boolean) => void;
@@ -85,6 +89,7 @@ export function useChessGameLifecycle(options: Options) {
       const projection = applyBoardProjection(gameData);
       analysis.restoreAnnotations(gameData.annotations);
       const imported = Boolean(snapshot.importedAnalysisGame);
+      analysis.restoreGameMetadata(gameData.pgnTags, imported);
       board.setUciAnalysisLoaded(imported);
       if (imported) {
         game.setClock(null);
@@ -189,6 +194,7 @@ export function useChessGameLifecycle(options: Options) {
       analysis.resetState();
       const projection = applyBoardProjection(imported);
       analysis.restoreAnnotations("annotations" in imported ? imported.annotations : undefined);
+      analysis.restoreGameMetadata("pgnTags" in imported ? imported.pgnTags : undefined, true);
       board.setUciAnalysisLoaded(true);
       analysis.setImportedPlayers(
         formatPlayerDisplayName(imported.whitePlayerName, "White"),
