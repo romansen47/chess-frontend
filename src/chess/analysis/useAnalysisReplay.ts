@@ -11,6 +11,7 @@ import { getDisplayedBlackPlayerName, getDisplayedWhitePlayerName } from "../gam
 import type { AnalysisReplayStep, UciGameResponse } from "../types";
 import type { UseAnalysisControllerOptions } from "./analysisControllerTypes";
 import { EMPTY_ANALYSIS_PROFILE, type AnalysisState } from "./useAnalysisState";
+import { stopAnalysisCalculations } from "./analysisStartLifecycle";
 
 interface ReplayDependencies {
   resetAnalysisVariation: () => void;
@@ -142,6 +143,15 @@ export function useAnalysisReplay(
   }
 
   async function startAnalysisReplay() {
+    state.analysisReplayCancelledRef.current = true;
+    await stopAnalysisCalculations({
+      cancelReplay: cancelAnalysisReplayRequest,
+      stopAnalysisEvaluation: dependencies.stopAnalysisEvaluation,
+      stopLiveEvaluation: options.stopLiveEvaluation,
+      disablePlayerEngines: options.disablePlayerEngines,
+    });
+    state.setIsAnalysisReplayRunning(false);
+
     try {
       if (!state.analysisSettings.engineProfileId) throw new Error(t("analysis.noDeepProfile"));
       state.analysisReplayResumeRef.current = null;
@@ -183,9 +193,6 @@ export function useAnalysisReplay(
       state.analysisEvaluationPlyRef.current = null;
       state.analysisEvaluationKeyRef.current = null;
       dependencies.resetAnalysisVariation();
-      await dependencies.stopAnalysisEvaluation();
-      await options.stopLiveEvaluation();
-      await options.disablePlayerEngines();
       options.setShowGameEndDialog(false);
       options.setEngineAutoUpdate(false);
       options.setLiveEvaluationBar(null);
