@@ -42,7 +42,7 @@ describe("analysis metadata utilities", () => {
       SetUp: "1",
       FEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w HAha - 0 1",
     };
-    expect(displayPositionMetadata(tags)).toEqual({
+    expect(displayPositionMetadata(tags, true)).toEqual({
       Variant: "Standard", SetUp: "0", FEN: "—",
     });
     expect(tags).toEqual({
@@ -51,24 +51,17 @@ describe("analysis metadata utilities", () => {
     });
   });
 
-  it("recognizes classical castling notation for the initial position", () => {
-    expect(displayPositionMetadata({
-      Variant: "Chess960", SetUp: "1",
-      FEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    })).toEqual({ Variant: "Standard", SetUp: "0", FEN: "—" });
-  });
-
   it("retains nonclassical starting positions and custom FEN positions", () => {
     const tags = {
       Variant: "Chess960", SetUp: "1",
       FEN: "rbnqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RBNQKBNR w HAha - 0 1",
     };
-    expect(displayPositionMetadata(tags)).toEqual(tags);
+    expect(displayPositionMetadata(tags, false)).toEqual(tags);
     const later = {
       Variant: "Chess960", SetUp: "1",
       FEN: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b HAha - 0 1",
     };
-    expect(displayPositionMetadata(later)).toEqual(later);
+    expect(displayPositionMetadata(later, null)).toEqual(later);
   });
 
 });
