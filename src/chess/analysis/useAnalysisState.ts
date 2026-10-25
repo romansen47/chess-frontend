@@ -41,6 +41,7 @@ export function useAnalysisState() {
   const [analysisWhitePlayerName, setAnalysisWhitePlayerName] = useState<string | null>(null);
   const [analysisBlackPlayerName, setAnalysisBlackPlayerName] = useState<string | null>(null);
   const [analysisGameMetadata, setAnalysisGameMetadata] = useState<Record<string, string>>({});
+  const [analysisStandardStartingPosition, setAnalysisStandardStartingPosition] = useState<boolean | null>(null);
   const [analysisGameMetadataAvailable, setAnalysisGameMetadataAvailable] = useState(false);
   const [analysisGameMetadataSaving, setAnalysisGameMetadataSaving] = useState(false);
   const [analysisGameMetadataError, setAnalysisGameMetadataError] = useState<string | null>(null);
@@ -94,6 +95,7 @@ export function useAnalysisState() {
     analysisWhitePlayerName, setAnalysisWhitePlayerName,
     analysisBlackPlayerName, setAnalysisBlackPlayerName,
     analysisGameMetadata, setAnalysisGameMetadata,
+    analysisStandardStartingPosition, setAnalysisStandardStartingPosition,
     analysisGameMetadataAvailable, setAnalysisGameMetadataAvailable,
     analysisGameMetadataSaving, setAnalysisGameMetadataSaving,
     analysisGameMetadataError, setAnalysisGameMetadataError,
