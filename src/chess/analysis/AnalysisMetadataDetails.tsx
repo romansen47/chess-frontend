@@ -3,6 +3,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import {
   PROTECTED_GAME_METADATA_TAGS,
   customGameMetadataEntries,
+  displayPositionMetadata,
   metadataMapsEqual,
   nextCustomMetadataKey,
 } from "./analysisMetadataUtils";
@@ -42,6 +43,7 @@ export default function AnalysisMetadataDetails({ state, actions }: Props) {
 
   const dirty = !metadataMapsEqual(draft, state.analysisGameMetadata);
   const customEntries = useMemo(() => customGameMetadataEntries(draft), [draft]);
+  const positionMetadata = useMemo(() => displayPositionMetadata(draft), [draft]);
 
   function setTag(key: string, value: string) {
     setDraft((previous) => ({ ...previous, [key]: value }));
@@ -200,7 +202,7 @@ export default function AnalysisMetadataDetails({ state, actions }: Props) {
           {PROTECTED_GAME_METADATA_TAGS.map((key) => (
             <div className="analysis-metadata-readonly-row" key={key}>
               <span>{key}</span>
-              <code>{draft[key] ?? "—"}</code>
+              <code>{positionMetadata[key]}</code>
             </div>
           ))}
         </div>
