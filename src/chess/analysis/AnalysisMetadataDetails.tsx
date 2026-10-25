@@ -43,7 +43,10 @@ export default function AnalysisMetadataDetails({ state, actions }: Props) {
 
   const dirty = !metadataMapsEqual(draft, state.analysisGameMetadata);
   const customEntries = useMemo(() => customGameMetadataEntries(draft), [draft]);
-  const positionMetadata = useMemo(() => displayPositionMetadata(draft), [draft]);
+  const positionMetadata = useMemo(
+    () => displayPositionMetadata(draft, state.analysisStandardStartingPosition),
+    [draft, state.analysisStandardStartingPosition],
+  );
 
   function setTag(key: string, value: string) {
     setDraft((previous) => ({ ...previous, [key]: value }));
