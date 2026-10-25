@@ -8,8 +8,10 @@ export function useAnalysisMetadata(state: AnalysisState) {
   function restoreGameMetadata(
     tags: Record<string, string> | null | undefined,
     available: boolean,
+    standardStartingPosition: boolean | null = null,
   ) {
     state.setAnalysisGameMetadata(tags ? { ...tags } : {});
+    state.setAnalysisStandardStartingPosition(standardStartingPosition);
     state.setAnalysisGameMetadataAvailable(available);
     state.setAnalysisGameMetadataError(null);
     state.setAnalysisGameMetadataSaving(false);
@@ -37,7 +39,7 @@ export function useAnalysisMetadata(state: AnalysisState) {
   }
 
   function resetGameMetadata() {
-    restoreGameMetadata({}, false);
+    restoreGameMetadata({}, false, null);
   }
 
   return {
