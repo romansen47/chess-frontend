@@ -165,9 +165,9 @@ export default function AnalysisMetadataDetails({ state, actions }: Props) {
             {customEntries.map(([key, value]) => (
               <div className="analysis-metadata-custom-row" key={key}>
                 <input
-                  value={key}
+                  defaultValue={key}
                   aria-label={t("metadata.tagName")}
-                  onChange={(event) => renameCustomTag(key, event.target.value)}
+                  onBlur={(event) => renameCustomTag(key, event.target.value)}
                   disabled={state.analysisGameMetadataSaving}
                 />
                 <input
