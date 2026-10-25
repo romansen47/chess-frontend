@@ -88,6 +88,7 @@ export default function ChessBoardContainer({
     annotationsSaving: analysis.annotationsSaving,
     annotationSaveError: analysis.annotationSaveError,
     analysisGameMetadata: analysis.analysisGameMetadata,
+    analysisStandardStartingPosition: analysis.analysisStandardStartingPosition,
     analysisGameMetadataAvailable: analysis.analysisGameMetadataAvailable,
     analysisGameMetadataSaving: analysis.analysisGameMetadataSaving,
     analysisGameMetadataError: analysis.analysisGameMetadataError,
