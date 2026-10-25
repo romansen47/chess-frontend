@@ -197,7 +197,6 @@ export default function AnalysisSettingsDialog({
             type="button"
             className="analysis-settings-dialog-button"
             onClick={onStart}
-            disabled={running || !settings.engineProfileId || unavailable || deepAnalysisAvailable === null}
           >
             {running ? t("analysis.starting") : t("common.ok")}
           </button>
