@@ -61,24 +61,15 @@ export function nextCustomMetadataKey(
 }
 
 /**
- * Present the PGN-facing variant separately from the internal Chess960 model.
- * The core intentionally uses Scharnagl 518 (and an explicit FEN) even for
- * classical games. Never mutate the authoritative metadata here.
+ * Presents position metadata without leaking the core's internal Chess960
+ * representation into the UI. The semantic starting-position classification
+ * comes from the backend; the frontend does not infer chess variants from FEN.
  */
 export function displayPositionMetadata(
   tags: Readonly<Record<string, string>>,
+  standardStartingPosition: boolean | null,
 ): Record<(typeof PROTECTED_GAME_METADATA_TAGS)[number], string> {
-  const fen = tags.FEN?.trim() ?? "";
-  const fields = fen.split(/\s+/);
-  const classicalLayout =
-    fields[0] === "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" &&
-    fields[1] === "w" &&
-    (fields[2] === "HAha" || fields[2] === "KQkq") &&
-    fields[3] === "-" &&
-    fields[4] === "0" &&
-    fields[5] === "1";
-
-  if (classicalLayout) {
+  if (standardStartingPosition === true) {
     return { Variant: "Standard", SetUp: "0", FEN: "—" };
   }
 
