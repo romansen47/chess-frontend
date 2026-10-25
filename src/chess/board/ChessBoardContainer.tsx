@@ -87,6 +87,10 @@ export default function ChessBoardContainer({
     annotationsDirty: analysis.annotationsDirty,
     annotationsSaving: analysis.annotationsSaving,
     annotationSaveError: analysis.annotationSaveError,
+    analysisGameMetadata: analysis.analysisGameMetadata,
+    analysisGameMetadataAvailable: analysis.analysisGameMetadataAvailable,
+    analysisGameMetadataSaving: analysis.analysisGameMetadataSaving,
+    analysisGameMetadataError: analysis.analysisGameMetadataError,
     animateEngineVariations: uiPreferences.preferences.animateEngineVariations,
     engineVariationAnimationIntervalMs:
       uiPreferences.preferences.engineVariationAnimationIntervalMs,
@@ -103,6 +107,7 @@ export default function ChessBoardContainer({
     setEngineView: analysis.setAnalysisEngineView,
     updateGameAnnotation: analysis.updateGameAnnotation,
     persistGameAnnotations: analysis.persistGameAnnotations,
+    persistGameMetadata: analysis.persistGameMetadata,
   };
 
   const analysisBoardDecorationOptions = {

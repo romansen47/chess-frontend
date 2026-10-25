@@ -96,7 +96,7 @@ export default function AnalysisMetadataDetails({ state, actions }: Props) {
             onClick={() => setDraft({ ...state.analysisGameMetadata })}
             disabled={!dirty || state.analysisGameMetadataSaving}
           >
-            {t("common.reset")}
+            {t("metadata.reset")}
           </button>
           <button
             type="button"
