@@ -2,7 +2,7 @@ import type { EngineEvaluation, GameAnnotation, MoveAnnotation, MoveRow, Analysi
 import type { BoardOrientation } from "../board/boardOrientation";
 import type { AnalysisEngineView } from "./AnalysisEngineTabs";
 
-export type AnalysisDetailsTab = "engine" | "database" | "annotations";
+export type AnalysisDetailsTab = "engine" | "database" | "annotations" | "metadata";
 
 export interface AnalysisReplayContentState {
   boardOrientation: BoardOrientation;
@@ -29,6 +29,10 @@ export interface AnalysisReplayContentState {
   annotationsDirty: boolean;
   annotationsSaving: boolean;
   annotationSaveError: string | null;
+  analysisGameMetadata: Record<string, string>;
+  analysisGameMetadataAvailable: boolean;
+  analysisGameMetadataSaving: boolean;
+  analysisGameMetadataError: string | null;
   animateEngineVariations: boolean;
   engineVariationAnimationIntervalMs: number;
 }
@@ -41,4 +45,5 @@ export interface AnalysisReplayContentActions {
   setEngineView: (view: AnalysisEngineView) => void;
   updateGameAnnotation: (annotation: GameAnnotation) => void;
   persistGameAnnotations: () => void | Promise<void>;
+  persistGameMetadata: (tags: Record<string, string>) => Promise<void>;
 }

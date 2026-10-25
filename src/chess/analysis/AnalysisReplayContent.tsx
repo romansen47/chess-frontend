@@ -4,6 +4,7 @@ import LiveEvaluationView from "./LiveEvaluationView";
 import AnalysisProfileContent from "./AnalysisProfileContent";
 import AnalysisEngineDetails from "./AnalysisEngineDetails";
 import AnalysisAnnotationDetails from "./AnalysisAnnotationDetails";
+import AnalysisMetadataDetails from "./AnalysisMetadataDetails";
 import type { AnalysisReplayContentActions, AnalysisReplayContentState } from "./analysisReplayViewTypes";
 
 export type { AnalysisDetailsTab } from "./analysisReplayViewTypes";
@@ -20,6 +21,7 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
   const engineTabActive = state.analysisDetailsTab === "engine";
   const databaseTabActive = state.analysisDetailsTab === "database";
   const annotationsTabActive = state.analysisDetailsTab === "annotations";
+  const metadataTabActive = state.analysisDetailsTab === "metadata";
   const activePrimaryTabId = `analysis-primary-tab-${state.analysisDetailsTab}`;
 
   const primaryTabs = !variationMode && (
@@ -51,6 +53,20 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
         onClick={() => actions.setDetailsTab("database")}
       >
         {t("analysis.databaseSource")}
+      </button>
+      <button
+        id="analysis-primary-tab-metadata"
+        type="button"
+        role="tab"
+        aria-selected={metadataTabActive}
+        aria-controls="analysis-primary-tabpanel"
+        className={[
+          "analysis-primary-tab",
+          metadataTabActive ? "analysis-primary-tab-active" : "",
+        ].filter(Boolean).join(" ")}
+        onClick={() => actions.setDetailsTab("metadata")}
+      >
+        {t("metadata.tab")}
       </button>
       <button
         id="analysis-primary-tab-annotations"
@@ -86,7 +102,9 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
               orientation={state.boardOrientation}
               animateVariations={state.animateEngineVariations}
               animationIntervalMs={state.engineVariationAnimationIntervalMs} />
-          </> : state.analysisDetailsTab === "annotations" ? (
+          </> : state.analysisDetailsTab === "metadata" ? (
+            <AnalysisMetadataDetails state={state} actions={actions} />
+          ) : state.analysisDetailsTab === "annotations" ? (
             <AnalysisAnnotationDetails state={state} actions={actions} />
           ) : state.analysisDetailsTab === "database" ? (
             <AnalysisEngineDetails state={state} actions={actions} />
