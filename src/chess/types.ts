@@ -106,6 +106,7 @@ export interface UciGameResponse {
   annotations?: GameAnnotation[];
   startingPositionId?: number;
   initialFen?: string | null;
+  standardStartingPosition?: boolean;
   pgnTags?: Record<string, string>;
 }
 
