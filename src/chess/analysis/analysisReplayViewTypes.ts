@@ -30,6 +30,7 @@ export interface AnalysisReplayContentState {
   annotationsSaving: boolean;
   annotationSaveError: string | null;
   analysisGameMetadata: Record<string, string>;
+  analysisStandardStartingPosition: boolean | null;
   analysisGameMetadataAvailable: boolean;
   analysisGameMetadataSaving: boolean;
   analysisGameMetadataError: string | null;
