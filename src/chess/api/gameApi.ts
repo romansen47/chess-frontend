@@ -2,6 +2,7 @@ import type {
   ClockState,
   GameAnnotation,
   GameSettings,
+  GameMetadataResponse,
   GameSnapshotResponse,
   UciGameResponse,
 } from "../types";
@@ -76,4 +77,20 @@ export async function saveGameAnnotations(
     throw new Error(message || `HTTP ${response.status}`);
   }
   return (await response.json()) as GameAnnotation[];
+}
+
+
+export async function saveGameMetadata(
+  tags: Record<string, string>,
+): Promise<GameMetadataResponse> {
+  const response = await fetch("/api/game/metadata", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tags }),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `HTTP ${response.status}`);
+  }
+  return (await response.json()) as GameMetadataResponse;
 }

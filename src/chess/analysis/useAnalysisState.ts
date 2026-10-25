@@ -40,6 +40,10 @@ export function useAnalysisState() {
   const [analysisLineAnimationIndex, setAnalysisLineAnimationIndex] = useState(0);
   const [analysisWhitePlayerName, setAnalysisWhitePlayerName] = useState<string | null>(null);
   const [analysisBlackPlayerName, setAnalysisBlackPlayerName] = useState<string | null>(null);
+  const [analysisGameMetadata, setAnalysisGameMetadata] = useState<Record<string, string>>({});
+  const [analysisGameMetadataAvailable, setAnalysisGameMetadataAvailable] = useState(false);
+  const [analysisGameMetadataSaving, setAnalysisGameMetadataSaving] = useState(false);
+  const [analysisGameMetadataError, setAnalysisGameMetadataError] = useState<string | null>(null);
   const analysisReplayCancelledRef = useRef(false);
   const analysisReplayResumeRef = useRef<AnalysisReplayStep | null>(null);
   const [analysisEvaluationEnabled, setAnalysisEvaluationEnabledState] = useState(false);
@@ -89,6 +93,10 @@ export function useAnalysisState() {
     analysisLineAnimationIndex, setAnalysisLineAnimationIndex,
     analysisWhitePlayerName, setAnalysisWhitePlayerName,
     analysisBlackPlayerName, setAnalysisBlackPlayerName,
+    analysisGameMetadata, setAnalysisGameMetadata,
+    analysisGameMetadataAvailable, setAnalysisGameMetadataAvailable,
+    analysisGameMetadataSaving, setAnalysisGameMetadataSaving,
+    analysisGameMetadataError, setAnalysisGameMetadataError,
     analysisReplayCancelledRef, analysisReplayResumeRef,
     analysisEvaluationEnabled, setAnalysisEvaluationEnabled, analysisEvaluationEnabledRef,
     analysisEvaluation, setAnalysisEvaluation,

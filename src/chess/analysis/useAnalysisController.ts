@@ -6,6 +6,7 @@ import { useAnalysisVariation } from "./useAnalysisVariation";
 import { useAnalysisNavigation } from "./useAnalysisNavigation";
 import { useAnalysisReplay } from "./useAnalysisReplay";
 import { useAnalysisAnnotations } from "./useAnalysisAnnotations";
+import { useAnalysisMetadata } from "./useAnalysisMetadata";
 
 export function useAnalysisController(options: UseAnalysisControllerOptions) {
   const state = useAnalysisState();
@@ -21,6 +22,7 @@ export function useAnalysisController(options: UseAnalysisControllerOptions) {
     selectAnalysisPositionByPly: navigation.selectAnalysisPositionByPly,
   });
   const annotations = useAnalysisAnnotations(state, options);
+  const metadata = useAnalysisMetadata(state);
   const derived = useAnalysisDerived(state, options);
 
   function resetAnalysisState() {
@@ -44,6 +46,7 @@ export function useAnalysisController(options: UseAnalysisControllerOptions) {
     variation.resetAnalysisVariation();
     state.setAnalysisDetailsTab("engine");
     state.setAnalysisProfile(EMPTY_ANALYSIS_PROFILE);
+    metadata.resetGameMetadata();
   }
 
   return {
@@ -76,6 +79,10 @@ export function useAnalysisController(options: UseAnalysisControllerOptions) {
     setAnalysisWhitePlayerName: state.setAnalysisWhitePlayerName,
     analysisBlackPlayerName: state.analysisBlackPlayerName,
     setAnalysisBlackPlayerName: state.setAnalysisBlackPlayerName,
+    analysisGameMetadata: state.analysisGameMetadata,
+    analysisGameMetadataAvailable: state.analysisGameMetadataAvailable,
+    analysisGameMetadataSaving: state.analysisGameMetadataSaving,
+    analysisGameMetadataError: state.analysisGameMetadataError,
     analysisEvaluationEnabled: state.analysisEvaluationEnabled,
     analysisEvaluation: state.analysisEvaluation,
     analysisEvaluationError: state.analysisEvaluationError,
@@ -100,6 +107,8 @@ export function useAnalysisController(options: UseAnalysisControllerOptions) {
     performAnalysisVariationMove: variation.performAnalysisVariationMove,
     restoreAnnotations: annotations.restoreAnnotations,
     setImportedPlayers: annotations.setImportedPlayers,
+    restoreGameMetadata: metadata.restoreGameMetadata,
+    persistGameMetadata: metadata.persistGameMetadata,
   };
 }
 

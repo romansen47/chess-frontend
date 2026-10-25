@@ -91,6 +91,10 @@ export interface GameAnnotation {
   variations: string[];
 }
 
+export interface GameMetadataResponse {
+  tags: Record<string, string>;
+}
+
 export interface UciGameResponse {
   totalPlies: number;
   sideToMove: string | null;
@@ -102,6 +106,7 @@ export interface UciGameResponse {
   annotations?: GameAnnotation[];
   startingPositionId?: number;
   initialFen?: string | null;
+  pgnTags?: Record<string, string>;
 }
 
 export interface GameSnapshotResponse {
