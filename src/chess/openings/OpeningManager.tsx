@@ -10,7 +10,12 @@ import {
   renameOpening,
 } from "../api/openingApi";
 import type { Opening, Piece } from "../types";
+import {
+  groupOpeningHierarchy,
+  openingLineLabel,
+} from "./openingHierarchy";
 import { openingMoveRows } from "./openingMoveRows";
+import OpeningVariationList from "./OpeningVariationList";
 import "./OpeningManager.css";
 
 function OpeningBoard({ opening }: { opening: Opening }) {
@@ -58,14 +63,13 @@ export default function OpeningManager() {
     () => openings.find((opening) => opening.id === selectedId) ?? openings[0] ?? null,
     [openings, selectedId],
   );
-  const filteredOpenings = useMemo(() => {
-    const query = filter.trim().toLocaleLowerCase();
-    if (!query) return openings;
-    return openings.filter((opening) =>
-      opening.name.toLocaleLowerCase().includes(query)
-      || opening.eco?.toLocaleLowerCase().includes(query));
-  }, [filter, openings]);
-  const visibleOpenings = filteredOpenings.slice(0, 400);
+  const hierarchy = useMemo(() => groupOpeningHierarchy(openings), [openings]);
+  const selectedVariation = useMemo(
+    () => hierarchy
+      .flatMap((family) => family.variations)
+      .find((variation) => variation.lines.some((line) => line.id === selected?.id)) ?? null,
+    [hierarchy, selected?.id],
+  );
 
   async function load() {
     try {
@@ -192,40 +196,13 @@ export default function OpeningManager() {
 
       <div className="opening-manager-layout">
         <aside className="opening-manager-list">
-          {openings.length > 0 && (
-            <div className="opening-manager-filter">
-              <input
-                type="search"
-                value={filter}
-                placeholder={t("openings.filter")}
-                onChange={(event) => setFilter(event.target.value)}
-              />
-              <span>
-                {t("openings.showing", {
-                  shown: visibleOpenings.length,
-                  total: filteredOpenings.length,
-                })}
-              </span>
-            </div>
-          )}
-          {openings.length === 0 ? (
-            <div className="opening-manager-empty">{t("openings.empty")}</div>
-          ) : visibleOpenings.length === 0 ? (
-            <div className="opening-manager-empty">{t("openings.noMatches")}</div>
-          ) : visibleOpenings.map((opening) => (
-            <button
-              key={opening.id}
-              type="button"
-              className={opening.id === selected?.id ? "active" : ""}
-              onClick={() => setSelectedId(opening.id)}
-            >
-              <strong>{opening.name}</strong>
-              <span>
-                {opening.eco ? `${opening.eco} · ` : ""}
-                {t("openings.plies", { count: opening.moves.length })}
-              </span>
-            </button>
-          ))}
+          <OpeningVariationList
+            openings={openings}
+            selectedId={selected?.id ?? null}
+            filter={filter}
+            onFilterChange={setFilter}
+            onSelect={setSelectedId}
+          />
         </aside>
 
         <section className="opening-manager-details">
@@ -249,6 +226,25 @@ export default function OpeningManager() {
                   </button>
                 </div>
               </div>
+
+              {selectedVariation && (
+                <label className="opening-manager-line-selector">
+                  <span>
+                    {t("openings.family")}: {selectedVariation.family} ·{" "}
+                    {t("openings.variation")}: {selectedVariation.variation}
+                  </span>
+                  <select
+                    value={selected.id}
+                    onChange={(event) => setSelectedId(event.target.value)}
+                  >
+                    {selectedVariation.lines.map((line, index) => (
+                      <option key={line.id} value={line.id}>
+                        {openingLineLabel(line, index, selectedVariation.lines.length)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
 
               {!selected.playable && (
                 <div className="opening-manager-warning">{t("openings.notPlayable")}</div>
