@@ -73,7 +73,9 @@ export interface SearchForm {
   toYear: string;
   result: string;
   minElo: string;
-  openingId: string;
+  openingFamily: string;
+  openingVariation: string;
+  openingLineId: string;
   eco: string;
 }
 
@@ -87,8 +89,8 @@ export interface DatabaseSearchRequest {
   result: string | null;
   minElo: number | null;
   eco: string | null;
-  openingStartingPositionId: number | null;
-  openingMoves: string[];
+  openingVariation: string | null;
+  openingLineId: string | null;
   limit: number;
 }
 
@@ -100,6 +102,8 @@ export const EMPTY_DATABASE_SEARCH: SearchForm = {
   toYear: "",
   result: "",
   minElo: "",
-  openingId: "",
+  openingFamily: "",
+  openingVariation: "",
+  openingLineId: "",
   eco: "",
 };
