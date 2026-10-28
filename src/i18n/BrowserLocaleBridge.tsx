@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useI18n, type Language } from "./I18nProvider";
+import { isSingleGamePgnInput } from "./singleGamePgnFileBridge";
 
 const TERMINATE_PROGRAM_TEXT =
   "Terminate Program?\n\nThe chess server and, in development mode, the frontend server will be stopped.";
@@ -52,21 +53,6 @@ function localizeSingleGameImportError(
   // PGN_MULTIPLE_GAMES deliberately remains structured JSON. The dedicated
   // modal dialog owns that error because it also explains the database import path.
   return null;
-}
-
-function isSingleGamePgnInput(input: HTMLInputElement): boolean {
-  if (input.type !== "file") {
-    return false;
-  }
-
-  // The database dialog already uploads its File directly via FormData and
-  // must never participate in this compatibility bridge.
-  if (input.classList.contains("chess-database-hidden-input")) {
-    return false;
-  }
-
-  const accept = input.accept.toLowerCase();
-  return accept.includes(".pgn") || accept.includes("application/x-chess-pgn");
 }
 
 export default function BrowserLocaleBridge() {
