@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { Opening } from "../types";
 import type { DatabaseImportJob, SearchForm } from "./chessDatabaseTypes";
 import {
   createDatabaseSearchRequest,
@@ -17,7 +16,9 @@ function search(overrides: Partial<SearchForm> = {}): SearchForm {
     toYear: "",
     result: "",
     minElo: "",
-    openingId: "",
+    openingFamily: "",
+    openingVariation: "",
+    openingLineId: "",
     eco: "",
     ...overrides,
   };
@@ -58,8 +59,8 @@ describe("chess database utilities", () => {
       result: null,
       minElo: 2700,
       eco: null,
-      openingStartingPositionId: null,
-      openingMoves: [],
+      openingVariation: null,
+      openingLineId: null,
       limit: 200,
     });
   });
@@ -87,27 +88,16 @@ describe("chess database utilities", () => {
   });
 
 
-  it("maps ECO and the selected opening line into search criteria", () => {
-    const opening: Opening = {
-      id: "najdorf",
-      name: "Sicilian Defense, Najdorf",
-      eco: "B90",
-      startingPositionId: 518,
-      initialFen: null,
-      moves: ["e2e4", "c7c5", "g1f3", "d7d6"],
-      sanMoves: ["e4", "c5", "Nf3", "d6"],
-      position: "",
-      sideToMove: "white",
-      playable: true,
-    };
-
-    expect(createDatabaseSearchRequest(
-      search({ openingId: opening.id, eco: " B9 " }),
-      opening,
-    )).toMatchObject({
-      eco: "B9",
-      openingStartingPositionId: 518,
-      openingMoves: opening.moves,
+  it("maps variation and optional exact line into search criteria", () => {
+    expect(createDatabaseSearchRequest(search({
+      openingFamily: "Grünfeld Defense",
+      openingVariation: "Grünfeld Defense: Russian Variation",
+      openingLineId: "line-2",
+      eco: " D9 ",
+    }))).toMatchObject({
+      eco: "D9",
+      openingVariation: "Grünfeld Defense: Russian Variation",
+      openingLineId: "line-2",
     });
   });
 
