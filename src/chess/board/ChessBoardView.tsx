@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ChessDatabaseDialog from "../../ChessDatabaseDialog";
 import { useI18n } from "../../i18n/I18nProvider";
 import { SINGLE_GAME_PGN_INPUT_CLASS } from "../../i18n/singleGamePgnFileBridge";
-import AnnotationTiming from "../analysis/AnnotationTiming";
 import { boardThemeCssVariables } from "../settings/boardThemes";
 import ChessHeader from "../header/ChessHeader";
 import MovePanel from "../game/MovePanel";
@@ -12,12 +11,13 @@ import ClockPanel from "./ClockPanel";
 import EnginePanel from "./EnginePanel";
 import ChessBoardDialogs from "./ChessBoardDialogs";
 import type { ChessBoardViewProps } from "./chessBoardViewTypes";
+import "./ResponsiveWorkspace.css";
 
-type MobileAnalysisTab = "moves" | "deep" | "eval";
+type MobileWorkspaceTab = "moves" | "engine";
 
 export default function ChessBoardView(props: ChessBoardViewProps) {
   const { t } = useI18n();
-  const [mobileAnalysisTab, setMobileAnalysisTab] = useState<MobileAnalysisTab>("moves");
+  const [mobileWorkspaceTab, setMobileWorkspaceTab] = useState<MobileWorkspaceTab>("moves");
 
   const {
     headerProps, movePanelProps, boardProps,
@@ -26,16 +26,9 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
     analysisReplayActive, uciAnalysisLoaded, clock, clockError, historicalClock,
     boardTheme,
     whiteComputerEnabled, blackComputerEnabled, toggleWhiteComputer, toggleBlackComputer,
-    engine, engineActions, mobileDeepAnalysisContent, mobileEvalEngineContent,
-    mobileAnalysisTimingAnnotation,
+    engine, engineActions,
     hoverBoardProps, dialogs, dialogActions,
   } = props;
-
-  useEffect(() => {
-    if (!analysisReplayActive) {
-      setMobileAnalysisTab("moves");
-    }
-  }, [analysisReplayActive]);
 
   return <>
     <ChessHeader {...headerProps} />
@@ -47,7 +40,7 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
     <main className="app-main" style={boardThemeCssVariables(boardTheme)}>
       <div
         className={`board-layout${analysisReplayActive ? " board-layout-analysis" : ""}`}
-        data-mobile-analysis-tab={analysisReplayActive ? mobileAnalysisTab : undefined}
+        data-mobile-workspace-tab={mobileWorkspaceTab}
       >
         <MovePanel {...movePanelProps} />
         <section className="board-column">
@@ -63,56 +56,30 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
         </section>
         <EnginePanel engine={engine} actions={engineActions} />
 
-        {analysisReplayActive && (
-          <>
-            <div className="mobile-analysis-tabs" role="tablist" aria-label={t("analysis.dialogTitle")}>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mobileAnalysisTab === "moves"}
-                className={mobileAnalysisTab === "moves" ? "active" : ""}
-                onClick={() => setMobileAnalysisTab("moves")}
-              >
-                {t("moves.title")}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mobileAnalysisTab === "deep"}
-                className={mobileAnalysisTab === "deep" ? "active" : ""}
-                onClick={() => setMobileAnalysisTab("deep")}
-              >
-                {t("settings.deepAnalysis")}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mobileAnalysisTab === "eval"}
-                className={mobileAnalysisTab === "eval" ? "active" : ""}
-                onClick={() => setMobileAnalysisTab("eval")}
-              >
-                {t("analysis.evaluationEngine")}
-              </button>
-            </div>
-
-            <section className="mobile-analysis-pane mobile-analysis-deep">
-              {mobileAnalysisTimingAnnotation && (
-                <div className="mobile-analysis-timing">
-                  <AnnotationTiming annotation={mobileAnalysisTimingAnnotation} />
-                </div>
-              )}
-              {mobileDeepAnalysisContent}
-            </section>
-            <section className="mobile-analysis-pane mobile-analysis-eval">
-              {mobileAnalysisTimingAnnotation && (
-                <div className="mobile-analysis-timing">
-                  <AnnotationTiming annotation={mobileAnalysisTimingAnnotation} />
-                </div>
-              )}
-              {mobileEvalEngineContent}
-            </section>
-          </>
-        )}
+        <div className="mobile-workspace-tabs" role="tablist" aria-label={t("analysis.dialogTitle")}>
+          <button
+            id="mobile-workspace-tab-moves"
+            type="button"
+            role="tab"
+            aria-selected={mobileWorkspaceTab === "moves"}
+            className={mobileWorkspaceTab === "moves" ? "active" : ""}
+            onClick={() => setMobileWorkspaceTab("moves")}
+          >
+            {t("moves.title")}
+          </button>
+          <button
+            id="mobile-workspace-tab-engine"
+            type="button"
+            role="tab"
+            aria-selected={mobileWorkspaceTab === "engine"}
+            className={mobileWorkspaceTab === "engine" ? "active" : ""}
+            onClick={() => setMobileWorkspaceTab("engine")}
+          >
+            {analysisReplayActive
+              ? t("analysis.dialogTitle")
+              : t("analysis.evaluationEngine")}
+          </button>
+        </div>
 
         <HoverBoard {...hoverBoardProps} />
         <ChessBoardDialogs dialogs={dialogs} actions={dialogActions} />

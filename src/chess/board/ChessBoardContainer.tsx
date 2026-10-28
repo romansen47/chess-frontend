@@ -4,10 +4,7 @@ import {
 } from "../analysis/analysisBoardArrows";
 import { historicalClock } from "../analysis/historicalClock";
 import type { MouseEvent } from "react";
-import AnalysisEngineDetails from "../analysis/AnalysisEngineDetails";
-import AnalysisProfileContent from "../analysis/AnalysisProfileContent";
 import AnalysisReplayContent from "../analysis/AnalysisReplayContent";
-import LiveEvaluationView from "../analysis/LiveEvaluationView";
 import type { AnalysisController } from "../analysis/useAnalysisController";
 import { useAnalysisLineAnimation } from "../analysis/useAnalysisLineAnimation";
 import {
@@ -133,52 +130,6 @@ export default function ChessBoardContainer({
       actions={analysisViewActions}
     />
   );
-
-  const mobileDeepAnalysisState = {
-    ...analysisViewState,
-    analysisDetailsTab: "engine" as const,
-  };
-
-  const mobileDeepAnalysisContent = analysis.analysisReplayActive
-    ? (
-        <AnalysisProfileContent
-          state={analysisViewState}
-          actions={analysisViewActions}
-        >
-          <AnalysisEngineDetails
-            state={mobileDeepAnalysisState}
-            actions={analysisViewActions}
-          />
-        </AnalysisProfileContent>
-      )
-    : null;
-
-  const selectedAnalysisTimingAnnotation = (() => {
-    const ply = analysis.analysisSelectedPosition?.ply;
-    if (ply == null) return null;
-    const annotation = analysis.gameAnnotations[ply] ?? null;
-    return annotation
-      && (annotation.clockMillis != null || annotation.elapsedMoveMillis != null)
-      ? annotation
-      : null;
-  })();
-
-  const mobileEvalEngineContent = analysis.analysisReplayActive
-    ? (
-        <LiveEvaluationView
-          evaluation={analysis.analysisEvaluationEnabled ? analysis.analysisEvaluation : null}
-          evaluationKey={analysis.analysisEvaluationKeyRef.current}
-          activePly={analysis.analysisSelectedPosition?.ply ?? null}
-          variationMode={analysis.analysisVariationMoves.length > 0}
-          deepAnalysisRunning={analysis.isAnalysisReplayRunning}
-          orientation={board.boardOrientation}
-          animateVariations={uiPreferences.preferences.animateEngineVariations}
-          animationIntervalMs={
-            uiPreferences.preferences.engineVariationAnimationIntervalMs
-          }
-        />
-      )
-    : null;
 
   function showMovePreview(
     event: MouseEvent<HTMLElement>,
@@ -334,9 +285,6 @@ export default function ChessBoardContainer({
       onEngineConfigOverviewChange: live.handleEngineConfigOverviewChange,
       updateUiPreferences: uiPreferences.updatePreferences,
       closeSettings: () => engine.setShowSettings(false) }}
-    mobileDeepAnalysisContent={mobileDeepAnalysisContent}
-    mobileEvalEngineContent={mobileEvalEngineContent}
-    mobileAnalysisTimingAnnotation={selectedAnalysisTimingAnnotation}
     hoverBoardProps={{
       preview: board.hoverPreview,
       annotationText: board.hoverAnnotationText,

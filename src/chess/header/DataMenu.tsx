@@ -5,10 +5,12 @@ interface DataMenuProps {
   disabled: boolean;
   actionsDisabled: boolean;
   terminating: boolean;
+  showAnalysisExport: boolean;
   onNewGame: () => void;
   onExportCurrentGame: () => void;
   onImportNewGame: () => void;
   onOpenDatabase: () => void;
+  onExportAnalysisPgn: () => void;
   onTerminateProgram: () => void;
 }
 
@@ -16,10 +18,12 @@ export default function DataMenu({
   disabled,
   actionsDisabled,
   terminating,
+  showAnalysisExport,
   onNewGame,
   onExportCurrentGame,
   onImportNewGame,
   onOpenDatabase,
+  onExportAnalysisPgn,
   onTerminateProgram,
 }: DataMenuProps) {
   const { t } = useI18n();
@@ -114,6 +118,17 @@ export default function DataMenu({
           >
             {t("data.chessDatabase")}
           </button>
+
+          {showAnalysisExport && (
+            <button
+              className="data-menu-item data-menu-analysis-export"
+              role="menuitem"
+              onClick={() => runAndClose(onExportAnalysisPgn)}
+              disabled={actionsDisabled}
+            >
+              {t("analysis.exportPgn")}
+            </button>
+          )}
 
           <div className="data-menu-separator" role="separator" />
 

@@ -188,8 +188,8 @@
   aspect-ratio: 1;
 }
 
-.opening-preview-square.light { background: #e8d7b0; }
-.opening-preview-square.dark { background: #7f9b5f; }
+.opening-preview-square-light { background: #e8d7b0; }
+.opening-preview-square-dark { background: #7f9b5f; }
 
 .opening-preview-piece {
   font-size: 23px;

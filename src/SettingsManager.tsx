@@ -11,12 +11,9 @@ import { useI18n } from "./i18n/I18nProvider";
 import EngineManager from "./EngineManager";
 import EngineProfileHierarchy from "./EngineProfileHierarchy";
 import OpeningManager from "./chess/openings/OpeningManager";
-import { BOARD_THEMES, type BoardThemeId } from "./chess/settings/boardThemes";
-import {
-  ANALYSIS_EVALUATION_ARROW_COUNTS,
-  ENGINE_VARIATION_ANIMATION_INTERVALS,
-  type UiPreferences,
-} from "./chess/settings/useUiPreferences";
+import EngineDefaultsSettings from "./settings/EngineDefaultsSettings";
+import DisplaySettings from "./settings/DisplaySettings";
+import type { UiPreferences } from "./chess/settings/useUiPreferences";
 import "./SettingsManager.css";
 
 interface SettingsManagerProps {
@@ -27,8 +24,12 @@ interface SettingsManagerProps {
   onClose: () => void;
 }
 
-type SettingsMode = "ENGINE_DEFAULTS" | "OPENINGS" | "DISPLAY" | "ENGINES" | "ENGINE_LOG";
-type AssignmentKey = keyof EngineProfileAssignments;
+type SettingsMode =
+  | "ENGINE_DEFAULTS"
+  | "OPENINGS"
+  | "DISPLAY"
+  | "ENGINES"
+  | "ENGINE_LOG";
 
 const EMPTY_ASSIGNMENTS: EngineProfileAssignments = {
   whitePlayerProfileId: null,
@@ -64,9 +65,7 @@ export default function SettingsManager({
   const profiles = overview?.profiles ?? [];
 
   useEffect(() => {
-    if (overview) {
-      setDefaultsDraft(copyAssignments(overview.defaults));
-    }
+    if (overview) setDefaultsDraft(copyAssignments(overview.defaults));
   }, [overview]);
 
   function changeMode(nextMode: SettingsMode) {
@@ -78,7 +77,6 @@ export default function SettingsManager({
 
   async function resetEngineSettings() {
     if (!window.confirm(t("settings.resetConfirm"))) return;
-
     try {
       setBusy(true);
       setError(null);
@@ -87,21 +85,17 @@ export default function SettingsManager({
       onOverviewChange(next);
       setDefaultsDraft(copyAssignments(next.defaults));
       setMode("ENGINE_DEFAULTS");
-      setMessage(
-        t("settings.resetSummary", {
-          engines: next.engines.length,
-          fallback:
-            next.engines.find(
-              (engine) =>
-                engine.id ===
-                next.profiles.find(
-                  (profile) => profile.id === next.fallbackProfileId,
-                )?.engineId,
-            )?.engine ?? "–",
-        }),
+      const fallbackProfile = next.profiles.find(
+        (profile) => profile.id === next.fallbackProfileId,
       );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("settings.resetFailed"));
+      setMessage(t("settings.resetSummary", {
+        engines: next.engines.length,
+        fallback: next.engines.find(
+          (engine) => engine.id === fallbackProfile?.engineId,
+        )?.engine ?? "–",
+      }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t("settings.resetFailed"));
     } finally {
       setBusy(false);
     }
@@ -116,102 +110,27 @@ export default function SettingsManager({
       onOverviewChange(next);
       setDefaultsDraft(copyAssignments(next.defaults));
       setMessage(t("settings.defaultSaved"));
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : t("settings.defaultSaveFailed"),
-      );
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t("settings.defaultSaveFailed"));
     } finally {
       setBusy(false);
     }
   }
 
-  function profileAndEngine(profileId: string | null | undefined) {
-    const profile =
-      profiles.find((candidate) => candidate.id === profileId) ?? null;
-    const engine = profile
-      ? engines.find((candidate) => candidate.id === profile.engineId) ?? null
-      : null;
-    return { profile, engine };
-  }
-
-  function renderAssignmentCard(
-    key: AssignmentKey,
-    title: string,
-    description: string,
-  ) {
-    const selectedId = defaultsDraft[key] ?? "";
-    const { engine } = profileAndEngine(selectedId);
-
-    return (
-      <label className="engine-config-default-card" key={key}>
-        <div className="engine-config-default-card-heading">
-          <div>
-            <strong>{title}</strong>
-            <span>{description}</span>
-          </div>
-          {selectedId === overview?.fallbackProfileId && (
-            <span className="engine-config-chip">
-              {t("settings.fallback")}
-            </span>
-          )}
-        </div>
-
-        <select
-          value={selectedId}
-          onChange={(event) =>
-            setDefaultsDraft({
-              ...defaultsDraft,
-              [key]: event.target.value,
-            })
-          }
-          disabled={busy || profiles.length === 0}
-        >
-          {engines.map((candidateEngine) => {
-            const engineProfiles = profiles.filter(
-              (profile) => profile.engineId === candidateEngine.id,
-            );
-            if (engineProfiles.length === 0) return null;
-            return (
-              <optgroup
-                key={candidateEngine.id ?? candidateEngine.name}
-                label={candidateEngine.name}
-              >
-                {engineProfiles.map((profile) => (
-                  <option
-                    key={profile.id ?? profile.name}
-                    value={profile.id ?? ""}
-                  >
-                    {profile.name}
-                  </option>
-                ))}
-              </optgroup>
-            );
-          })}
-        </select>
-
-        <div className="engine-config-default-card-meta">
-          <span>{engine?.name ?? t("settings.unknownEngine")}</span>
-          <span className="engine-config-default-card-path">
-            {engine?.engine ?? "–"}
-          </span>
-        </div>
-      </label>
-    );
-  }
-
-  const fallbackProfile =
-    profiles.find((profile) => profile.id === overview?.fallbackProfileId) ??
-    null;
-  const fallbackEngine = fallbackProfile
-    ? engines.find((engine) => engine.id === fallbackProfile.engineId) ?? null
-    : null;
+  const tabs: Array<{ mode: SettingsMode; label: string; count?: string }> = [
+    { mode: "ENGINE_DEFAULTS", label: t("settings.engineDefaults") },
+    { mode: "OPENINGS", label: t("openings.title") },
+    { mode: "DISPLAY", label: t("settings.display") },
+    {
+      mode: "ENGINES",
+      label: t("settings.enginesAndProfiles"),
+      count: `${engines.length}/${profiles.length}`,
+    },
+    { mode: "ENGINE_LOG", label: t("settings.engineLog") },
+  ];
 
   return (
-    <div
-      className="engine-config-backdrop"
-      role="presentation"
-      onMouseDown={onClose}
-    >
+    <div className="engine-config-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="engine-config-dialog"
         role="dialog"
@@ -224,12 +143,7 @@ export default function SettingsManager({
             <h2>{t("settings.title")}</h2>
             <div className="engine-config-dialog-subtitle">
               {t("settings.subtitle")}
-              {overview && (
-                <span>
-                  {" "}
-                  · {t("settings.version", { version: overview.version })}
-                </span>
-              )}
+              {overview && <span> · {t("settings.version", { version: overview.version })}</span>}
             </div>
           </div>
 
@@ -251,9 +165,7 @@ export default function SettingsManager({
             <details
               className="engine-config-mobile-header-menu"
               open={mobileHeaderMenuOpen}
-              onToggle={(event) =>
-                setMobileHeaderMenuOpen(event.currentTarget.open)
-              }
+              onToggle={(event) => setMobileHeaderMenuOpen(event.currentTarget.open)}
             >
               <summary
                 aria-label={t("settings.mobileMoreActions")}
@@ -289,86 +201,37 @@ export default function SettingsManager({
         </header>
 
         {error && <div className="engine-config-error-banner">{error}</div>}
-        {message && (
-          <div className="engine-config-message-banner">{message}</div>
-        )}
+        {message && <div className="engine-config-message-banner">{message}</div>}
 
-        <div
-          className="engine-config-tabs"
-          role="tablist"
-          aria-label={t("settings.area")}
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "ENGINE_DEFAULTS"}
-            className={mode === "ENGINE_DEFAULTS" ? "active" : ""}
-            onClick={() => changeMode("ENGINE_DEFAULTS")}
-            disabled={busy}
-          >
-            {t("settings.engineDefaults")}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "OPENINGS"}
-            className={mode === "OPENINGS" ? "active" : ""}
-            onClick={() => changeMode("OPENINGS")}
-            disabled={busy}
-          >
-            {t("openings.title")}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "DISPLAY"}
-            className={mode === "DISPLAY" ? "active" : ""}
-            onClick={() => changeMode("DISPLAY")}
-            disabled={busy}
-          >
-            {t("settings.display")}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "ENGINES"}
-            className={mode === "ENGINES" ? "active" : ""}
-            onClick={() => changeMode("ENGINES")}
-            disabled={busy}
-          >
-            {t("settings.enginesAndProfiles")}
-            <span className="engine-config-tab-count">
-              {engines.length}/{profiles.length}
-            </span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "ENGINE_LOG"}
-            className={mode === "ENGINE_LOG" ? "active" : ""}
-            onClick={() => changeMode("ENGINE_LOG")}
-            disabled={busy}
-          >
-            {t("settings.engineLog")}
-          </button>
+        <div className="engine-config-tabs" role="tablist" aria-label={t("settings.area")}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.mode}
+              type="button"
+              role="tab"
+              aria-selected={mode === tab.mode}
+              className={mode === tab.mode ? "active" : ""}
+              onClick={() => changeMode(tab.mode)}
+              disabled={busy}
+            >
+              {tab.label}
+              {tab.count && <span className="engine-config-tab-count">{tab.count}</span>}
+            </button>
+          ))}
         </div>
 
         <label className="engine-config-mobile-mode-picker">
           <span>{t("settings.area")}</span>
           <select
             value={mode}
-            onChange={(event) =>
-              changeMode(event.target.value as SettingsMode)
-            }
+            onChange={(event) => changeMode(event.target.value as SettingsMode)}
             disabled={busy}
           >
-            <option value="ENGINE_DEFAULTS">{t("settings.engineDefaults")}</option>
-            <option value="OPENINGS">{t("openings.title")}</option>
-            <option value="DISPLAY">{t("settings.display")}</option>
-            <option value="ENGINES">
-              {t("settings.enginesAndProfiles")} ({engines.length}/{profiles.length})
-            </option>
-            <option value="ENGINE_LOG">{t("settings.engineLog")}</option>
+            {tabs.map((tab) => (
+              <option key={tab.mode} value={tab.mode}>
+                {tab.label}{tab.count ? ` (${tab.count})` : ""}
+              </option>
+            ))}
           </select>
         </label>
 
@@ -377,275 +240,24 @@ export default function SettingsManager({
             "engine-config-body",
             `engine-config-body-${mode.toLowerCase().replace("_", "-")}`,
             mode === "ENGINE_LOG" ? "engine-config-body-log" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
+          ].filter(Boolean).join(" ")}
         >
           {mode === "ENGINE_LOG" ? (
             <EngineManager embedded />
           ) : mode === "ENGINES" ? (
-            <EngineProfileHierarchy
-              overview={overview}
-              onOverviewChange={onOverviewChange}
-            />
+            <EngineProfileHierarchy overview={overview} onOverviewChange={onOverviewChange} />
           ) : mode === "OPENINGS" ? (
             <OpeningManager />
           ) : mode === "DISPLAY" ? (
-            <main className="engine-config-details engine-config-display-details">
-              <div className="engine-config-editor">
-                <div className="engine-config-details-heading">
-                  <div>
-                    <strong>{t("settings.displaySettings")}</strong>
-                    <span>{t("settings.displaySettingsDescription")}</span>
-                  </div>
-                  <span className="engine-config-chip">
-                    {t("settings.thisDevice")}
-                  </span>
-                </div>
-
-                <div className="engine-config-preference-grid">
-                  <label className="engine-config-preference-card">
-                    <div>
-                      <strong>{t("settings.showEvaluationArrows")}</strong>
-                      <span>{t("settings.showEvaluationArrowsDescription")}</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={uiPreferences.showAnalysisEvaluationArrows}
-                      onChange={(event) =>
-                        onUiPreferencesChange({
-                          showAnalysisEvaluationArrows: event.target.checked,
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="engine-config-preference-card">
-                    <div>
-                      <strong>{t("settings.engineArrowCount")}</strong>
-                      <span>{t("settings.engineArrowCountDescription")}</span>
-                    </div>
-                    <select
-                      className="engine-config-preference-select"
-                      value={uiPreferences.analysisEvaluationArrowCount}
-                      disabled={!uiPreferences.showAnalysisEvaluationArrows}
-                      onChange={(event) =>
-                        onUiPreferencesChange({
-                          analysisEvaluationArrowCount: Number(
-                            event.target.value,
-                          ) as UiPreferences["analysisEvaluationArrowCount"],
-                        })
-                      }
-                    >
-                      {ANALYSIS_EVALUATION_ARROW_COUNTS.map((count) => (
-                        <option key={count} value={count}>{count}</option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="engine-config-preference-card">
-                    <div>
-                      <strong>{t("settings.animateEngineVariations")}</strong>
-                      <span>{t("settings.animateEngineVariationsDescription")}</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={uiPreferences.animateEngineVariations}
-                      onChange={(event) =>
-                        onUiPreferencesChange({
-                          animateEngineVariations: event.target.checked,
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="engine-config-preference-card">
-                    <div>
-                      <strong>{t("settings.animationSpeed")}</strong>
-                      <span>{t("settings.animationSpeedDescription")}</span>
-                    </div>
-                    <select
-                      className="engine-config-preference-select"
-                      value={uiPreferences.engineVariationAnimationIntervalMs}
-                      disabled={!uiPreferences.animateEngineVariations}
-                      onChange={(event) =>
-                        onUiPreferencesChange({
-                          engineVariationAnimationIntervalMs: Number(
-                            event.target.value,
-                          ) as UiPreferences["engineVariationAnimationIntervalMs"],
-                        })
-                      }
-                    >
-                      {ENGINE_VARIATION_ANIMATION_INTERVALS.map((milliseconds) => (
-                        <option key={milliseconds} value={milliseconds}>
-                          {milliseconds === 500 ? "0.5 s" : `${milliseconds / 1000} s`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="engine-config-preference-card">
-                    <div>
-                      <strong>{t("settings.showMoveAnnotationsOnBoard")}</strong>
-                      <span>{t("settings.showMoveAnnotationsOnBoardDescription")}</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={uiPreferences.showMoveAnnotationsOnBoard}
-                      onChange={(event) =>
-                        onUiPreferencesChange({
-                          showMoveAnnotationsOnBoard: event.target.checked,
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="engine-config-preference-card">
-                    <div>
-                      <strong>{t("settings.boardTheme")}</strong>
-                      <span>{t("settings.boardThemeDescription")}</span>
-                    </div>
-                    <select
-                      className="engine-config-preference-select"
-                      value={uiPreferences.boardTheme}
-                      onChange={(event) =>
-                        onUiPreferencesChange({
-                          boardTheme: event.target.value as BoardThemeId,
-                        })
-                      }
-                    >
-                      {BOARD_THEMES.map((theme) => (
-                        <option key={theme.id} value={theme.id}>
-                          {theme.id === "green"
-                            ? t("settings.boardThemeGreen")
-                            : theme.id === "brown"
-                              ? t("settings.boardThemeBrown")
-                              : t("settings.boardThemeSlate")}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="engine-config-preference-card">
-                    <div>
-                      <strong>{t("settings.showBoardCoordinates")}</strong>
-                      <span>{t("settings.showBoardCoordinatesDescription")}</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={uiPreferences.showBoardCoordinates}
-                      onChange={(event) =>
-                        onUiPreferencesChange({
-                          showBoardCoordinates: event.target.checked,
-                        })
-                      }
-                    />
-                  </label>
-                </div>
-
-                <div className="engine-config-display-note">
-                  {t("settings.displayStoredLocally")}
-                </div>
-              </div>
-            </main>
+            <DisplaySettings preferences={uiPreferences} onChange={onUiPreferencesChange} />
           ) : (
-            <>
-              <aside className="engine-config-sidebar">
-                <div className="engine-config-sidebar-header">
-                  <div>
-                    <strong>{t("settings.useCases")}</strong>
-                    <span>{t("settings.useCasesDescription")}</span>
-                  </div>
-                </div>
-                <div className="engine-config-nav-list engine-config-assignment-list">
-                  {([
-                    ["whitePlayerProfileId", t("settings.whiteCpu")],
-                    ["blackPlayerProfileId", t("settings.blackCpu")],
-                    ["evaluationProfileId", t("settings.liveEvaluation")],
-                    ["deepAnalysisProfileId", t("settings.deepAnalysis")],
-                  ] as Array<[AssignmentKey, string]>).map(([key, label]) => {
-                    const { profile, engine } = profileAndEngine(
-                      defaultsDraft[key],
-                    );
-                    return (
-                      <div
-                        className="engine-config-nav-item engine-config-assignment-summary"
-                        key={key}
-                      >
-                        <span className="engine-config-nav-title">{label}</span>
-                        <span className="engine-config-nav-meta">
-                          {profile?.name ?? t("settings.noProfile")}
-                        </span>
-                        <span className="engine-config-nav-path">
-                          {engine?.name ?? "–"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </aside>
-
-              <main className="engine-config-details">
-                <div className="engine-config-editor">
-                  <div className="engine-config-details-heading">
-                    <div>
-                      <strong>{t("settings.defaultAssignments")}</strong>
-                      <span>{t("settings.defaultAssignmentsDescription")}</span>
-                    </div>
-                    <span className="engine-config-chip">
-                      {t("settings.global")}
-                    </span>
-                  </div>
-
-                  {fallbackProfile && (
-                    <div className="engine-config-default-info">
-                      {t("settings.fallbackInfoBefore")}{" "}
-                      <strong>
-                        {fallbackEngine?.engine ??
-                          t("settings.detectedUciEngine")}
-                      </strong>{" "}
-                      {t("settings.fallbackInfoAfter")}
-                    </div>
-                  )}
-
-                  <div className="engine-config-default-grid">
-                    {renderAssignmentCard(
-                      "whitePlayerProfileId",
-                      t("settings.whiteCpuPlayer"),
-                      t("settings.whiteCpuDescription"),
-                    )}
-                    {renderAssignmentCard(
-                      "blackPlayerProfileId",
-                      t("settings.blackCpuPlayer"),
-                      t("settings.blackCpuDescription"),
-                    )}
-                    {renderAssignmentCard(
-                      "evaluationProfileId",
-                      t("settings.liveEvaluation"),
-                      t("settings.liveEvaluationDescription"),
-                    )}
-                    {renderAssignmentCard(
-                      "deepAnalysisProfileId",
-                      t("settings.deepAnalysis"),
-                      t("settings.deepAnalysisDescription"),
-                    )}
-                  </div>
-
-                  <div className="engine-config-actions engine-config-actions-footer">
-                    <div className="engine-config-actions-spacer" />
-                    <button
-                      type="button"
-                      onClick={() => void saveDefaults()}
-                      disabled={busy || profiles.length === 0}
-                    >
-                      {busy
-                        ? t("settings.saving")
-                        : t("settings.saveDefaults")}
-                    </button>
-                  </div>
-                </div>
-              </main>
-            </>
+            <EngineDefaultsSettings
+              overview={overview}
+              draft={defaultsDraft}
+              busy={busy}
+              onDraftChange={setDefaultsDraft}
+              onSave={() => void saveDefaults()}
+            />
           )}
         </div>
       </section>

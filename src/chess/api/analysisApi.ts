@@ -6,6 +6,12 @@ import type {
   EngineEvaluation,
   PossibleMovesResponse,
 } from "../types";
+import {
+  jsonRequest,
+  responseErrorMessage,
+  requestJson,
+  requestJsonResponse,
+} from "./httpClient";
 
 export interface AnalysisVariationMoveApiResponse {
   ok: boolean;
@@ -13,49 +19,34 @@ export interface AnalysisVariationMoveApiResponse {
   data: AnalysisVariationMoveResult;
 }
 
-export async function fetchAnalysisPossibleMoves(request: AnalysisVariationRequest): Promise<PossibleMovesResponse> {
-  const response = await fetch("/api/analysis-variation/possible-moves", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as PossibleMovesResponse;
+export function fetchAnalysisPossibleMoves(request: AnalysisVariationRequest): Promise<PossibleMovesResponse> {
+  return requestJson<PossibleMovesResponse>(
+    "/api/analysis-variation/possible-moves",
+    jsonRequest("POST", request),
+  );
 }
 
-export async function submitAnalysisVariationMove(request: AnalysisVariationRequest): Promise<AnalysisVariationMoveApiResponse> {
-  const response = await fetch("/api/analysis-variation/move", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-  const data = (await response.json()) as AnalysisVariationMoveResult;
-  return { ok: response.ok, status: response.status, data };
+export function submitAnalysisVariationMove(request: AnalysisVariationRequest): Promise<AnalysisVariationMoveApiResponse> {
+  return requestJsonResponse<AnalysisVariationMoveResult>(
+    "/api/analysis-variation/move",
+    jsonRequest("POST", request),
+  );
 }
 
-export async function fetchAnalysisEvaluation(ply: number): Promise<EngineEvaluation> {
-  const response = await fetch(`/api/analysis-eval?ply=${encodeURIComponent(String(ply))}`);
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as EngineEvaluation;
+export function fetchAnalysisEvaluation(ply: number): Promise<EngineEvaluation> {
+  return requestJson<EngineEvaluation>(
+    `/api/analysis-eval?ply=${encodeURIComponent(String(ply))}`,
+  );
 }
 
-export async function fetchAnalysisVariationEvaluation(ply: number, moves: string[]): Promise<EngineEvaluation> {
-  const response = await fetch("/api/analysis-eval/variation", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ anchorPly: ply, moves } satisfies AnalysisVariationRequest),
-  });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as EngineEvaluation;
+export function fetchAnalysisVariationEvaluation(ply: number, moves: string[]): Promise<EngineEvaluation> {
+  return requestJson<EngineEvaluation>(
+    "/api/analysis-eval/variation",
+    jsonRequest(
+      "POST",
+      { anchorPly: ply, moves } satisfies AnalysisVariationRequest,
+    ),
+  );
 }
 
 export async function stopAnalysisEvaluationRequest(options?: { keepalive?: boolean }): Promise<void> {
@@ -66,36 +57,25 @@ export async function stopAnalysisEvaluationRequest(options?: { keepalive?: bool
   });
 }
 
-export async function startAnalysisReplayRequest(settings: AnalysisReplaySettings): Promise<AnalysisReplayStep> {
-  const response = await fetch("/api/analysis-replay/start", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(settings),
-  });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as AnalysisReplayStep;
+export function startAnalysisReplayRequest(settings: AnalysisReplaySettings): Promise<AnalysisReplayStep> {
+  return requestJson<AnalysisReplayStep>(
+    "/api/analysis-replay/start",
+    jsonRequest("POST", settings),
+  );
 }
 
 export async function fetchAnalysisReplayState(): Promise<AnalysisReplayStep | null> {
   const response = await fetch("/api/analysis-replay/state");
   if (response.status === 204) return null;
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
+  if (!response.ok) throw new Error(await responseErrorMessage(response));
   return (await response.json()) as AnalysisReplayStep;
 }
 
-export async function fetchNextAnalysisReplayStep(): Promise<AnalysisReplayStep> {
-  const response = await fetch("/api/analysis-replay/next", { method: "POST", headers: { "Content-Type": "application/json" } });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as AnalysisReplayStep;
+export function fetchNextAnalysisReplayStep(): Promise<AnalysisReplayStep> {
+  return requestJson<AnalysisReplayStep>("/api/analysis-replay/next", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 export async function cancelAnalysisReplayRequest(): Promise<void> {

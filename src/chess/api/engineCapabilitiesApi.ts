@@ -1,10 +1,6 @@
 import type { EngineCapabilities } from "./engineContracts";
+import { requestJson } from "./httpClient";
 
-export async function fetchEngineCapabilities(): Promise<EngineCapabilities> {
-  const response = await fetch("/api/engines/capabilities");
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as EngineCapabilities;
+export function fetchEngineCapabilities(): Promise<EngineCapabilities> {
+  return requestJson<EngineCapabilities>("/api/engines/capabilities");
 }

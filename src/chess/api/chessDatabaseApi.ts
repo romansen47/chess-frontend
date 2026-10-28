@@ -5,22 +5,7 @@ import type {
   DatabaseSearchRequest,
   DatabaseStatus,
 } from "../database/chessDatabaseTypes";
-
-async function errorMessage(response: Response): Promise<string> {
-  const message = await response.text();
-  return message || `HTTP ${response.status}`;
-}
-
-async function requestJson<T>(
-  input: RequestInfo | URL,
-  init?: RequestInit,
-): Promise<T> {
-  const response = await fetch(input, init);
-  if (!response.ok) {
-    throw new Error(await errorMessage(response));
-  }
-  return (await response.json()) as T;
-}
+import { requestJson } from "./httpClient";
 
 export function fetchChessDatabaseStatus(): Promise<DatabaseStatus> {
   return requestJson<DatabaseStatus>("/api/chess-database/status");

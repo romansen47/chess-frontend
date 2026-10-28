@@ -6,40 +6,7 @@ import type {
   EngineRuntimeAssignments,
   EngineRuntimeTarget,
 } from "../../engineConfigTypes";
-
-async function errorMessage(response: Response): Promise<string> {
-  const message = await response.text();
-  return message || `HTTP ${response.status}`;
-}
-
-async function requestJson<T>(
-  input: RequestInfo | URL,
-  init?: RequestInit,
-): Promise<T> {
-  const response = await fetch(input, init);
-  if (!response.ok) {
-    throw new Error(await errorMessage(response));
-  }
-  return (await response.json()) as T;
-}
-
-async function requestVoid(
-  input: RequestInfo | URL,
-  init?: RequestInit,
-): Promise<void> {
-  const response = await fetch(input, init);
-  if (!response.ok) {
-    throw new Error(await errorMessage(response));
-  }
-}
-
-function jsonRequest(method: "POST" | "PUT", body: unknown): RequestInit {
-  return {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  };
-}
+import { jsonRequest, requestJson, requestVoid } from "./httpClient";
 
 export function fetchEngineConfigOverview(): Promise<EngineConfigOverview> {
   return requestJson<EngineConfigOverview>("/api/engine-configs");

@@ -130,10 +130,12 @@ export default function ChessHeader({
           disabled={terminatingProgram}
           actionsDisabled={analysisBusy}
           terminating={terminatingProgram}
+          showAnalysisExport={analysisReplayActive && analysisReplayFinished && debugMode}
           onNewGame={onNewGame}
           onExportCurrentGame={onExportCurrentGame}
           onImportNewGame={onImportNewGame}
           onOpenDatabase={onOpenDatabase}
+          onExportAnalysisPgn={onExportAnalysisPgn}
           onTerminateProgram={onTerminateProgram}
         />
 

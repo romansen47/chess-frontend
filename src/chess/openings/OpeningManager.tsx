@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
-import { getPieceSymbol, squareName } from "../board/boardUtils";
-import { mapPositionStringToLocalPieces } from "../board/positionUtils";
+import PositionPreviewBoard from "../board/PositionPreviewBoard";
 import {
   deleteOpening,
   fetchOpenings,
@@ -9,7 +8,7 @@ import {
   importOpenings,
   renameOpening,
 } from "../api/openingApi";
-import type { Opening, Piece } from "../types";
+import type { Opening } from "../types";
 import {
   groupOpeningHierarchy,
   openingLineLabel,
@@ -19,34 +18,7 @@ import OpeningVariationList from "./OpeningVariationList";
 import "./OpeningManager.css";
 
 function OpeningBoard({ opening }: { opening: Opening }) {
-  const pieces = opening.position?.length === 64
-    ? mapPositionStringToLocalPieces(opening.position)
-    : [];
-  const piecesBySquare = new Map<string, Piece>(
-    pieces.map((piece) => [squareName(piece.file, piece.rank), piece]),
-  );
-  const squares = [];
-
-  for (let rank = 8; rank >= 1; rank--) {
-    for (let file = 1; file <= 8; file++) {
-      const square = squareName(file, rank);
-      const piece = piecesBySquare.get(square);
-      squares.push(
-        <div
-          key={square}
-          className={`opening-preview-square ${(file + rank) % 2 !== 0 ? "light" : "dark"}`}
-        >
-          {piece && (
-            <span className={`opening-preview-piece opening-preview-piece-${piece.color}`}>
-              {getPieceSymbol(piece)}
-            </span>
-          )}
-        </div>,
-      );
-    }
-  }
-
-  return <div className="opening-preview-board">{squares}</div>;
+  return <PositionPreviewBoard position={opening.position} classPrefix="opening-preview" />;
 }
 
 export default function OpeningManager() {

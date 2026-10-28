@@ -1,4 +1,5 @@
 import type { MoveResult, PieceColor } from "../types";
+import { requestJsonResponse } from "./httpClient";
 
 export interface ComputerMoveApiResponse {
   ok: boolean;
@@ -11,13 +12,11 @@ export interface CancelComputerMoveApiResponse {
   status: number;
 }
 
-export async function requestComputerMove(): Promise<ComputerMoveApiResponse> {
-  const response = await fetch("/api/computer-move", {
+export function requestComputerMove(): Promise<ComputerMoveApiResponse> {
+  return requestJsonResponse<MoveResult>("/api/computer-move", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
   });
-  const data = (await response.json()) as MoveResult;
-  return { ok: response.ok, status: response.status, data };
 }
 
 export async function cancelComputerMove(side: PieceColor): Promise<CancelComputerMoveApiResponse> {

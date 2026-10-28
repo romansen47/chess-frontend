@@ -6,59 +6,41 @@ import type {
   GameSnapshotResponse,
   UciGameResponse,
 } from "../types";
+import { jsonRequest, requestBlob, requestJson } from "./httpClient";
 
-export async function fetchGameSettings(): Promise<GameSettings> {
-  const response = await fetch("/api/game-settings");
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return (await response.json()) as GameSettings;
+export function fetchGameSettings(): Promise<GameSettings> {
+  return requestJson<GameSettings>("/api/game-settings");
 }
 
-export async function fetchGameSnapshot(): Promise<GameSnapshotResponse> {
-  const response = await fetch("/api/game/state");
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return (await response.json()) as GameSnapshotResponse;
+export function fetchGameSnapshot(): Promise<GameSnapshotResponse> {
+  return requestJson<GameSnapshotResponse>("/api/game/state");
 }
 
-export async function fetchClock(): Promise<ClockState> {
-  const response = await fetch("/api/clock");
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return (await response.json()) as ClockState;
+export function fetchClock(): Promise<ClockState> {
+  return requestJson<ClockState>("/api/clock");
 }
 
-export async function createNewGame(settings: GameSettings): Promise<GameSettings> {
-  const response = await fetch("/api/new-game", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(settings),
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return (await response.json()) as GameSettings;
+export function createNewGame(settings: GameSettings): Promise<GameSettings> {
+  return requestJson<GameSettings>(
+    "/api/new-game",
+    jsonRequest("POST", settings),
+  );
 }
 
-export async function importPgn(content: string): Promise<UciGameResponse> {
-  const response = await fetch("/api/game/pgn", {
+export function importPgn(content: string): Promise<UciGameResponse> {
+  return requestJson<UciGameResponse>("/api/game/pgn", {
     method: "POST",
     headers: { "Content-Type": "text/plain; charset=utf-8" },
     body: content,
   });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as UciGameResponse;
 }
 
-export async function exportPgn(whiteComputer: boolean, blackComputer: boolean): Promise<Blob> {
+export function exportPgn(whiteComputer: boolean, blackComputer: boolean): Promise<Blob> {
   const params = new URLSearchParams({
     whiteComputer: String(whiteComputer),
     blackComputer: String(blackComputer),
   });
-  const response = await fetch(`/api/game/pgn?${params.toString()}`);
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return await response.blob();
+  return requestBlob(`/api/game/pgn?${params.toString()}`);
 }
 
 
@@ -67,30 +49,18 @@ export async function saveGameAnnotations(
   whiteComputer: boolean,
   blackComputer: boolean
 ): Promise<GameAnnotation[]> {
-  const response = await fetch("/api/game/annotations", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ annotations, whiteComputer, blackComputer }),
-  });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as GameAnnotation[];
+  return requestJson<GameAnnotation[]>(
+    "/api/game/annotations",
+    jsonRequest("POST", { annotations, whiteComputer, blackComputer }),
+  );
 }
 
 
 export async function saveGameMetadata(
   tags: Record<string, string>,
 ): Promise<GameMetadataResponse> {
-  const response = await fetch("/api/game/metadata", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tags }),
-  });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `HTTP ${response.status}`);
-  }
-  return (await response.json()) as GameMetadataResponse;
+  return requestJson<GameMetadataResponse>(
+    "/api/game/metadata",
+    jsonRequest("POST", { tags }),
+  );
 }

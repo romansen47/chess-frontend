@@ -7,7 +7,6 @@ import type {
   AnalysisReplaySettings,
   ClockState,
   EngineEvaluation,
-  GameAnnotation,
   GameSettings,
   Opening,
   PieceType,
@@ -112,9 +111,6 @@ export interface ChessBoardViewProps {
   toggleBlackComputer: () => void;
   engine: EnginePanelState;
   engineActions: EnginePanelActions;
-  mobileDeepAnalysisContent: ReactNode;
-  mobileEvalEngineContent: ReactNode;
-  mobileAnalysisTimingAnnotation: GameAnnotation | null;
   hoverBoardProps: ComponentProps<typeof HoverBoard>;
   dialogs: DialogState;
   dialogActions: DialogActions;

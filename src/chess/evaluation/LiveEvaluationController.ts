@@ -46,49 +46,33 @@ export class LiveEvaluationController {
   }
 
   async start(position: LiveEvaluationPosition): Promise<void> {
-    this.assertNotDisposed();
-    this.desiredActive = true;
-    this.currentPosition = copyPosition(position);
-
-    const generation = ++this.activationGeneration;
-    this.suspendActiveSource();
-
-    let capabilities: EngineCapabilities;
-    try {
-      capabilities = await this.fetchCapabilities();
-    } catch (error) {
-      if (!this.isCurrent(generation)) return;
-      this.emit({ type: "error", error });
-      return;
-    }
-
-    if (!this.isCurrent(generation)) return;
-
-    if (capabilities.evaluation.available) {
-      await this.activateSource(
-        this.backendSource,
-        this.currentPosition,
-        generation,
-      );
-      return;
-    }
-
-    await this.activateBrowserSource(generation);
+    await this.activatePosition(position, false);
   }
 
   async reselect(position: LiveEvaluationPosition): Promise<void> {
+    await this.activatePosition(position, true);
+  }
+
+  private async activatePosition(
+    position: LiveEvaluationPosition,
+    stopCurrentSource: boolean,
+  ): Promise<void> {
     this.assertNotDisposed();
     this.desiredActive = true;
     this.currentPosition = copyPosition(position);
 
     const generation = ++this.activationGeneration;
-    try {
-      await this.stopActiveSource();
-    } catch (error) {
-      console.debug(
-        "[LiveEvaluationController] source stop failed during reselection",
-        error,
-      );
+    if (stopCurrentSource) {
+      try {
+        await this.stopActiveSource();
+      } catch (error) {
+        console.debug(
+          "[LiveEvaluationController] source stop failed during reselection",
+          error,
+        );
+      }
+    } else {
+      this.suspendActiveSource();
     }
     if (!this.isCurrent(generation)) return;
 

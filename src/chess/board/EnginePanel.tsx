@@ -25,7 +25,7 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
   const analysisDisplayBarValue = analysisBarValue ?? 0.5;
 
   return (
-    <section className="engine-panel">
+    <section className={`engine-panel${engine.showSettings ? " engine-settings-open" : ""}`}>
       <div className="engine-panel-main">
         {!engine.analysisReplayActive && !engine.uciAnalysisLoaded && (
           <button
