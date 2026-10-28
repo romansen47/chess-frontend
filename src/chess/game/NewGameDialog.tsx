@@ -1,6 +1,10 @@
 import { useI18n } from "../../i18n/I18nProvider";
 import { createInitialPieces, getPieceSymbol, squareName } from "../board/boardUtils";
 import { mapPositionStringToLocalPieces } from "../board/positionUtils";
+import {
+  groupOpeningHierarchy,
+  openingLineLabel,
+} from "../openings/openingHierarchy";
 import NumericStepper from "../ui/NumericStepper";
 import type { GameSettings, Opening, Piece } from "../types";
 import "./NewGameDialog.css";
@@ -101,6 +105,9 @@ export default function NewGameDialog({
   };
 
   const selectedOpening = openings.find((opening) => opening.id === settings.openingId) ?? null;
+  const openingHierarchy = groupOpeningHierarchy(
+    openings.filter((opening) => opening.playable),
+  );
   const startingPositionId = selectedOpening?.startingPositionId ?? settings.startingPositionId ?? 518;
   const timeMinutes = Math.max(1, Math.floor(settings.timeForEachPlayerSeconds / 60));
   const mobileTimeValues = presetValues(MOBILE_TIME_PRESETS_MINUTES, timeMinutes);
@@ -131,10 +138,17 @@ export default function NewGameDialog({
                 disabled={starting}
               >
                 <option value="">{t("game.noOpening")}</option>
-                {openings.filter((opening) => opening.playable).map((opening) => (
-                  <option key={opening.id} value={opening.id}>
-                    {opening.name}{opening.eco ? ` · ${opening.eco}` : ""}
-                  </option>
+                {openingHierarchy.map((family) => (
+                  <optgroup key={family.name} label={family.name}>
+                    {family.variations.flatMap((variation) =>
+                      variation.lines.map((line, index) => (
+                        <option key={line.id} value={line.id}>
+                          {variation.variation} · {
+                            openingLineLabel(line, index, variation.lines.length)
+                          }
+                        </option>
+                      )))}
+                  </optgroup>
                 ))}
               </select>
               <small>{t("game.openingHint")}</small>
