@@ -5,6 +5,7 @@ import { mapPositionStringToLocalPieces } from "../board/positionUtils";
 import {
   deleteOpening,
   fetchOpenings,
+  importLichessOpeningCatalog,
   importOpenings,
   renameOpening,
 } from "../api/openingApi";
@@ -48,6 +49,7 @@ export default function OpeningManager() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [openings, setOpenings] = useState<Opening[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +58,14 @@ export default function OpeningManager() {
     () => openings.find((opening) => opening.id === selectedId) ?? openings[0] ?? null,
     [openings, selectedId],
   );
+  const filteredOpenings = useMemo(() => {
+    const query = filter.trim().toLocaleLowerCase();
+    if (!query) return openings;
+    return openings.filter((opening) =>
+      opening.name.toLocaleLowerCase().includes(query)
+      || opening.eco?.toLocaleLowerCase().includes(query));
+  }, [filter, openings]);
+  const visibleOpenings = filteredOpenings.slice(0, 400);
 
   async function load() {
     try {
@@ -91,6 +101,24 @@ export default function OpeningManager() {
       setMessage(t("openings.imported", { count: imported.length }));
     } catch (e) {
       setError(e instanceof Error ? e.message : t("openings.importFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleLichessImport() {
+    try {
+      setBusy(true);
+      setError(null);
+      setMessage(null);
+      const result = await importLichessOpeningCatalog();
+      await load();
+      setMessage(t("openings.lichessImported", {
+        count: result.importedCount,
+        total: result.catalogEntries,
+      }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("openings.lichessImportFailed"));
     } finally {
       setBusy(false);
     }
@@ -149,9 +177,14 @@ export default function OpeningManager() {
           <strong>{t("openings.title")}</strong>
           <span>{t("openings.description")}</span>
         </div>
-        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={busy}>
-          {t("openings.importPgn")}
-        </button>
+        <div className="opening-manager-toolbar-actions">
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={busy}>
+            {t("openings.importPgn")}
+          </button>
+          <button type="button" onClick={() => void handleLichessImport()} disabled={busy}>
+            {t("openings.importLichess")}
+          </button>
+        </div>
       </div>
 
       {error && <div className="opening-manager-error">{error}</div>}
@@ -159,9 +192,27 @@ export default function OpeningManager() {
 
       <div className="opening-manager-layout">
         <aside className="opening-manager-list">
+          {openings.length > 0 && (
+            <div className="opening-manager-filter">
+              <input
+                type="search"
+                value={filter}
+                placeholder={t("openings.filter")}
+                onChange={(event) => setFilter(event.target.value)}
+              />
+              <span>
+                {t("openings.showing", {
+                  shown: visibleOpenings.length,
+                  total: filteredOpenings.length,
+                })}
+              </span>
+            </div>
+          )}
           {openings.length === 0 ? (
             <div className="opening-manager-empty">{t("openings.empty")}</div>
-          ) : openings.map((opening) => (
+          ) : visibleOpenings.length === 0 ? (
+            <div className="opening-manager-empty">{t("openings.noMatches")}</div>
+          ) : visibleOpenings.map((opening) => (
             <button
               key={opening.id}
               type="button"
