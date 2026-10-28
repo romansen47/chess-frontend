@@ -40,7 +40,7 @@ export function useChessDatabaseSearch({
     setOpeningsLoading(true);
     void fetchOpenings()
       .then((loaded) => {
-        if (active) setOpenings(loaded.filter((opening) => opening.playable));
+        if (active) setOpenings(loaded);
       })
       .catch(() => {
         if (active) setOpenings([]);
@@ -73,12 +73,8 @@ export function useChessDatabaseSearch({
     setSearchResults([]);
     setHasSearched(true);
     try {
-      const selectedOpening =
-        openings.find((opening) => opening.id === searchForm.openingId) ?? null;
       setSearchResults(
-        await searchDatabaseGames(
-          createDatabaseSearchRequest(searchForm, selectedOpening),
-        ),
+        await searchDatabaseGames(createDatabaseSearchRequest(searchForm)),
       );
     } catch (error) {
       setSearchError(
