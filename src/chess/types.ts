@@ -206,6 +206,8 @@ export interface ClockState {
 export interface Opening {
   id: string;
   name: string;
+  family: string;
+  variation: string;
   eco: string | null;
   startingPositionId: number;
   initialFen: string | null;
