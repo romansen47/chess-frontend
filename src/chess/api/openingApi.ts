@@ -1,5 +1,11 @@
 import type { Opening } from "../types";
 
+export interface OpeningCatalogImportResult {
+  importedCount: number;
+  catalogEntries: number;
+  sourceRevision: string;
+}
+
 async function errorMessage(response: Response): Promise<string> {
   const message = await response.text();
   return message || `HTTP ${response.status}`;
@@ -21,6 +27,14 @@ export async function importOpenings(content: string, fileName: string): Promise
   });
   if (!response.ok) throw new Error(await errorMessage(response));
   return (await response.json()) as Opening[];
+}
+
+export async function importLichessOpeningCatalog(): Promise<OpeningCatalogImportResult> {
+  const response = await fetch("/api/openings/catalogs/lichess/import", {
+    method: "POST",
+  });
+  if (!response.ok) throw new Error(await errorMessage(response));
+  return (await response.json()) as OpeningCatalogImportResult;
 }
 
 export async function renameOpening(id: string, name: string): Promise<Opening> {
