@@ -73,6 +73,8 @@ export interface SearchForm {
   toYear: string;
   result: string;
   minElo: string;
+  openingId: string;
+  eco: string;
 }
 
 export interface DatabaseSearchRequest {
@@ -84,6 +86,9 @@ export interface DatabaseSearchRequest {
   toYear: number | null;
   result: string | null;
   minElo: number | null;
+  eco: string | null;
+  openingStartingPositionId: number | null;
+  openingMoves: string[];
   limit: number;
 }
 
@@ -95,4 +100,6 @@ export const EMPTY_DATABASE_SEARCH: SearchForm = {
   toYear: "",
   result: "",
   minElo: "",
+  openingId: "",
+  eco: "",
 };
