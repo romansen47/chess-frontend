@@ -24,6 +24,14 @@
   gap: 3px;
 }
 
+.opening-manager-toolbar-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-end;
+  gap: 8px !important;
+  flex-wrap: wrap;
+}
+
 .opening-manager-toolbar span,
 .opening-manager-heading span,
 .opening-manager-list span {
@@ -62,6 +70,33 @@
   flex-direction: column;
   gap: 6px;
   overflow: auto;
+}
+
+.opening-manager-filter {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  padding-bottom: 6px;
+  background: #202020;
+}
+
+.opening-manager-filter input {
+  width: 100%;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #4b4b4b;
+  border-radius: 5px;
+  outline: none;
+  background: #191919;
+  color: #f2f2f2;
+  font: inherit;
+}
+
+.opening-manager-filter input:focus {
+  border-color: #737373;
 }
 
 .opening-manager-list button {
@@ -195,8 +230,14 @@
     margin: 0 auto;
   }
 
-  .opening-manager-heading {
+  .opening-manager-heading,
+  .opening-manager-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .opening-manager-toolbar-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
