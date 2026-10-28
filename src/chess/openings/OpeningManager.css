@@ -111,6 +111,47 @@
   background: #404040;
 }
 
+.opening-manager-variation-entry {
+  display: grid;
+  gap: 5px;
+}
+
+.opening-manager-family {
+  margin-top: 7px;
+  padding: 3px 4px;
+  color: #d2d2d2;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.opening-manager-variation-entry > button {
+  width: 100%;
+}
+
+.opening-manager-line-selector {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.opening-manager-line-selector > span {
+  color: #aaa;
+  font-size: 0.76rem;
+}
+
+.opening-manager-line-selector select {
+  width: 100%;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid #4b4b4b;
+  border-radius: 5px;
+  background: #191919;
+  color: #f2f2f2;
+  font: inherit;
+}
+
 .opening-manager-details {
   min-width: 0;
   border: 1px solid #444;
