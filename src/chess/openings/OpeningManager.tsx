@@ -230,8 +230,9 @@ export default function OpeningManager() {
               {selectedVariation && (
                 <label className="opening-manager-line-selector">
                   <span>
-                    {t("openings.family")}: {selectedVariation.family} ·{" "}
-                    {t("openings.variation")}: {selectedVariation.variation}
+                    {t("openings.moveOrder")} · {t("openings.family")}:{" "}
+                    {selectedVariation.family} · {t("openings.variation")}:{" "}
+                    {selectedVariation.variation}
                   </span>
                   <select
                     value={selected.id}
