@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import {
   loadDatabaseGame,
   searchDatabaseGames,
 } from "../api/chessDatabaseApi";
+import { fetchOpenings } from "../api/openingApi";
+import type { Opening } from "../types";
 import type {
   ChessDatabaseLoadedGame,
   DatabaseGameSummary,
@@ -30,6 +32,26 @@ export function useChessDatabaseSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [loadingGameId, setLoadingGameId] = useState<number | null>(null);
+  const [openings, setOpenings] = useState<Opening[]>([]);
+  const [openingsLoading, setOpeningsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setOpeningsLoading(true);
+    void fetchOpenings()
+      .then((loaded) => {
+        if (active) setOpenings(loaded.filter((opening) => opening.playable));
+      })
+      .catch(() => {
+        if (active) setOpenings([]);
+      })
+      .finally(() => {
+        if (active) setOpeningsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function updateSearchField<K extends keyof SearchForm>(
     key: K,
@@ -51,8 +73,12 @@ export function useChessDatabaseSearch({
     setSearchResults([]);
     setHasSearched(true);
     try {
+      const selectedOpening =
+        openings.find((opening) => opening.id === searchForm.openingId) ?? null;
       setSearchResults(
-        await searchDatabaseGames(createDatabaseSearchRequest(searchForm)),
+        await searchDatabaseGames(
+          createDatabaseSearchRequest(searchForm, selectedOpening),
+        ),
       );
     } catch (error) {
       setSearchError(
@@ -86,6 +112,8 @@ export function useChessDatabaseSearch({
     isSearching,
     searchError,
     loadingGameId,
+    openings,
+    openingsLoading,
     updateSearchField,
     resetSearch,
     searchGames,
