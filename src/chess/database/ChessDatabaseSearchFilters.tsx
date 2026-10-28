@@ -1,4 +1,9 @@
+import { useMemo } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
+import {
+  groupOpeningHierarchy,
+  openingLineLabel,
+} from "../openings/openingHierarchy";
 import type { PlayerColorAssignment } from "./chessDatabaseTypes";
 import type { ChessDatabaseSearchController } from "./useChessDatabaseSearch";
 
@@ -15,6 +20,11 @@ export default function ChessDatabaseSearchFilters({ controller }: Props) {
     openingsLoading,
     updateSearchField,
   } = controller;
+  const hierarchy = useMemo(() => groupOpeningHierarchy(openings), [openings]);
+  const family = hierarchy.find((candidate) =>
+    candidate.name === searchForm.openingFamily) ?? null;
+  const variation = family?.variations.find((candidate) =>
+    candidate.name === searchForm.openingVariation) ?? null;
 
   return (
     <div className="chess-database-filter-panels">
@@ -28,9 +38,9 @@ export default function ChessDatabaseSearchFilters({ controller }: Props) {
             <span className="chess-database-player-label-row">
               <span>{t("common.player")} 1</span>
               {searchForm.colorAssignment !== "any" && (
-                <span
-                  className={`chess-database-color-badge ${searchForm.colorAssignment === "player1White" ? "is-white" : "is-black"}`}
-                >
+                <span className={`chess-database-color-badge ${
+                  searchForm.colorAssignment === "player1White" ? "is-white" : "is-black"
+                }`}>
                   {searchForm.colorAssignment === "player1White"
                     ? t("common.white")
                     : t("common.black")}
@@ -46,9 +56,9 @@ export default function ChessDatabaseSearchFilters({ controller }: Props) {
             <span className="chess-database-player-label-row">
               <span>{t("common.player")} 2</span>
               {searchForm.colorAssignment !== "any" && (
-                <span
-                  className={`chess-database-color-badge ${searchForm.colorAssignment === "player1White" ? "is-black" : "is-white"}`}
-                >
+                <span className={`chess-database-color-badge ${
+                  searchForm.colorAssignment === "player1White" ? "is-black" : "is-white"
+                }`}>
                   {searchForm.colorAssignment === "player1White"
                     ? t("common.black")
                     : t("common.white")}
@@ -93,30 +103,18 @@ export default function ChessDatabaseSearchFilters({ controller }: Props) {
         <div className="chess-database-search-grid">
           <label>
             <span>{t("database.fromYear")}</span>
-            <input
-              type="number"
-              min="1000"
-              max="9999"
-              value={searchForm.fromYear}
-              onChange={(event) => updateSearchField("fromYear", event.target.value)}
-            />
+            <input type="number" min="1000" max="9999" value={searchForm.fromYear}
+              onChange={(event) => updateSearchField("fromYear", event.target.value)} />
           </label>
           <label>
             <span>{t("database.toYear")}</span>
-            <input
-              type="number"
-              min="1000"
-              max="9999"
-              value={searchForm.toYear}
-              onChange={(event) => updateSearchField("toYear", event.target.value)}
-            />
+            <input type="number" min="1000" max="9999" value={searchForm.toYear}
+              onChange={(event) => updateSearchField("toYear", event.target.value)} />
           </label>
           <label>
             <span>{t("common.result")}</span>
-            <select
-              value={searchForm.result}
-              onChange={(event) => updateSearchField("result", event.target.value)}
-            >
+            <select value={searchForm.result}
+              onChange={(event) => updateSearchField("result", event.target.value)}>
               <option value="">{t("common.any")}</option>
               <option value="1-0">1-0</option>
               <option value="0-1">0-1</option>
@@ -125,12 +123,8 @@ export default function ChessDatabaseSearchFilters({ controller }: Props) {
           </label>
           <label>
             <span>{t("database.minimumElo")}</span>
-            <input
-              type="number"
-              min="0"
-              value={searchForm.minElo}
-              onChange={(event) => updateSearchField("minElo", event.target.value)}
-            />
+            <input type="number" min="0" value={searchForm.minElo}
+              onChange={(event) => updateSearchField("minElo", event.target.value)} />
           </label>
         </div>
       </section>
@@ -138,31 +132,75 @@ export default function ChessDatabaseSearchFilters({ controller }: Props) {
       <section className="chess-database-filter-panel">
         <div className="chess-database-filter-panel-title">
           <strong>{t("game.opening")}</strong>
-          <span>{t("openings.description")}</span>
+          <span>{t("database.openingExactHint")}</span>
         </div>
         <div className="chess-database-search-grid">
           <label>
-            <span>{t("game.opening")}</span>
+            <span>{t("database.openingFamily")}</span>
             <select
-              value={searchForm.openingId}
-              onChange={(event) => updateSearchField("openingId", event.target.value)}
+              value={searchForm.openingFamily}
               disabled={openingsLoading}
+              onChange={(event) => {
+                updateSearchField("openingFamily", event.target.value);
+                updateSearchField("openingVariation", "");
+                updateSearchField("openingLineId", "");
+              }}
             >
               <option value="">{openingsLoading ? "…" : t("common.any")}</option>
-              {openings.map((opening) => (
-                <option key={opening.id} value={opening.id}>
-                  {opening.name}{opening.eco ? ` · ${opening.eco}` : ""}
+              {hierarchy.map((candidate) => (
+                <option key={candidate.name} value={candidate.name}>
+                  {candidate.name}
                 </option>
               ))}
             </select>
           </label>
+
+          <label>
+            <span>{t("database.openingVariation")}</span>
+            <select
+              value={searchForm.openingVariation}
+              disabled={!family}
+              onChange={(event) => {
+                updateSearchField("openingVariation", event.target.value);
+                updateSearchField("openingLineId", "");
+              }}
+            >
+              <option value="">{t("common.any")}</option>
+              {family?.variations.map((candidate) => (
+                <option key={candidate.key} value={candidate.name}>
+                  {candidate.variation} · {candidate.lines.length}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>{t("database.openingLine")}</span>
+            <select
+              value={searchForm.openingLineId}
+              disabled={!variation}
+              onChange={(event) =>
+                updateSearchField("openingLineId", event.target.value)
+              }
+            >
+              <option value="">
+                {variation
+                  ? t("database.allMoveOrders", { count: variation.lines.length })
+                  : t("common.any")}
+              </option>
+              {variation?.lines.map((line, index) => (
+                <option key={line.id} value={line.id}>
+                  {openingLineLabel(line, index, variation.lines.length)}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label>
             <span>{t("database.eco")}</span>
-            <input
-              value={searchForm.eco}
+            <input value={searchForm.eco}
               onChange={(event) => updateSearchField("eco", event.target.value)}
-              placeholder="B90"
-            />
+              placeholder="B90" />
           </label>
         </div>
       </section>
