@@ -1,4 +1,3 @@
-import type { Opening } from "../types";
 import type {
   DatabaseImportJob,
   DatabaseSearchRequest,
@@ -45,7 +44,6 @@ function optionalNumber(value: string): number | null {
 
 export function createDatabaseSearchRequest(
   searchForm: SearchForm,
-  selectedOpening: Opening | null = null,
 ): DatabaseSearchRequest {
   const player1 = searchForm.player.trim() || null;
   const player2 = searchForm.player2.trim() || null;
@@ -64,8 +62,8 @@ export function createDatabaseSearchRequest(
     result: searchForm.result || null,
     minElo: optionalNumber(searchForm.minElo),
     eco: searchForm.eco.trim() || null,
-    openingStartingPositionId: selectedOpening?.startingPositionId ?? null,
-    openingMoves: selectedOpening?.moves ?? [],
+    openingVariation: searchForm.openingVariation.trim() || null,
+    openingLineId: searchForm.openingLineId.trim() || null,
     limit: 200,
   };
 }
