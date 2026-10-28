@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ChessDatabaseDialog from "../../ChessDatabaseDialog";
 import { useI18n } from "../../i18n/I18nProvider";
+import { SINGLE_GAME_PGN_INPUT_CLASS } from "../../i18n/singleGamePgnFileBridge";
 import AnnotationTiming from "../analysis/AnnotationTiming";
 import { boardThemeCssVariables } from "../settings/boardThemes";
 import ChessHeader from "../header/ChessHeader";
@@ -39,8 +40,9 @@ export default function ChessBoardView(props: ChessBoardViewProps) {
   return <>
     <ChessHeader {...headerProps} />
     {showChessDatabaseDialog && <ChessDatabaseDialog onClose={closeChessDatabaseDialog} onGameLoaded={onDatabaseGameLoaded} />}
-    <input ref={uciFileInputRef} type="file" accept=".pgn,.txt,application/x-chess-pgn,text/plain"
-      style={{ display: "none" }} onChange={(event) => void onUciFileSelected(event)} />
+    <input ref={uciFileInputRef} className={SINGLE_GAME_PGN_INPUT_CLASS} type="file"
+      accept=".pgn,.txt,application/x-chess-pgn,text/plain" style={{ display: "none" }}
+      onChange={(event) => void onUciFileSelected(event)} />
 
     <main className="app-main" style={boardThemeCssVariables(boardTheme)}>
       <div
