@@ -15,7 +15,6 @@ export default function ChessDatabaseSearchView({
 }: Props) {
   const { t } = useI18n();
   const {
-    searchForm,
     searchResults,
     hasSearched,
     isSearching,
