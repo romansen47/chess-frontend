@@ -21,6 +21,8 @@ export default function ChessDatabaseSearchView({
     isSearching,
     searchError,
     loadingGameId,
+    openings,
+    openingsLoading,
     updateSearchField,
     resetSearch,
     searchGames,
@@ -183,6 +185,45 @@ export default function ChessDatabaseSearchView({
                       onChange={(event) =>
                         updateSearchField("minElo", event.target.value)
                       }
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section className="chess-database-filter-panel">
+                <div className="chess-database-filter-panel-title">
+                  <strong>{t("game.opening")}</strong>
+                  <span>{t("openings.description")}</span>
+                </div>
+                <div className="chess-database-search-grid">
+                  <label>
+                    <span>{t("game.opening")}</span>
+                    <select
+                      value={searchForm.openingId}
+                      onChange={(event) =>
+                        updateSearchField("openingId", event.target.value)
+                      }
+                      disabled={openingsLoading}
+                    >
+                      <option value="">
+                        {openingsLoading ? "…" : t("common.any")}
+                      </option>
+                      {openings.map((opening) => (
+                        <option key={opening.id} value={opening.id}>
+                          {opening.name}
+                          {opening.eco ? ` · ${opening.eco}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>{t("database.eco")}</span>
+                    <input
+                      value={searchForm.eco}
+                      onChange={(event) =>
+                        updateSearchField("eco", event.target.value)
+                      }
+                      placeholder="B90"
                     />
                   </label>
                 </div>
