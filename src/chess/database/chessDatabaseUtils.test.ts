@@ -59,6 +59,7 @@ describe("chess database utilities", () => {
       result: null,
       minElo: 2700,
       eco: null,
+      openingFamily: null,
       openingVariation: null,
       openingLineId: null,
       limit: 200,
@@ -96,6 +97,7 @@ describe("chess database utilities", () => {
       eco: " D9 ",
     }))).toMatchObject({
       eco: "D9",
+      openingFamily: "Grünfeld Defense",
       openingVariation: "Grünfeld Defense: Russian Variation",
       openingLineId: "line-2",
     });

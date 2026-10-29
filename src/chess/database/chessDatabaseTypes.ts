@@ -89,6 +89,7 @@ export interface DatabaseSearchRequest {
   result: string | null;
   minElo: number | null;
   eco: string | null;
+  openingFamily: string | null;
   openingVariation: string | null;
   openingLineId: string | null;
   limit: number;

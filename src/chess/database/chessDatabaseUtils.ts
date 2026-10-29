@@ -62,6 +62,7 @@ export function createDatabaseSearchRequest(
     result: searchForm.result || null,
     minElo: optionalNumber(searchForm.minElo),
     eco: searchForm.eco.trim() || null,
+    openingFamily: searchForm.openingFamily.trim() || null,
     openingVariation: searchForm.openingVariation.trim() || null,
     openingLineId: searchForm.openingLineId.trim() || null,
     limit: 200,
