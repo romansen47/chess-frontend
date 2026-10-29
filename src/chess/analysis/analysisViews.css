@@ -420,7 +420,7 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  border: 1px solid #505050;
+  border: 1px solid transparent;
   border-radius: 4px;
   background: #1e1e1e;
   color: #f5f5f5;
@@ -432,7 +432,7 @@
 .analysis-metadata-field select:focus,
 .analysis-metadata-custom-row input:focus {
   outline: 1px solid #d6c26a;
-  border-color: #d6c26a;
+  border-color: transparent;
 }
 
 .analysis-metadata-section {
