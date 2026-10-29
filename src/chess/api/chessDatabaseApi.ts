@@ -5,7 +5,7 @@ import type {
   DatabaseSearchRequest,
   DatabaseStatus,
 } from "../database/chessDatabaseTypes";
-import { requestJson } from "./httpClient";
+import { requestJson, requestVoid } from "./httpClient";
 
 export function fetchChessDatabaseStatus(): Promise<DatabaseStatus> {
   return requestJson<DatabaseStatus>("/api/chess-database/status");
@@ -54,4 +54,10 @@ export function loadDatabaseGame(
     `/api/chess-database/games/${gameId}/load`,
     { method: "POST" },
   );
+}
+
+export function deleteDatabaseGame(gameId: number): Promise<void> {
+  return requestVoid(`/api/chess-database/games/${gameId}`, {
+    method: "DELETE",
+  });
 }

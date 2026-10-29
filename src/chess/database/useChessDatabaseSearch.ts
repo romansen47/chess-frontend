@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import {
+  deleteDatabaseGame,
   loadDatabaseGame,
   searchDatabaseGames,
 } from "../api/chessDatabaseApi";
@@ -32,6 +33,7 @@ export function useChessDatabaseSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [loadingGameId, setLoadingGameId] = useState<number | null>(null);
+  const [deletingGameId, setDeletingGameId] = useState<number | null>(null);
   const [openings, setOpenings] = useState<Opening[]>([]);
   const [openingsLoading, setOpeningsLoading] = useState(true);
 
@@ -101,6 +103,28 @@ export function useChessDatabaseSearch({
     }
   }
 
+  async function deleteGame(game: DatabaseGameSummary) {
+    if (!window.confirm(t("database.deleteGameConfirm", {
+      white: game.white,
+      black: game.black,
+    }))) return;
+
+    setDeletingGameId(game.id);
+    setSearchError(null);
+    try {
+      await deleteDatabaseGame(game.id);
+      setSearchResults((previous) => previous.filter(
+        (candidate) => candidate.id !== game.id,
+      ));
+    } catch (error) {
+      setSearchError(
+        error instanceof Error ? error.message : t("database.gameDeleteFailed"),
+      );
+    } finally {
+      setDeletingGameId(null);
+    }
+  }
+
   return {
     searchForm,
     searchResults,
@@ -108,12 +132,14 @@ export function useChessDatabaseSearch({
     isSearching,
     searchError,
     loadingGameId,
+    deletingGameId,
     openings,
     openingsLoading,
     updateSearchField,
     resetSearch,
     searchGames,
     loadGame,
+    deleteGame,
   };
 }
 

@@ -498,6 +498,22 @@
   font-size: calc(0.74rem - 2px);
 }
 
+.chess-database-row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.chess-database-delete-action {
+  border-color: #7a3434 !important;
+  color: #ffb6b6 !important;
+}
+
+.chess-database-delete-action:hover:not(:disabled),
+.chess-database-delete-action:focus-visible:not(:disabled) {
+  border-color: #b84b4b !important;
+  background: #4a2323 !important;
+}
+
 .chess-database-empty {
   height: 92px;
   padding: 24px !important;

@@ -20,10 +20,13 @@ export default function ChessDatabaseSearchView({
     isSearching,
     searchError,
     loadingGameId,
+    deletingGameId,
     resetSearch,
     searchGames,
     loadGame,
+    deleteGame,
   } = controller;
+  const operationRunning = loadingGameId !== null || deletingGameId !== null;
 
   return (
     <div className="chess-database-overlay" role="presentation">
@@ -55,14 +58,14 @@ export default function ChessDatabaseSearchView({
                 type="button"
                 className="chess-database-secondary-button"
                 onClick={resetSearch}
-                disabled={isSearching || loadingGameId !== null}
+                disabled={isSearching || operationRunning}
               >
                 {t("database.resetFilters")}
               </button>
               <button
                 type="submit"
                 className="chess-database-primary-button"
-                disabled={isSearching || loadingGameId !== null}
+                disabled={isSearching || operationRunning}
               >
                 {isSearching
                   ? t("database.querying")
@@ -127,16 +130,28 @@ export default function ChessDatabaseSearchView({
                       <td>{game.eco || "—"}</td>
                       <td title={game.event || ""}>{game.event || "—"}</td>
                       <td>
-                        <button
-                          type="button"
-                          className="chess-database-row-action"
-                          onClick={() => void loadGame(game.id)}
-                          disabled={loadingGameId !== null}
-                        >
-                          {loadingGameId === game.id
-                            ? t("database.loadingGameAction")
-                            : t("database.loadGameAction")}
-                        </button>
+                        <div className="chess-database-row-actions">
+                          <button
+                            type="button"
+                            className="chess-database-row-action"
+                            onClick={() => void loadGame(game.id)}
+                            disabled={operationRunning}
+                          >
+                            {loadingGameId === game.id
+                              ? t("database.loadingGameAction")
+                              : t("database.loadGameAction")}
+                          </button>
+                          <button
+                            type="button"
+                            className="chess-database-row-action chess-database-delete-action"
+                            onClick={() => void deleteGame(game)}
+                            disabled={operationRunning}
+                          >
+                            {deletingGameId === game.id
+                              ? t("database.deletingGameAction")
+                              : t("common.delete")}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -150,14 +165,14 @@ export default function ChessDatabaseSearchView({
           <button
             type="button"
             onClick={onBack}
-            disabled={loadingGameId !== null}
+            disabled={operationRunning}
           >
             {t("common.back")}
           </button>
           <button
             type="button"
             onClick={onClose}
-            disabled={loadingGameId !== null}
+            disabled={operationRunning}
           >
             {t("common.close")}
           </button>
