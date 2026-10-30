@@ -16,7 +16,7 @@ Large PGN libraries are processed by the backend database importer rather than i
 
 ## Third-party browser engine
 
-The default live-evaluation engine is the vendored Stockfish.js 19.0.0 lite single-threaded build running in a Web Worker on the browser device. Engine Settings and the evaluation-bar context menu can switch to a backend profile. The browser engine has a fixed tested configuration and is not registered as an editable backend engine or profile. Stockfish.js and its WASM binary are licensed separately under GNU GPL v3 and are not covered by this repository's Apache-2.0 license. The exact upstream source, release commit, checksums, and GPL text are documented under `public/third-party/stockfish/19.0.0/`.
+The default live-evaluation engine is the vendored Stockfish.js 19.0.0 lite single-threaded build running in a Web Worker on the browser device. The evaluation-bar context menu can switch to a backend profile. The browser engine has a fixed tested configuration and is not registered as an editable backend engine or profile. Stockfish.js and its WASM binary are licensed separately under GNU GPL v3 and are not covered by this repository's Apache-2.0 license. The exact upstream source, release commit, checksums, and GPL text are documented under `public/third-party/stockfish/19.0.0/`.
 
 ## Engine profiles and Chess960
 
