@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "./i18n/I18nProvider";
+import {
+  fetchEngineProcessLog,
+  type EngineLogEntry,
+} from "./chess/api/engineLogApi";
+import EngineCommunicationLog from "./chess/engine/EngineCommunicationLog";
 import "./EngineManager.css";
 
 interface EngineProcessInfo {
@@ -15,13 +20,6 @@ interface EngineProcessInfo {
   lastActivityAt: string;
   exitCode: number | null;
   logEntryCount: number;
-}
-
-interface EngineLogEntry {
-  sequence: number;
-  timestamp: string;
-  direction: "COMMAND" | "RESPONSE" | "SYSTEM" | string;
-  message: string;
 }
 
 interface EngineManagerProps {
@@ -100,9 +98,7 @@ export default function EngineManager({
 
   async function loadLog(id: string) {
     try {
-      const response = await fetch(`/api/engine-processes/${encodeURIComponent(id)}/log`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      setLogEntries((await response.json()) as EngineLogEntry[]);
+      setLogEntries(await fetchEngineProcessLog(id));
     } catch (e) {
       setError(t("engine.loadLogFailed", { message: String(e) }));
     }
@@ -247,21 +243,10 @@ export default function EngineManager({
               <strong>{t("engine.protocol")}</strong>
               <span>{t("engine.maxRecentEntries")}</span>
             </div>
-            <div className="engine-manager-log">
-              {logEntries.length === 0 && <div className="engine-manager-empty">{t("engine.noCommunication")}</div>}
-              {logEntries.map((entry) => (
-                <div
-                  key={entry.sequence}
-                  className={`engine-manager-log-line engine-manager-log-${entry.direction.toLowerCase()}`}
-                >
-                  <span className="engine-manager-log-time">{new Date(entry.timestamp).toLocaleTimeString()}</span>
-                  <span className="engine-manager-log-direction">
-                    {entry.direction === "COMMAND" ? "→" : entry.direction === "RESPONSE" ? "←" : "•"}
-                  </span>
-                  <span className="engine-manager-log-message">{entry.message}</span>
-                </div>
-              ))}
-            </div>
+            <EngineCommunicationLog
+              entries={logEntries}
+              emptyText={t("engine.noCommunication")}
+            />
           </>
         )}
       </div>

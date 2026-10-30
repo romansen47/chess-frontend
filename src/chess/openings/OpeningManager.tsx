@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
 import PositionPreviewBoard from "../board/PositionPreviewBoard";
 import {
   deleteOpening,
   fetchOpenings,
-  importLichessOpeningCatalog,
-  importOpenings,
   renameOpening,
 } from "../api/openingApi";
 import type { Opening } from "../types";
@@ -23,12 +21,10 @@ function OpeningBoard({ opening }: { opening: Opening }) {
 
 export default function OpeningManager() {
   const { t } = useI18n();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [openings, setOpenings] = useState<Opening[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const selected = useMemo(
@@ -61,44 +57,6 @@ export default function OpeningManager() {
   useEffect(() => {
     void load();
   }, []);
-
-  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    try {
-      setBusy(true);
-      setError(null);
-      setMessage(null);
-      const imported = await importOpenings(await file.text(), file.name);
-      await load();
-      if (imported[0]) setSelectedId(imported[0].id);
-      setMessage(t("openings.imported", { count: imported.length }));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("openings.importFailed"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleLichessImport() {
-    try {
-      setBusy(true);
-      setError(null);
-      setMessage(null);
-      const result = await importLichessOpeningCatalog();
-      await load();
-      setMessage(t("openings.lichessImported", {
-        count: result.importedCount,
-        total: result.catalogEntries,
-      }));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("openings.lichessImportFailed"));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function handleRename(opening: Opening) {
     const name = window.prompt(t("openings.renamePrompt"), opening.name);
@@ -140,31 +98,14 @@ export default function OpeningManager() {
 
   return (
     <main className="opening-manager">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pgn,text/plain,application/x-chess-pgn"
-        hidden
-        onChange={(event) => void handleFile(event)}
-      />
-
       <div className="opening-manager-toolbar">
         <div>
           <strong>{t("openings.title")}</strong>
           <span>{t("openings.description")}</span>
         </div>
-        <div className="opening-manager-toolbar-actions">
-          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={busy}>
-            {t("openings.importPgn")}
-          </button>
-          <button type="button" onClick={() => void handleLichessImport()} disabled={busy}>
-            {t("openings.importLichess")}
-          </button>
-        </div>
       </div>
 
       {error && <div className="opening-manager-error">{error}</div>}
-      {message && <div className="opening-manager-message">{message}</div>}
 
       <div className="opening-manager-layout">
         <aside className="opening-manager-list">

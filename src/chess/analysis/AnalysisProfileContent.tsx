@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import AnalysisProfilePanel from "./AnalysisProfilePanel";
+import AnalysisEngineOutput from "./AnalysisEngineOutput";
 import type {
   AnalysisReplayContentActions,
   AnalysisReplayContentState,
@@ -27,6 +28,7 @@ export default function AnalysisProfileContent({
   return (
     <>
       <AnalysisProfilePanel state={state} actions={actions} />
+      {state.isAnalysisReplayRunning && <AnalysisEngineOutput />}
       {state.analysisReplayFinished && !state.isAnalysisReplayRunning && children}
     </>
   );

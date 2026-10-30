@@ -226,6 +226,12 @@
     height: clamp(220px, 42dvh, 320px);
   }
 
+  .analysis-engine-output {
+    flex: 0 0 auto;
+    width: 100%;
+    height: clamp(260px, 45dvh, 420px);
+  }
+
   .analysis-tab-stack,
   .analysis-primary-tabpanel {
     min-height: 0;

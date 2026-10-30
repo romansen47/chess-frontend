@@ -1,0 +1,66 @@
+.engine-communication-log {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 6px 0;
+  border: 1px solid #393939;
+  border-radius: 6px;
+  background: #111;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: calc(0.7rem - 2px);
+}
+
+.engine-communication-line {
+  display: grid;
+  grid-template-columns: 78px 18px minmax(0, 1fr);
+  gap: 5px;
+  padding: 2px 8px;
+  line-height: 1.35;
+}
+
+.engine-communication-line:hover {
+  background: #1e1e1e;
+}
+
+.engine-communication-time {
+  color: #777;
+}
+
+.engine-communication-direction {
+  color: #bdbdbd;
+  text-align: center;
+}
+
+.engine-communication-message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.engine-communication-command .engine-communication-message {
+  color: #f2d28b;
+}
+
+.engine-communication-response .engine-communication-message {
+  color: #9fd4ff;
+}
+
+.engine-communication-system .engine-communication-message,
+.engine-communication-lifecycle .engine-communication-message {
+  color: #a8a8a8;
+  font-style: italic;
+}
+
+.engine-communication-empty {
+  padding: 12px;
+  color: #888;
+  font-size: calc(0.76rem - 2px);
+}
+
+@media (max-width: 900px) {
+  .engine-communication-line {
+    grid-template-columns: 54px 14px minmax(0, 1fr);
+    padding: 2px 5px;
+    font-size: 0.64rem;
+  }
+}

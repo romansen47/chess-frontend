@@ -24,14 +24,6 @@
   gap: 3px;
 }
 
-.opening-manager-toolbar-actions {
-  display: flex !important;
-  flex-direction: row !important;
-  justify-content: flex-end;
-  gap: 8px !important;
-  flex-wrap: wrap;
-}
-
 .opening-manager-toolbar span,
 .opening-manager-heading span,
 .opening-manager-list span {
