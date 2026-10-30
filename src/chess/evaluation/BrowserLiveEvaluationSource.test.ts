@@ -46,14 +46,19 @@ class FakeBrowserEngine {
     this.disposeCount++;
   }
 
-  emit(evalValue: number, depth = 15): void {
+  emit(
+    evalValue: number,
+    depth = 15,
+    moves = ["e2e4 e7e5", "d2d4 d7d5", "g1f3 g8f6"],
+  ): void {
     this.listener?.({
       engineName: "Stockfish 19 Lite",
-      lines: [
-        { eval: evalValue, depth, mateDistance: null, moves: "e2e4 e7e5" },
-        { eval: evalValue - 0.1, depth, mateDistance: null, moves: "d2d4 d7d5" },
-        { eval: evalValue - 0.2, depth, mateDistance: null, moves: "g1f3 g8f6" },
-      ],
+      lines: moves.map((variation, index) => ({
+        eval: evalValue - index * 0.1,
+        depth,
+        mateDistance: null,
+        moves: variation,
+      })),
     });
   }
 }
@@ -181,4 +186,53 @@ describe("BrowserLiveEvaluationSource", () => {
       moveArrows: [{ from: "e2", to: "e4" }, { from: "e7", to: "e5" }],
     });
   });
+
+  it("keeps the previous complete board until the next position is hydrated", async () => {
+    const engine = new FakeBrowserEngine();
+    let finishSecond!: (value: EngineLine[]) => void;
+    const firstDisplay: EngineLine[] = [{
+      eval: 0.5,
+      depth: 12,
+      moves: "e4 e5",
+      positions: ["old-start", "old-after-e4", "old-after-e5"],
+      moveArrows: [{ from: "e2", to: "e4" }, { from: "e7", to: "e5" }],
+    }];
+    const hydrate = vi.fn()
+      .mockResolvedValueOnce(firstDisplay)
+      .mockImplementationOnce(() => new Promise<EngineLine[]>((resolve) => {
+        finishSecond = resolve;
+      }));
+    const events: LiveEvaluationEvent[] = [];
+    const source = new BrowserLiveEvaluationSource(() => engine, 1, hydrate, 0);
+    source.subscribe((event) => events.push(event));
+    await source.start({ initialFen: INITIAL_FEN, uciMoves: [] });
+    engine.emit(0.5, 12, ["e2e4 e7e5"]);
+    await vi.waitFor(() => expect(lastEvaluation(events)?.lines[0].moves).toBe("e4 e5"));
+
+    await source.updatePosition({ initialFen: INITIAL_FEN, uciMoves: ["e2e4"] });
+    engine.emit(0.8, 15, ["e7e5 g1f3"]);
+
+    expect(lastEvaluation(events)?.lines[0]).toMatchObject({
+      eval: 0.8,
+      depth: 15,
+      moves: "e4 e5",
+      positions: ["old-start", "old-after-e4", "old-after-e5"],
+    });
+
+    finishSecond([{
+      eval: 0.8,
+      depth: 15,
+      moves: "e5 ♘f3",
+      positions: ["new-start", "new-after-e5", "new-after-f3"],
+      moveArrows: [{ from: "e7", to: "e5" }, { from: "g1", to: "f3" }],
+    }]);
+    await vi.waitFor(() => {
+      expect(lastEvaluation(events)?.lines[0].positions?.[0]).toBe("new-start");
+    });
+  });
 });
+
+function lastEvaluation(events: LiveEvaluationEvent[]) {
+  const event = events.filter((candidate) => candidate.type === "evaluation").at(-1);
+  return event?.type === "evaluation" ? event.evaluation : null;
+}

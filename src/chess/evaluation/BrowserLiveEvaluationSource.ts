@@ -49,6 +49,7 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
   private disposed = false;
   private latestSnapshot: EvaluationSnapshot | null = null;
   private readonly displayByVariation = new Map<string, LineDisplay>();
+  private readonly displayByIndex = new Map<number, LineDisplay>();
   private lastHydrationSignature: string | null = null;
 
   constructor(
@@ -79,27 +80,27 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     this.assertUsable();
     this.active = true;
     this.position = copyPosition(position);
-    await this.search(this.position);
+    await this.search(this.position, false);
   }
 
   async updatePosition(position: LiveEvaluationPosition): Promise<void> {
     this.assertUsable();
     this.position = copyPosition(position);
     if (this.active) {
-      await this.search(this.position);
+      await this.search(this.position, true);
     }
   }
 
   refresh(): void {
     this.assertUsable();
-    if (this.active && this.position) void this.search(this.position);
+    if (this.active && this.position) void this.search(this.position, true);
   }
 
   suspend(): void {
     if (this.disposed) return;
     this.active = false;
     this.generation++;
-    this.resetLineDisplay();
+    this.resetLineDisplay(false);
     this.emit({ type: "loading", loading: false });
     if (this.engine) {
       void this.engine.stop().catch((error) =>
@@ -111,7 +112,7 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     if (this.disposed) return;
     this.active = false;
     this.generation++;
-    this.resetLineDisplay();
+    this.resetLineDisplay(false);
     this.emit({ type: "loading", loading: false });
     const engine = this.engine;
     this.engine = null;
@@ -129,14 +130,19 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     this.active = false;
     this.generation++;
     this.lineHydrator.dispose();
+    this.displayByVariation.clear();
+    this.displayByIndex.clear();
     this.engine?.dispose();
     this.engine = null;
     this.listeners.clear();
   }
 
-  private async search(position: LiveEvaluationPosition): Promise<void> {
+  private async search(
+    position: LiveEvaluationPosition,
+    preserveDisplay: boolean,
+  ): Promise<void> {
     const generation = ++this.generation;
-    this.resetLineDisplay();
+    this.resetLineDisplay(preserveDisplay);
     const engine = this.engine ?? this.createEngine();
     this.engine = engine;
     this.emit({ type: "error", error: null });
@@ -197,18 +203,24 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     if (!this.isCurrent(generation)) return;
     rawLines.forEach((raw, index) => {
       const display = displayLines[index];
-      if (!display) return;
-      this.displayByVariation.set(raw.moves, {
+      if (!display?.positions?.length) return;
+      const lineDisplay = {
         moves: display.moves,
-        positions: display.positions ? [...display.positions] : undefined,
+        positions: [...display.positions],
         moveArrows: display.moveArrows?.map((arrow) => ({ ...arrow })),
-      });
+      };
+      this.displayByVariation.set(raw.moves, lineDisplay);
+      if (this.latestSnapshot?.lines[index]?.moves === raw.moves) {
+        this.displayByIndex.set(index, lineDisplay);
+      }
     });
     if (this.latestSnapshot) this.emitSnapshot(this.latestSnapshot);
   }
 
   private emitSnapshot(snapshot: EvaluationSnapshot): void {
-    const lines = snapshot.lines.map((line) => this.withLineDisplay(line));
+    const lines = snapshot.lines.map(
+      (line, index) => this.withLineDisplay(line, index),
+    );
     const evalValue = lines[0].eval;
     const bar = evaluationToBar(evalValue);
     this.emit({ type: "bar", bar });
@@ -223,15 +235,17 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     });
   }
 
-  private withLineDisplay(line: EngineLine): EngineLine {
-    const display = this.displayByVariation.get(line.moves);
+  private withLineDisplay(line: EngineLine, index: number): EngineLine {
+    const display = this.displayByVariation.get(line.moves)
+      ?? this.displayByIndex.get(index);
     return display ? { ...copyEngineLine(line), ...display } : copyEngineLine(line);
   }
 
-  private resetLineDisplay(): void {
+  private resetLineDisplay(preserveDisplay: boolean): void {
     this.lineHydrator.cancel();
     this.latestSnapshot = null;
     this.displayByVariation.clear();
+    if (!preserveDisplay) this.displayByIndex.clear();
     this.lastHydrationSignature = null;
   }
 
