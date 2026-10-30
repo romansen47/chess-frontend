@@ -1,6 +1,11 @@
 import type { EngineLine } from "../types";
+import {
+  hydrateBrowserEngineLines,
+  type BrowserLineDisplayHydration,
+} from "../api/browserLineDisplayApi";
 import type { BrowserUciEvaluation, BrowserUciEvaluationListener } from "../engine/browser/BrowserUciEngine";
 import { createStockfishBrowserUciEngine } from "../engine/browser/createStockfishWorker";
+import { BrowserLineDisplayHydrator } from "./BrowserLineDisplayHydrator";
 import { evaluationToBar } from "./evaluationBar";
 import type {
   LiveEvaluationEvent,
@@ -21,26 +26,47 @@ interface BrowserEvaluationEngine {
   dispose(): void;
 }
 
+interface EvaluationSnapshot {
+  engineName: string;
+  lines: EngineLine[];
+}
+
+interface LineDisplay {
+  moves: string;
+  positions?: string[];
+  moveArrows?: EngineLine["moveArrows"];
+}
+
 export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
   private readonly listeners = new Set<LiveEvaluationListener>();
   private readonly createEngine: () => BrowserEvaluationEngine;
   private readonly multiPv: number;
+  private readonly lineHydrator: BrowserLineDisplayHydrator;
   private engine: BrowserEvaluationEngine | null = null;
   private position: LiveEvaluationPosition | null = null;
   private generation = 0;
   private active = false;
   private disposed = false;
+  private latestSnapshot: EvaluationSnapshot | null = null;
+  private readonly displayByVariation = new Map<string, LineDisplay>();
+  private lastHydrationSignature: string | null = null;
 
   constructor(
     createEngine: () => BrowserEvaluationEngine =
       createStockfishBrowserUciEngine,
     multiPv: number = BROWSER_LIVE_EVALUATION_MULTIPV,
+    hydrateLines: BrowserLineDisplayHydration = hydrateBrowserEngineLines,
+    hydrationIntervalMs = 500,
   ) {
     if (!Number.isInteger(multiPv) || multiPv < 1) {
       throw new Error("Browser live evaluation MultiPV must be positive");
     }
     this.createEngine = createEngine;
     this.multiPv = multiPv;
+    this.lineHydrator = new BrowserLineDisplayHydrator(
+      hydrateLines,
+      hydrationIntervalMs,
+    );
   }
 
   subscribe(listener: LiveEvaluationListener): () => void {
@@ -73,6 +99,7 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     if (this.disposed) return;
     this.active = false;
     this.generation++;
+    this.resetLineDisplay();
     this.emit({ type: "loading", loading: false });
     if (this.engine) {
       void this.engine.stop().catch((error) =>
@@ -84,6 +111,7 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     if (this.disposed) return;
     this.active = false;
     this.generation++;
+    this.resetLineDisplay();
     this.emit({ type: "loading", loading: false });
     const engine = this.engine;
     this.engine = null;
@@ -100,6 +128,7 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
     this.disposed = true;
     this.active = false;
     this.generation++;
+    this.lineHydrator.dispose();
     this.engine?.dispose();
     this.engine = null;
     this.listeners.clear();
@@ -107,6 +136,7 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
 
   private async search(position: LiveEvaluationPosition): Promise<void> {
     const generation = ++this.generation;
+    this.resetLineDisplay();
     const engine = this.engine ?? this.createEngine();
     this.engine = engine;
     this.emit({ type: "error", error: null });
@@ -130,19 +160,79 @@ export class BrowserLiveEvaluationSource implements LiveEvaluationSource {
   ): void {
     if (!this.isCurrent(generation) || evaluation.lines.length === 0) return;
     const lines = evaluation.lines.map(copyEngineLine);
+    this.latestSnapshot = {
+      engineName: browserEngineName(evaluation.engineName),
+      lines,
+    };
+    this.emit({ type: "loading", loading: false });
+    this.emitSnapshot(this.latestSnapshot);
+    this.requestLineDisplay(generation, lines);
+  }
+
+  private requestLineDisplay(generation: number, lines: EngineLine[]): void {
+    if (!this.position?.initialFen) return;
+    const signature = lines.map((line) => line.moves).join("\u0000");
+    if (signature === this.lastHydrationSignature) return;
+    this.lastHydrationSignature = signature;
+    const rawLines = lines.map(copyEngineLine);
+    this.lineHydrator.submit(
+      this.position,
+      rawLines,
+      (displayLines) => this.applyLineDisplay(generation, rawLines, displayLines),
+      (error) => {
+        if (!this.isCurrent(generation)) return;
+        if (this.lastHydrationSignature === signature) {
+          this.lastHydrationSignature = null;
+        }
+        console.debug("[BrowserLiveEvaluationSource] line display unavailable", error);
+      },
+    );
+  }
+
+  private applyLineDisplay(
+    generation: number,
+    rawLines: EngineLine[],
+    displayLines: EngineLine[],
+  ): void {
+    if (!this.isCurrent(generation)) return;
+    rawLines.forEach((raw, index) => {
+      const display = displayLines[index];
+      if (!display) return;
+      this.displayByVariation.set(raw.moves, {
+        moves: display.moves,
+        positions: display.positions ? [...display.positions] : undefined,
+        moveArrows: display.moveArrows?.map((arrow) => ({ ...arrow })),
+      });
+    });
+    if (this.latestSnapshot) this.emitSnapshot(this.latestSnapshot);
+  }
+
+  private emitSnapshot(snapshot: EvaluationSnapshot): void {
+    const lines = snapshot.lines.map((line) => this.withLineDisplay(line));
     const evalValue = lines[0].eval;
     const bar = evaluationToBar(evalValue);
-    this.emit({ type: "loading", loading: false });
     this.emit({ type: "bar", bar });
     this.emit({
       type: "evaluation",
       evaluation: {
         eval: evalValue,
         bar,
-        engineName: browserEngineName(evaluation.engineName),
+        engineName: snapshot.engineName,
         lines,
       },
     });
+  }
+
+  private withLineDisplay(line: EngineLine): EngineLine {
+    const display = this.displayByVariation.get(line.moves);
+    return display ? { ...copyEngineLine(line), ...display } : copyEngineLine(line);
+  }
+
+  private resetLineDisplay(): void {
+    this.lineHydrator.cancel();
+    this.latestSnapshot = null;
+    this.displayByVariation.clear();
+    this.lastHydrationSignature = null;
   }
 
   private isCurrent(generation: number): boolean {
@@ -174,5 +264,6 @@ function copyEngineLine(line: EngineLine): EngineLine {
   return {
     ...line,
     positions: line.positions ? [...line.positions] : undefined,
+    moveArrows: line.moveArrows?.map((arrow) => ({ ...arrow })),
   };
 }

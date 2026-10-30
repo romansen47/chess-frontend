@@ -12,7 +12,10 @@ import type {
   LiveEvaluationEvent,
   LiveEvaluationPosition,
 } from "./LiveEvaluationSource";
+import type { EngineLine } from "../types";
 import { evaluationToBar } from "./evaluationBar";
+
+const INITIAL_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w HAha - 0 1";
 
 class FakeBrowserEngine {
   starts: Array<{
@@ -83,9 +86,9 @@ describe("BrowserLiveEvaluationSource", () => {
         bar,
         engineName: "Stockfish 19 Lite (Browser)",
         lines: [
-          { eval: 0.75, depth: 18, mateDistance: null, moves: "e2e4 e7e5", positions: undefined },
-          { eval: 0.65, depth: 18, mateDistance: null, moves: "d2d4 d7d5", positions: undefined },
-          { eval: 0.55, depth: 18, mateDistance: null, moves: "g1f3 g8f6", positions: undefined },
+          { eval: 0.75, depth: 18, mateDistance: null, moves: "e2e4 e7e5", positions: undefined, moveArrows: undefined },
+          { eval: 0.65, depth: 18, mateDistance: null, moves: "d2d4 d7d5", positions: undefined, moveArrows: undefined },
+          { eval: 0.55, depth: 18, mateDistance: null, moves: "g1f3 g8f6", positions: undefined, moveArrows: undefined },
         ],
       },
     });
@@ -135,5 +138,47 @@ describe("BrowserLiveEvaluationSource", () => {
     expect(first.disposeCount).toBe(1);
     expect(createEngine).toHaveBeenCalledTimes(2);
     expect(second.starts[0].position).toEqual({ uciMoves: ["d2d4"] });
+  });
+
+  it("adds SAN, board positions and arrows without replacing newer scores", async () => {
+    const engine = new FakeBrowserEngine();
+    let finishHydration!: (value: EngineLine[]) => void;
+    const hydrate = vi.fn(() => new Promise<EngineLine[]>(
+      (resolve) => { finishHydration = resolve; },
+    ));
+    const events: LiveEvaluationEvent[] = [];
+    const source = new BrowserLiveEvaluationSource(() => engine, 3, hydrate, 0);
+    source.subscribe((event) => events.push(event));
+    await source.start({ initialFen: INITIAL_FEN, uciMoves: [] });
+
+    engine.emit(0.5, 12);
+    engine.emit(0.8, 14);
+    finishHydration([
+      {
+        eval: 0.5,
+        depth: 12,
+        moves: "e4 e5",
+        positions: ["start", "after-e4", "after-e5"],
+        moveArrows: [{ from: "e2", to: "e4" }, { from: "e7", to: "e5" }],
+      },
+      { eval: 0.4, depth: 12, moves: "d4 d5", positions: ["start"], moveArrows: [] },
+      { eval: 0.3, depth: 12, moves: "♘f3 ♞f6", positions: ["start"], moveArrows: [] },
+    ]);
+    await vi.waitFor(() => {
+      const evaluations = events.filter((event) => event.type === "evaluation");
+      expect(evaluations).toHaveLength(3);
+    });
+
+    const evaluationEvent = events.filter((event) => event.type === "evaluation").at(-1);
+    expect(evaluationEvent?.type).toBe("evaluation");
+    if (evaluationEvent?.type !== "evaluation") throw new Error("Missing evaluation");
+    expect(evaluationEvent.evaluation.eval).toBe(0.8);
+    expect(evaluationEvent.evaluation.lines[0]).toMatchObject({
+      eval: 0.8,
+      depth: 14,
+      moves: "e4 e5",
+      positions: ["start", "after-e4", "after-e5"],
+      moveArrows: [{ from: "e2", to: "e4" }, { from: "e7", to: "e5" }],
+    });
   });
 });
