@@ -102,6 +102,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource,
       fetchCapabilities: vi.fn().mockResolvedValue(availableCapabilities),
+      sourcePreference: "backend",
     });
 
     await controller.start(position);
@@ -118,6 +119,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource,
       fetchCapabilities: vi.fn().mockResolvedValue(unavailableCapabilities),
+      sourcePreference: "backend",
     });
 
     await controller.start(position);
@@ -134,6 +136,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource: () => browser,
       fetchCapabilities: vi.fn().mockResolvedValue(availableCapabilities),
+      sourcePreference: "backend",
     });
 
     await controller.start(position);
@@ -160,6 +163,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource,
       fetchCapabilities: vi.fn().mockResolvedValue(availableCapabilities),
+      sourcePreference: "backend",
     });
     controller.subscribe((event) => events.push(event));
 
@@ -180,6 +184,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource: () => browser,
       fetchCapabilities: vi.fn().mockResolvedValue(availableCapabilities),
+      sourcePreference: "backend",
     });
 
     await controller.start(position);
@@ -208,6 +213,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource: () => browser,
       fetchCapabilities: () => capabilities.promise,
+      sourcePreference: "backend",
     });
 
     const startPromise = controller.start(position);
@@ -227,6 +233,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource: () => browserCreation.promise,
       fetchCapabilities: vi.fn().mockResolvedValue(unavailableCapabilities),
+      sourcePreference: "backend",
     });
 
     const startPromise = controller.start(position);
@@ -250,6 +257,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource: () => browser,
       fetchCapabilities,
+      sourcePreference: "backend",
     });
 
     await controller.start(position);
@@ -270,6 +278,7 @@ describe("LiveEvaluationController", () => {
       backendSource: backend,
       createBrowserSource: () => browser,
       fetchCapabilities,
+      sourcePreference: "backend",
     });
 
     await controller.start(position);
@@ -279,5 +288,62 @@ describe("LiveEvaluationController", () => {
     expect(browser.starts).toEqual([
       { uciMoves: ["e2e4", "e7e5", "g1f3"] },
     ]);
+  });
+
+  it("uses browser Stockfish by default without probing backend capabilities", async () => {
+    const backend = new FakeSource();
+    const browser = new FakeSource();
+    const fetchCapabilities = vi.fn();
+    const controller = new LiveEvaluationController({
+      backendSource: backend,
+      createBrowserSource: () => browser,
+      fetchCapabilities,
+    });
+
+    await controller.start(position);
+
+    expect(fetchCapabilities).not.toHaveBeenCalled();
+    expect(backend.starts).toHaveLength(0);
+    expect(browser.starts).toEqual([position]);
+  });
+
+  it("switches an active evaluation between browser and backend", async () => {
+    const backend = new FakeSource();
+    const browser = new FakeSource();
+    const controller = new LiveEvaluationController({
+      backendSource: backend,
+      createBrowserSource: () => browser,
+      fetchCapabilities: vi.fn().mockResolvedValue(availableCapabilities),
+      sourcePreference: "browser",
+    });
+
+    await controller.start(position);
+    await controller.setSourcePreference("backend");
+
+    expect(browser.stopCount).toBe(1);
+    expect(backend.starts).toEqual([position]);
+
+    await controller.setSourcePreference("browser");
+
+    expect(backend.stopCount).toBe(1);
+    expect(browser.starts).toEqual([position, position]);
+  });
+
+  it("does not start a source when preference changes while suspended", async () => {
+    const backend = new FakeSource();
+    const browser = new FakeSource();
+    const controller = new LiveEvaluationController({
+      backendSource: backend,
+      createBrowserSource: () => browser,
+      fetchCapabilities: vi.fn().mockResolvedValue(availableCapabilities),
+      sourcePreference: "browser",
+    });
+
+    await controller.start(position);
+    controller.suspend();
+    await controller.setSourcePreference("backend");
+
+    expect(backend.starts).toHaveLength(0);
+    expect(browser.starts).toEqual([position]);
   });
 });

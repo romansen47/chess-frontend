@@ -11,6 +11,10 @@ import {
 } from "./chess/api/engineConfigApi";
 import { notifyEngineRuntimeAssignmentsChanged } from "./chess/engine/engineRuntimeEvents";
 import EngineProfileMenu, { EngineProfileMenuItem } from "./chess/engine/EngineProfileMenu";
+import {
+  BROWSER_STOCKFISH_NAME,
+  type LiveEvaluationSourcePreference,
+} from "./chess/evaluation/liveEvaluationEngine";
 import { useI18n } from "./i18n/I18nProvider";
 import "./EngineProfileContextMenu.css";
 
@@ -18,6 +22,13 @@ interface MenuState {
   target: EngineRuntimeTarget;
   x: number;
   y: number;
+}
+
+interface Props {
+  liveEvaluationSource: LiveEvaluationSourcePreference;
+  onLiveEvaluationSourceChange: (
+    source: LiveEvaluationSourcePreference,
+  ) => void;
 }
 
 function targetFromContextEvent(event: MouseEvent): EngineRuntimeTarget | null {
@@ -39,7 +50,10 @@ function targetFromContextEvent(event: MouseEvent): EngineRuntimeTarget | null {
   return null;
 }
 
-export default function EngineProfileContextMenu() {
+export default function EngineProfileContextMenu({
+  liveEvaluationSource,
+  onLiveEvaluationSourceChange,
+}: Props) {
   const { t } = useI18n();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const mountedRef = useRef(false);
@@ -138,6 +152,8 @@ export default function EngineProfileContextMenu() {
 
   const profiles = (overview?.profiles ?? []).filter((profile) => profile.id);
   const defaultProfile = profiles.find((profile) => profile.id === defaultProfileId) ?? null;
+  const backendSelectionActive =
+    menu.target !== "evaluation" || liveEvaluationSource === "backend";
 
   const selectProfile = async (profileId: string | null) => {
     if (saving) return;
@@ -148,6 +164,9 @@ export default function EngineProfileContextMenu() {
       if (!mountedRef.current) return;
       setRuntime(nextRuntime);
       notifyEngineRuntimeAssignmentsChanged(nextRuntime);
+      if (menu.target === "evaluation") {
+        onLiveEvaluationSourceChange("backend");
+      }
       setMenu(null);
     } catch (selectionError) {
       if (!mountedRef.current) return;
@@ -155,6 +174,11 @@ export default function EngineProfileContextMenu() {
     } finally {
       if (mountedRef.current) setSaving(false);
     }
+  };
+
+  const selectBrowserStockfish = () => {
+    onLiveEvaluationSourceChange("browser");
+    setMenu(null);
   };
 
   return (
@@ -174,10 +198,23 @@ export default function EngineProfileContextMenu() {
         <div className="engine-profile-menu-status">{t("common.loading")}</div>
       )}
 
+      {menu.target === "evaluation" && (
+        <>
+          <EngineProfileMenuItem
+            checked={liveEvaluationSource === "browser"}
+            disabled={saving}
+            primary={BROWSER_STOCKFISH_NAME}
+            secondary={t("settings.thisDevice")}
+            onSelect={selectBrowserStockfish}
+          />
+          <div className="engine-profile-menu-separator" />
+        </>
+      )}
+
       {overview && (
         <>
           <EngineProfileMenuItem
-            checked={runtimeProfileId == null}
+            checked={backendSelectionActive && runtimeProfileId == null}
             disabled={saving || !defaultProfile}
             primary={
               <>
@@ -199,7 +236,7 @@ export default function EngineProfileContextMenu() {
           <EngineProfileMenu
             engines={overview.engines}
             profiles={profiles}
-            selectedProfileId={runtimeProfileId}
+            selectedProfileId={backendSelectionActive ? runtimeProfileId : null}
             disabled={saving}
             unknownEngineLabel={t("settings.unknownEngine")}
             emptyLabel={t("settings.noProfile")}

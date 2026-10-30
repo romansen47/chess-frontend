@@ -14,6 +14,7 @@ import OpeningManager from "./chess/openings/OpeningManager";
 import EngineDefaultsSettings from "./settings/EngineDefaultsSettings";
 import DisplaySettings from "./settings/DisplaySettings";
 import type { UiPreferences } from "./chess/settings/useUiPreferences";
+import type { LiveEvaluationSourcePreference } from "./chess/evaluation/liveEvaluationEngine";
 import "./SettingsManager.css";
 
 interface SettingsManagerProps {
@@ -56,6 +57,10 @@ export default function SettingsManager({
   const [defaultsDraft, setDefaultsDraft] = useState<EngineProfileAssignments>(
     () => copyAssignments(overview?.defaults),
   );
+  const [liveEvaluationSourceDraft, setLiveEvaluationSourceDraft] =
+    useState<LiveEvaluationSourcePreference>(
+      uiPreferences.liveEvaluationSource,
+    );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +72,10 @@ export default function SettingsManager({
   useEffect(() => {
     if (overview) setDefaultsDraft(copyAssignments(overview.defaults));
   }, [overview]);
+
+  useEffect(() => {
+    setLiveEvaluationSourceDraft(uiPreferences.liveEvaluationSource);
+  }, [uiPreferences.liveEvaluationSource]);
 
   function changeMode(nextMode: SettingsMode) {
     setMode(nextMode);
@@ -108,6 +117,9 @@ export default function SettingsManager({
       setMessage(null);
       const next = await updateEngineDefaults(defaultsDraft);
       onOverviewChange(next);
+      onUiPreferencesChange({
+        liveEvaluationSource: liveEvaluationSourceDraft,
+      });
       setDefaultsDraft(copyAssignments(next.defaults));
       setMessage(t("settings.defaultSaved"));
     } catch (cause) {
@@ -254,8 +266,10 @@ export default function SettingsManager({
             <EngineDefaultsSettings
               overview={overview}
               draft={defaultsDraft}
+              liveEvaluationSource={liveEvaluationSourceDraft}
               busy={busy}
               onDraftChange={setDefaultsDraft}
+              onLiveEvaluationSourceChange={setLiveEvaluationSourceDraft}
               onSave={() => void saveDefaults()}
             />
           )}

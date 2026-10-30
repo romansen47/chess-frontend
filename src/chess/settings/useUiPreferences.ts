@@ -4,6 +4,11 @@ import {
   isBoardThemeId,
   type BoardThemeId,
 } from "./boardThemes";
+import {
+  DEFAULT_LIVE_EVALUATION_SOURCE,
+  isLiveEvaluationSourcePreference,
+  type LiveEvaluationSourcePreference,
+} from "../evaluation/liveEvaluationEngine";
 
 const STORAGE_KEY = "chess.uiPreferences";
 
@@ -18,6 +23,7 @@ export const ENGINE_VARIATION_ANIMATION_INTERVALS: EngineVariationAnimationInter
 ];
 
 export interface UiPreferences {
+  liveEvaluationSource: LiveEvaluationSourcePreference;
   showAnalysisEvaluationArrows: boolean;
   analysisEvaluationArrowCount: AnalysisEvaluationArrowCount;
   animateEngineVariations: boolean;
@@ -28,6 +34,7 @@ export interface UiPreferences {
 }
 
 export const DEFAULT_UI_PREFERENCES: UiPreferences = {
+  liveEvaluationSource: DEFAULT_LIVE_EVALUATION_SOURCE,
   showAnalysisEvaluationArrows: true,
   analysisEvaluationArrowCount: 3,
   animateEngineVariations: true,
@@ -56,45 +63,55 @@ function booleanPreference(
   return typeof value === "boolean" ? value : fallback;
 }
 
+export function normalizeUiPreferences(value: unknown): UiPreferences {
+  const parsed = value && typeof value === "object"
+    ? value as Partial<UiPreferences>
+    : {};
+  return {
+    liveEvaluationSource: isLiveEvaluationSourcePreference(
+      parsed.liveEvaluationSource,
+    )
+      ? parsed.liveEvaluationSource
+      : DEFAULT_UI_PREFERENCES.liveEvaluationSource,
+    showAnalysisEvaluationArrows: booleanPreference(
+      parsed.showAnalysisEvaluationArrows,
+      DEFAULT_UI_PREFERENCES.showAnalysisEvaluationArrows,
+    ),
+    analysisEvaluationArrowCount: isAnalysisEvaluationArrowCount(
+      parsed.analysisEvaluationArrowCount,
+    )
+      ? parsed.analysisEvaluationArrowCount
+      : DEFAULT_UI_PREFERENCES.analysisEvaluationArrowCount,
+    animateEngineVariations: booleanPreference(
+      parsed.animateEngineVariations,
+      DEFAULT_UI_PREFERENCES.animateEngineVariations,
+    ),
+    engineVariationAnimationIntervalMs: isAnimationInterval(
+      parsed.engineVariationAnimationIntervalMs,
+    )
+      ? parsed.engineVariationAnimationIntervalMs
+      : DEFAULT_UI_PREFERENCES.engineVariationAnimationIntervalMs,
+    showMoveAnnotationsOnBoard: booleanPreference(
+      parsed.showMoveAnnotationsOnBoard,
+      DEFAULT_UI_PREFERENCES.showMoveAnnotationsOnBoard,
+    ),
+    showBoardCoordinates: booleanPreference(
+      parsed.showBoardCoordinates,
+      DEFAULT_UI_PREFERENCES.showBoardCoordinates,
+    ),
+    boardTheme: isBoardThemeId(parsed.boardTheme)
+      ? parsed.boardTheme
+      : DEFAULT_UI_PREFERENCES.boardTheme,
+  };
+}
+
 function loadUiPreferences(): UiPreferences {
   if (typeof window === "undefined") return DEFAULT_UI_PREFERENCES;
 
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return DEFAULT_UI_PREFERENCES;
-
-    const parsed = JSON.parse(stored) as Partial<UiPreferences>;
-    return {
-      showAnalysisEvaluationArrows: booleanPreference(
-        parsed.showAnalysisEvaluationArrows,
-        DEFAULT_UI_PREFERENCES.showAnalysisEvaluationArrows,
-      ),
-      analysisEvaluationArrowCount: isAnalysisEvaluationArrowCount(
-        parsed.analysisEvaluationArrowCount,
-      )
-        ? parsed.analysisEvaluationArrowCount
-        : DEFAULT_UI_PREFERENCES.analysisEvaluationArrowCount,
-      animateEngineVariations: booleanPreference(
-        parsed.animateEngineVariations,
-        DEFAULT_UI_PREFERENCES.animateEngineVariations,
-      ),
-      engineVariationAnimationIntervalMs: isAnimationInterval(
-        parsed.engineVariationAnimationIntervalMs,
-      )
-        ? parsed.engineVariationAnimationIntervalMs
-        : DEFAULT_UI_PREFERENCES.engineVariationAnimationIntervalMs,
-      showMoveAnnotationsOnBoard: booleanPreference(
-        parsed.showMoveAnnotationsOnBoard,
-        DEFAULT_UI_PREFERENCES.showMoveAnnotationsOnBoard,
-      ),
-      showBoardCoordinates: booleanPreference(
-        parsed.showBoardCoordinates,
-        DEFAULT_UI_PREFERENCES.showBoardCoordinates,
-      ),
-      boardTheme: isBoardThemeId(parsed.boardTheme)
-        ? parsed.boardTheme
-        : DEFAULT_UI_PREFERENCES.boardTheme,
-    };
+    return normalizeUiPreferences(JSON.parse(stored));
   } catch {
     return DEFAULT_UI_PREFERENCES;
   }

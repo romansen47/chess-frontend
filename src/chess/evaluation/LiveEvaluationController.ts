@@ -7,11 +7,16 @@ import type {
   LiveEvaluationPosition,
   LiveEvaluationSource,
 } from "./LiveEvaluationSource";
+import {
+  DEFAULT_LIVE_EVALUATION_SOURCE,
+  type LiveEvaluationSourcePreference,
+} from "./liveEvaluationEngine";
 
 interface LiveEvaluationControllerDependencies {
   backendSource: LiveEvaluationSource;
   createBrowserSource: () => LiveEvaluationSource | Promise<LiveEvaluationSource>;
   fetchCapabilities?: () => Promise<EngineCapabilities>;
+  sourcePreference?: LiveEvaluationSourcePreference;
 }
 
 export class LiveEvaluationController {
@@ -29,12 +34,15 @@ export class LiveEvaluationController {
   private activationGeneration = 0;
   private desiredActive = false;
   private disposed = false;
+  private sourcePreference: LiveEvaluationSourcePreference;
 
   constructor(dependencies: LiveEvaluationControllerDependencies) {
     this.backendSource = dependencies.backendSource;
     this.createBrowserSource = dependencies.createBrowserSource;
     this.fetchCapabilities =
       dependencies.fetchCapabilities ?? fetchEngineCapabilities;
+    this.sourcePreference =
+      dependencies.sourcePreference ?? DEFAULT_LIVE_EVALUATION_SOURCE;
   }
 
   subscribe(listener: LiveEvaluationListener): () => void {
@@ -51,6 +59,18 @@ export class LiveEvaluationController {
 
   async reselect(position: LiveEvaluationPosition): Promise<void> {
     await this.activatePosition(position, true);
+  }
+
+  /** Switches the execution location and restarts an active evaluation. */
+  async setSourcePreference(
+    preference: LiveEvaluationSourcePreference,
+  ): Promise<void> {
+    this.assertNotDisposed();
+    if (preference === this.sourcePreference) return;
+
+    this.sourcePreference = preference;
+    if (!this.desiredActive || this.currentPosition === null) return;
+    await this.activatePosition(this.currentPosition, true);
   }
 
   private async activatePosition(
@@ -75,6 +95,11 @@ export class LiveEvaluationController {
       this.suspendActiveSource();
     }
     if (!this.isCurrent(generation)) return;
+
+    if (this.sourcePreference === "browser") {
+      await this.activateBrowserSource(generation);
+      return;
+    }
 
     let capabilities: EngineCapabilities;
     try {

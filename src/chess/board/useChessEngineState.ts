@@ -12,8 +12,11 @@ import { fetchProgramFeatures } from "../api/programApi";
 import { BackendLiveEvaluationSource } from "../evaluation/BackendLiveEvaluationSource";
 import { LiveEvaluationController } from "../evaluation/LiveEvaluationController";
 import { ENGINE_RUNTIME_ASSIGNMENTS_CHANGED_EVENT } from "../engine/engineRuntimeEvents";
+import type { LiveEvaluationSourcePreference } from "../evaluation/liveEvaluationEngine";
 
-export function useChessEngineState() {
+export function useChessEngineState(
+  liveEvaluationSource: LiveEvaluationSourcePreference,
+) {
   const [engineEval, setEngineEval] = useState<EngineEvaluation | null>(null);
   const [engineEvaluationPly, setEngineEvaluationPly] = useState<number | null>(null);
   const [engineEvaluationHistory, setEngineEvaluationHistory] =
@@ -23,6 +26,7 @@ export function useChessEngineState() {
   const [evalError, setEvalError] = useState<string | null>(null);
   const [engineAutoUpdate, setEngineAutoUpdateState] = useState(false);
   const engineAutoUpdateRef = useRef(false);
+  const liveEvaluationSourceRef = useRef(liveEvaluationSource);
   const liveEvaluationControllerRef = useRef<LiveEvaluationController | null>(null);
   if (liveEvaluationControllerRef.current === null) {
     liveEvaluationControllerRef.current = new LiveEvaluationController({
@@ -31,6 +35,7 @@ export function useChessEngineState() {
         const { BrowserLiveEvaluationSource } = await import("../evaluation/BrowserLiveEvaluationSource");
         return new BrowserLiveEvaluationSource();
       },
+      sourcePreference: liveEvaluationSource,
     });
   }
   const [showSettings, setShowSettings] = useState(false);
@@ -59,6 +64,21 @@ export function useChessEngineState() {
     engineAutoUpdateRef.current = nextValue;
     setEngineAutoUpdateState(nextValue);
   }
+
+  useEffect(() => {
+    if (liveEvaluationSourceRef.current === liveEvaluationSource) return;
+    liveEvaluationSourceRef.current = liveEvaluationSource;
+    setEngineEval(null);
+    setLiveEvaluationBar(null);
+    setEvalError(null);
+    setEngineEvaluationHistory([]);
+    setEngineEvaluationPly(null);
+    void liveEvaluationControllerRef.current
+      ?.setSourcePreference(liveEvaluationSource)
+      .catch((error) => {
+        console.warn("[useChessEngineState] evaluation source switch failed", error);
+      });
+  }, [liveEvaluationSource]);
 
   useEffect(() => {
     let cancelled = false;

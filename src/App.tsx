@@ -5,8 +5,11 @@ import EngineProfileContextMenu from "./EngineProfileContextMenu";
 import { stopAnalysisEvaluationRequest } from "./chess/api/analysisApi";
 import BrowserLocaleBridge from "./i18n/BrowserLocaleBridge";
 import { I18nProvider } from "./i18n/I18nProvider";
+import { useUiPreferences } from "./chess/settings/useUiPreferences";
 
 function App() {
+  const uiPreferences = useUiPreferences();
+
   useEffect(() => {
     void stopAnalysisEvaluationRequest().catch((error) => {
       console.warn("[analysisEvaluationLifecycle] initial stop failed", error);
@@ -29,8 +32,12 @@ function App() {
     <I18nProvider>
       <BrowserLocaleBridge />
       <div className="app">
-        <ChessBoard />
-        <EngineProfileContextMenu />
+        <ChessBoard uiPreferences={uiPreferences} />
+        <EngineProfileContextMenu
+          liveEvaluationSource={uiPreferences.preferences.liveEvaluationSource}
+          onLiveEvaluationSourceChange={(source) =>
+            uiPreferences.updatePreferences({ liveEvaluationSource: source })}
+        />
       </div>
     </I18nProvider>
   );
