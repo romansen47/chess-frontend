@@ -37,8 +37,15 @@ function quotedKeyPattern(key) {
 
 const dictionaries = {};
 for (const language of ["en", "de", "fr"]) {
-  const source = await readFile(path.join(translationsRoot, language + ".ts"), "utf8");
-  dictionaries[language] = parseDictionary(source);
+  const languageRoot = path.join(translationsRoot, language);
+  const translationFiles = [
+    path.join(translationsRoot, language + ".ts"),
+    ...await sourceFiles(languageRoot),
+  ];
+  const sources = await Promise.all(
+    translationFiles.map((file) => readFile(file, "utf8")),
+  );
+  dictionaries[language] = parseDictionary(sources.join("\n"));
 }
 
 const keys = [...dictionaries.en.keys()];

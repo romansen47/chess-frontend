@@ -151,6 +151,7 @@ function parseInfoLine(
 
   const scoreIndex = tokens.indexOf("score");
   if (scoreIndex < 0 || scoreIndex + 2 >= tokens.length) return null;
+  if (tokens.includes("lowerbound") || tokens.includes("upperbound")) return null;
 
   const scoreType = tokens[scoreIndex + 1];
   const scoreValue = Number(tokens[scoreIndex + 2]);

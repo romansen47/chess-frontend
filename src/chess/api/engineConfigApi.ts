@@ -7,23 +7,25 @@ import type {
   EngineRuntimeTarget,
 } from "../../engineConfigTypes";
 import { jsonRequest, requestJson, requestVoid } from "./httpClient";
+import { parseEngineRuntimeAssignments } from "./engineConfigContracts";
 
 export function fetchEngineConfigOverview(): Promise<EngineConfigOverview> {
   return requestJson<EngineConfigOverview>("/api/engine-configs");
 }
 
 export function fetchEngineRuntimeAssignments(): Promise<EngineRuntimeAssignments> {
-  return requestJson<EngineRuntimeAssignments>("/api/engine-configs/runtime");
+  return requestJson<unknown>("/api/engine-configs/runtime")
+    .then(parseEngineRuntimeAssignments);
 }
 
 export function updateEngineRuntimeProfile(
   target: EngineRuntimeTarget,
   profileId: string | null,
 ): Promise<EngineRuntimeAssignments> {
-  return requestJson<EngineRuntimeAssignments>(
+  return requestJson<unknown>(
     `/api/engine-configs/runtime/${encodeURIComponent(target)}`,
     jsonRequest("PUT", { profileId }),
-  );
+  ).then(parseEngineRuntimeAssignments);
 }
 
 export function discoverEngineDefinitions(): Promise<EngineDefinition[]> {
