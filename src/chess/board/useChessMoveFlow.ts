@@ -149,6 +149,8 @@ export function useChessMoveFlow(options: Options) {
     game.setGameEndState(gameState);
     engine.setEngineAutoUpdate(false);
     engine.setLiveEvaluationBar(null);
+    engine.setEvalError(null);
+    engine.setIsLoadingEval(false);
     void options.stopLiveEvaluation();
     game.setClock((previous) => previous ? { ...previous, gameState, whiteRunning: false, blackRunning: false } : previous);
     game.setShowGameEndDialog(true);

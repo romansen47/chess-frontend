@@ -3,6 +3,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 import EngineLineExplorer from "../engine/EngineLineExplorer";
 import EvaluationHistoryChart from "../evaluation/EvaluationHistoryChart";
 import { activeEvaluationBarValue } from "../evaluation/evaluationBar";
+import { visibleLiveEvaluationError } from "../evaluation/liveEvaluationError";
 import type { EnginePanelActions, EnginePanelState } from "./chessBoardViewTypes";
 import "./EnginePanel.css";
 
@@ -23,6 +24,10 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
   );
   const liveDisplayBarValue = liveBarValue ?? 0.5;
   const analysisDisplayBarValue = analysisBarValue ?? 0.5;
+  const evalError = visibleLiveEvaluationError(
+    engine.evalError,
+    engine.clock?.gameState,
+  );
 
   return (
     <section className={`engine-panel${engine.showSettings ? " engine-settings-open" : ""}`}>
@@ -98,7 +103,7 @@ export default function EnginePanel({ engine, actions }: EnginePanelProps) {
           {engine.analysisReplayActive ? engine.analysisContent
             : engine.uciAnalysisLoaded ? <div className="engine-placeholder-text">{t("analysis.analyzeTitle")}</div>
               : <>
-                {engine.evalError && <div className="engine-error">{t("common.error")}: {engine.evalError}</div>}
+                {evalError && <div className="engine-error">{t("common.error")}: {evalError}</div>}
                 {engine.engineAutoUpdate && !engine.clock?.gameState && (
                   <div className="game-evaluation-content">
                     <EvaluationHistoryChart

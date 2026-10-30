@@ -7,6 +7,7 @@ import {
 import { useI18n } from "../../i18n/I18nProvider";
 import { fetchGameSnapshot } from "../api/gameApi";
 import { createLiveEvaluationPosition } from "../evaluation/liveEvaluationPosition";
+import { visibleLiveEvaluationError } from "../evaluation/liveEvaluationError";
 import type { AnalysisReplaySettings } from "../types";
 import type { ChessBoardState } from "./useChessBoardState";
 import type { ChessEngineState } from "./useChessEngineState";
@@ -122,7 +123,10 @@ export function useChessLiveEvaluation(options: Options) {
           if (event.error === null) engine.setEvalError(null);
           else {
             console.error("[loadEvaluation] error", event.error);
-            engine.setEvalError(t("evaluation.failed"));
+            engine.setEvalError(visibleLiveEvaluationError(
+              t("evaluation.failed"),
+              game.gameEndStateRef.current ?? game.clock?.gameState,
+            ));
           }
           break;
       }
@@ -141,6 +145,10 @@ export function useChessLiveEvaluation(options: Options) {
     } else {
       controller.suspend();
       engine.setLiveEvaluationBar(null);
+      if (game.clock?.gameState) {
+        engine.setEvalError(null);
+        engine.setIsLoadingEval(false);
+      }
     }
     return () => controller.suspend();
   }, [engine.engineAutoUpdate, options.analysisReplayActive, board.uciAnalysisLoaded, game.clock?.gameState]);
