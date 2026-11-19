@@ -394,40 +394,45 @@
 }
 
 
-.analysis-profile-bar {
-  cursor: default;
-  shape-rendering: crispEdges;
+.analysis-profile-area {
+  pointer-events: none;
 }
 
 
-.analysis-profile-bar-clickable {
-  cursor: pointer;
-}
-
-
-.analysis-profile-bar-positive {
+.analysis-profile-area-positive {
   fill: #ffffff;
 }
 
 
-.analysis-profile-bar-negative {
+.analysis-profile-area-negative {
   fill: #050505;
 }
 
 
-.analysis-profile-bar-latest {
-  filter: brightness(1.12);
+.analysis-profile-point {
+  fill: transparent;
+  cursor: default;
 }
 
 
-.analysis-profile-bar-selected {
+.analysis-profile-point-clickable {
+  cursor: pointer;
+}
+
+
+.analysis-profile-point-latest {
+  fill: rgba(255, 255, 255, 0.04);
+}
+
+
+.analysis-profile-point-selected {
   stroke: #d6e600;
   stroke-width: 1.2;
 }
 
 
-.analysis-profile-bar:hover {
-  filter: brightness(1.12);
+.analysis-profile-point:hover {
+  fill: rgba(255, 255, 255, 0.08);
 }
 
 

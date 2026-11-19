@@ -2,6 +2,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
   useEffect,
+  useId,
   useMemo,
   useState,
   type WheelEvent,
@@ -12,6 +13,7 @@ import {
   adjustEvaluationHistoryScale,
 } from "./evaluationHistoryScale";
 import type { EvaluationHistoryPoint } from "./evaluationHistory";
+import { buildEvaluationAreaPath } from "./evaluationHistoryGeometry";
 
 interface EvaluationHistoryChartProps {
   title: ReactNode;
@@ -53,6 +55,8 @@ export default function EvaluationHistoryChart({
   ariaLabel,
   className,
 }: EvaluationHistoryChartProps) {
+  const positiveClipId = useId();
+  const negativeClipId = useId();
   const [maxAbsEval, setMaxAbsEval] = useState(
     EVALUATION_HISTORY_MIN_MAX_ABS_EVAL,
   );
@@ -100,6 +104,18 @@ export default function EvaluationHistoryChart({
   };
   const zeroY = toY(0);
   const slotWidth = (WIDTH - PADDING_X * 2) / visiblePlies;
+  const areaPoints = visiblePoints.map((point) => ({
+    x: PADDING_X + (point.ply - 0.5) * slotWidth,
+    y: toY(point.evaluation),
+  }));
+  const firstVisiblePly = visiblePoints[0]?.ply ?? 1;
+  const lastVisiblePly = visiblePoints[visiblePoints.length - 1]?.ply ?? 0;
+  const areaPath = buildEvaluationAreaPath(
+    areaPoints,
+    zeroY,
+    PADDING_X + (firstVisiblePly - 1) * slotWidth,
+    PADDING_X + lastVisiblePly * slotWidth,
+  );
 
   function handleVerticalZoom(event: WheelEvent<SVGSVGElement>) {
     event.preventDefault();
@@ -148,6 +164,14 @@ export default function EvaluationHistoryChart({
         aria-label={`${ariaLabel}, vertical scale ±${maxAbsEval}`}
         onWheel={handleVerticalZoom}
       >
+        <defs>
+          <clipPath id={positiveClipId}>
+            <rect x={0} y={0} width={WIDTH} height={zeroY} />
+          </clipPath>
+          <clipPath id={negativeClipId}>
+            <rect x={0} y={zeroY} width={WIDTH} height={HEIGHT - zeroY} />
+          </clipPath>
+        </defs>
         <line
           className="analysis-profile-zero-line"
           x1={PADDING_X}
@@ -155,6 +179,20 @@ export default function EvaluationHistoryChart({
           x2={WIDTH - PADDING_X}
           y2={zeroY}
         />
+        {areaPath && (
+          <>
+            <path
+              className="analysis-profile-area analysis-profile-area-positive"
+              d={areaPath}
+              clipPath={`url(#${positiveClipId})`}
+            />
+            <path
+              className="analysis-profile-area analysis-profile-area-negative"
+              d={areaPath}
+              clipPath={`url(#${negativeClipId})`}
+            />
+          </>
+        )}
         {visiblePoints.map((point) => {
           const x = PADDING_X + (point.ply - 1) * slotWidth;
           const y = toY(point.evaluation);
@@ -168,18 +206,15 @@ export default function EvaluationHistoryChart({
             <rect
               key={point.ply}
               className={[
-                "analysis-profile-bar",
-                point.evaluation > 0
-                  ? "analysis-profile-bar-positive"
-                  : "analysis-profile-bar-negative",
+                "analysis-profile-point",
                 point.ply === latest?.ply
-                  ? "analysis-profile-bar-latest"
+                  ? "analysis-profile-point-latest"
                   : "",
                 point.ply === selectedPly
-                  ? "analysis-profile-bar-selected"
+                  ? "analysis-profile-point-selected"
                   : "",
                 selectable
-                  ? "analysis-profile-bar-clickable"
+                  ? "analysis-profile-point-clickable"
                   : "",
               ].filter(Boolean).join(" ")}
               x={x}
