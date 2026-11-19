@@ -1,17 +1,24 @@
-export const EVALUATION_HISTORY_MIN_MAX_ABS_EVAL = 10;
+export const EVALUATION_HISTORY_MIN_MAX_ABS_EVAL = 5;
 export const EVALUATION_HISTORY_MAX_MAX_ABS_EVAL = 100;
 export const EVALUATION_HISTORY_SCALE_STEP = 10;
+
+const EVALUATION_HISTORY_SCALE_LEVELS = [
+  EVALUATION_HISTORY_MIN_MAX_ABS_EVAL,
+  ...Array.from(
+    { length: EVALUATION_HISTORY_MAX_MAX_ABS_EVAL / EVALUATION_HISTORY_SCALE_STEP },
+    (_, index) => (index + 1) * EVALUATION_HISTORY_SCALE_STEP,
+  ),
+];
 
 export function adjustEvaluationHistoryScale(
   currentMaxAbsEval: number,
   wheelDeltaY: number,
 ): number {
-  const normalizedCurrent = Math.max(
-    EVALUATION_HISTORY_MIN_MAX_ABS_EVAL,
-    Math.min(
-      EVALUATION_HISTORY_MAX_MAX_ABS_EVAL,
-      Math.round(currentMaxAbsEval / EVALUATION_HISTORY_SCALE_STEP)
-        * EVALUATION_HISTORY_SCALE_STEP,
+  const normalizedCurrent = EVALUATION_HISTORY_SCALE_LEVELS.reduce(
+    (nearest, candidate) => (
+      Math.abs(candidate - currentMaxAbsEval) < Math.abs(nearest - currentMaxAbsEval)
+        ? candidate
+        : nearest
     ),
   );
 
@@ -19,11 +26,10 @@ export function adjustEvaluationHistoryScale(
     return normalizedCurrent;
   }
 
-  const next = normalizedCurrent
-    + (wheelDeltaY < 0 ? -EVALUATION_HISTORY_SCALE_STEP : EVALUATION_HISTORY_SCALE_STEP);
+  const currentIndex = EVALUATION_HISTORY_SCALE_LEVELS.indexOf(normalizedCurrent);
+  const nextIndex = currentIndex + (wheelDeltaY < 0 ? -1 : 1);
 
-  return Math.max(
-    EVALUATION_HISTORY_MIN_MAX_ABS_EVAL,
-    Math.min(EVALUATION_HISTORY_MAX_MAX_ABS_EVAL, next),
-  );
+  return EVALUATION_HISTORY_SCALE_LEVELS[
+    Math.max(0, Math.min(EVALUATION_HISTORY_SCALE_LEVELS.length - 1, nextIndex))
+  ];
 }
