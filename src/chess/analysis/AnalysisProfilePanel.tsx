@@ -1,5 +1,9 @@
+import { useCallback, useEffect, useState } from "react";
 import { useI18n } from "../../i18n/I18nProvider";
+import { fetchGameAnalysisRuns } from "../api/analysisApi";
+import type { GameAnalysisRunSummary } from "../types";
 import EvaluationHistoryChart from "../evaluation/EvaluationHistoryChart";
+import AnalysisComparisonDialog from "./AnalysisComparisonDialog";
 import { getAnalysisMoveSelectionForPly } from "./analysisSelectionUtils";
 import type {
   AnalysisReplayContentActions,
@@ -16,6 +20,8 @@ export default function AnalysisProfilePanel({
   actions,
 }: AnalysisProfilePanelProps) {
   const { t } = useI18n();
+  const [runs, setRuns] = useState<GameAnalysisRunSummary[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
   const {
     analysisProfile,
     analysisTotalPlies,
@@ -26,7 +32,18 @@ export default function AnalysisProfilePanel({
     analysisEvaluationError,
     moves,
     engineEval,
+    analysisReplayFinished,
   } = state;
+
+  const refreshRuns = useCallback(() => {
+    void fetchGameAnalysisRuns()
+      .then(setRuns)
+      .catch(() => setRuns([]));
+  }, []);
+
+  useEffect(() => {
+    if (!isAnalysisReplayRunning) refreshRuns();
+  }, [analysisReplayFinished, isAnalysisReplayRunning, refreshRuns]);
 
   const points = analysisProfile.map((point) => ({
     ply: point.ply,
@@ -36,7 +53,8 @@ export default function AnalysisProfilePanel({
   }));
 
   return (
-    <EvaluationHistoryChart
+    <>
+      <EvaluationHistoryChart
       title={t("analysis.history")}
       subtitle={engineEval?.engineName ?? undefined}
       points={points}
@@ -57,7 +75,16 @@ export default function AnalysisProfilePanel({
               Cancel
             </button>
           )
-        : undefined}
+        : runs.length >= 2
+          ? (
+              <button
+                className="analysis-cancel-button"
+                onClick={() => setShowComparison(true)}
+              >
+                {t("analysis.compareRuns")}
+              </button>
+            )
+          : undefined}
       errors={
         <>
           {analysisReplayError && (
@@ -73,6 +100,15 @@ export default function AnalysisProfilePanel({
         </>
       }
       ariaLabel="Evaluation history of the analyzed game"
-    />
+      />
+      {showComparison && (
+        <AnalysisComparisonDialog
+          runs={runs}
+          onClose={() => setShowComparison(false)}
+          onSelectPly={actions.selectPositionByPly}
+          onRunsChanged={refreshRuns}
+        />
+      )}
+    </>
   );
 }

@@ -175,8 +175,59 @@ export interface EngineLine {
   depth: number;
   mateDistance?: number | null;
   moves: string;
+  uciMoves?: string[];
   positions?: string[];
   moveArrows?: BoardArrowMove[];
+}
+
+export interface GameAnalysisRunSummary {
+  id: number;
+  engineName: string;
+  engineProfileId: string;
+  requestedDepth: number;
+  moveTimeSeconds: number;
+  multiPv: number;
+  positionCount: number;
+  maximumDepth: number;
+  createdAt: string;
+  active: boolean;
+}
+
+export interface StoredAnalysisLine {
+  rank: number;
+  evaluation: number;
+  normalizedScore: number;
+  depth: number;
+  mateDistance: number | null;
+  uciMoves: string[];
+}
+
+export interface StoredAnalysisPosition {
+  ply: number;
+  evaluation: number;
+  normalizedScore: number;
+  depth: number;
+  mateDistance: number | null;
+  lines: StoredAnalysisLine[];
+}
+
+export interface AnalysisPositionComparison {
+  ply: number;
+  left: StoredAnalysisPosition;
+  right: StoredAnalysisPosition;
+  differentBestMove: boolean;
+  differentContinuation: boolean;
+  mateDisagreement: boolean;
+  normalizedScoreGap: number;
+  commonPrefixLength: number;
+  leftBestMoveRankOnRight: number | null;
+  rightBestMoveRankOnLeft: number | null;
+}
+
+export interface GameAnalysisComparison {
+  left: GameAnalysisRunSummary;
+  right: GameAnalysisRunSummary;
+  positions: AnalysisPositionComparison[];
 }
 
 export interface EngineEvaluation {

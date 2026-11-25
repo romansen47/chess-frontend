@@ -4,6 +4,8 @@ import type {
   AnalysisVariationMoveResult,
   AnalysisVariationRequest,
   EngineEvaluation,
+  GameAnalysisComparison,
+  GameAnalysisRunSummary,
   PossibleMovesResponse,
 } from "../types";
 import {
@@ -80,4 +82,26 @@ export function fetchNextAnalysisReplayStep(): Promise<AnalysisReplayStep> {
 
 export async function cancelAnalysisReplayRequest(): Promise<void> {
   await fetch("/api/analysis-replay/cancel", { method: "POST", headers: { "Content-Type": "application/json" } });
+}
+
+export function fetchGameAnalysisRuns(): Promise<GameAnalysisRunSummary[]> {
+  return requestJson<GameAnalysisRunSummary[]>("/api/game-analyses");
+}
+
+export function compareGameAnalysisRuns(
+  leftRunId: number,
+  rightRunId: number,
+): Promise<GameAnalysisComparison> {
+  const query = new URLSearchParams({
+    leftRunId: String(leftRunId),
+    rightRunId: String(rightRunId),
+  });
+  return requestJson<GameAnalysisComparison>(`/api/game-analyses/compare?${query}`);
+}
+
+export async function activateGameAnalysisRun(runId: number): Promise<void> {
+  const response = await fetch(`/api/game-analyses/${encodeURIComponent(String(runId))}/active`, {
+    method: "POST",
+  });
+  if (!response.ok) throw new Error(await responseErrorMessage(response));
 }
