@@ -14,7 +14,7 @@ interface AnalysisLineAnimationOptions {
 }
 
 /**
- * Owns the purely visual animation of stored deep-analysis variations.
+ * Owns the purely visual animation of stored game-analysis variations.
  *
  * Evaluation fetching deliberately lives elsewhere; this hook only advances
  * through already available position snapshots.

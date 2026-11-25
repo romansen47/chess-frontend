@@ -13,6 +13,9 @@ export interface ComparisonRunSelection {
   rightId: number;
 }
 
+export const STANDARD_INITIAL_POSITION =
+  "rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR";
+
 /** Keeps A tied to the active run and always chooses a different B. */
 export function initialComparisonRunSelection(
   runs: readonly GameAnalysisRunSummary[],
@@ -65,12 +68,54 @@ export interface ComparisonMoveDisplay {
   uci: string | null;
 }
 
+/** Expands the board portion of a FEN into the 64-character UI position. */
+export function positionStringFromFen(fen: string | null | undefined): string | null {
+  const board = fen?.trim().split(/\s+/, 1)[0];
+  if (!board) return null;
+
+  const ranks = board.split("/");
+  if (ranks.length !== 8) return null;
+
+  let position = "";
+  for (const rank of ranks) {
+    let expandedRank = "";
+    for (const character of rank) {
+      if (character >= "1" && character <= "8") {
+        expandedRank += ".".repeat(Number(character));
+      } else if (/^[prnbqkPRNBQK]$/.test(character)) {
+        expandedRank += character;
+      } else {
+        return null;
+      }
+    }
+    if (expandedRank.length !== 8) return null;
+    position += expandedRank;
+  }
+  return position.length === 64 ? position : null;
+}
+
+/** Resolves the actual game start, including Chess960 and custom FEN games. */
+export function comparisonInitialPosition(
+  metadata: Readonly<Record<string, string>>,
+  standardStartingPosition: boolean | null,
+): string {
+  if (standardStartingPosition !== true) {
+    const fenPosition = positionStringFromFen(metadata.FEN);
+    if (fenPosition) return fenPosition;
+  }
+  return STANDARD_INITIAL_POSITION;
+}
+
 /** Resolves one ply to familiar chess notation and its resulting board. */
 export function comparisonMoveDisplay(
   moves: readonly MoveRow[],
   ply: number,
+  initialPosition: string = STANDARD_INITIAL_POSITION,
+  startLabel: string = "Start",
 ): ComparisonMoveDisplay {
-  if (ply <= 0) return { label: "Start", position: null, uci: null };
+  if (ply <= 0) {
+    return { label: startLabel, position: initialPosition, uci: null };
+  }
   const moveNumber = Math.ceil(ply / 2);
   const row = moves.find((candidate) => candidate.moveNumber === moveNumber);
   const whiteMove = ply % 2 === 1;

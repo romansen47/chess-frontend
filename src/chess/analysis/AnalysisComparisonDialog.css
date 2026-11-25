@@ -50,9 +50,25 @@
 
 .analysis-comparison-selectors label {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(4.5rem, auto) 1fr;
   align-items: center;
   gap: 0.5rem;
+}
+
+.analysis-comparison-selectors label > span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.analysis-comparison-selectors small {
+  padding: 0.12rem 0.35rem;
+  border-radius: 999px;
+  background: #285581;
+  color: #dceeff;
+  font-size: 0.68rem;
+  font-weight: 600;
 }
 
 .analysis-comparison-selectors select,
@@ -109,8 +125,8 @@
 
 .analysis-comparison-body {
   display: grid;
-  grid-template-columns: minmax(180px, 0.3fr) 1fr;
-  gap: 0.8rem;
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+  gap: 1rem;
 }
 
 .analysis-comparison-list {
@@ -132,13 +148,16 @@
 
 .analysis-comparison-list button.selected { background: #3c5267; }
 
-.analysis-comparison-sides { align-items: stretch; }
+.analysis-comparison-sides {
+  align-items: stretch;
+  gap: 0.75rem;
+}
 
 .analysis-comparison-detail {
   display: grid;
-  grid-template-columns: minmax(190px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(210px, 250px) minmax(0, 1fr);
   align-items: start;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .analysis-comparison-board-wrap {
@@ -147,7 +166,7 @@
 }
 
 .analysis-comparison-board {
-  width: min(100%, 260px);
+  width: min(100%, 250px);
   border-radius: 5px;
 }
 
@@ -163,6 +182,35 @@
   border: 1px solid #484848;
   border-radius: 6px;
   background: #222;
+}
+
+.analysis-comparison-side h3 {
+  margin-bottom: 0.65rem;
+  color: #dceeff;
+  font-size: 0.95rem;
+}
+
+.analysis-comparison-side dl {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.analysis-comparison-side dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.analysis-comparison-side dt {
+  color: #bdbdbd;
+}
+
+.analysis-comparison-side dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
 }
 
 .analysis-comparison-side code {

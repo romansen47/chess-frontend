@@ -50,7 +50,7 @@ export const englishSettingsTranslations = {
   "settings.displaySettings": "Analysis Display",
   "settings.displaySettingsDescription": "Visual defaults for analysis boards on this device.",
   "settings.showEvaluationArrows": "Show engine arrows",
-  "settings.showEvaluationArrowsDescription": "Show up to the three best live-evaluation or deep-analysis moves as red arrows on the main board.",
+  "settings.showEvaluationArrowsDescription": "Show up to the three best live-evaluation or game-analysis moves as red arrows on the main board.",
   "settings.engineArrowCount": "Number of engine arrows",
   "settings.engineArrowCountDescription": "Choose how many of the engine's best moves are shown on the main board.",
   "settings.animateEngineVariations": "Animate engine variations",

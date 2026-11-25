@@ -109,6 +109,8 @@ export default function AnalysisProfilePanel({
           onRunsChanged={refreshRuns}
           moves={moves}
           boardOrientation={state.boardOrientation}
+          analysisGameMetadata={state.analysisGameMetadata}
+          analysisStandardStartingPosition={state.analysisStandardStartingPosition}
         />
       )}
     </>

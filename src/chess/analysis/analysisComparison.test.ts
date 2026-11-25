@@ -4,10 +4,12 @@ import type {
   GameAnalysisRunSummary,
 } from "../types";
 import {
+  comparisonInitialPosition,
   comparisonMoveDisplay,
   initialComparisonRunSelection,
   isAnalysisDifference,
   principalVariationLabel,
+  positionStringFromFen,
   selectComparisonLeftRun,
 } from "./analysisComparison";
 
@@ -64,6 +66,24 @@ describe("analysis comparison", () => {
       uci: "f8e7",
     });
     expect(comparisonMoveDisplay(rows, 14).label).toBe("7... Qxd4");
+  });
+
+  it("renders the actual starting position, including a custom FEN", () => {
+    const fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b HAha - 0 1";
+    const expected = "rnbqkbnrpppppppp....................P...........PPPP.PPPRNBQKBNR";
+
+    expect(positionStringFromFen(fen)).toBe(expected);
+    expect(comparisonInitialPosition({ FEN: fen }, false)).toBe(expected);
+    expect(comparisonMoveDisplay([], 0, expected, "Startposition")).toEqual({
+      label: "Startposition",
+      position: expected,
+      uci: null,
+    });
+  });
+
+  it("falls back to the classical board for standard and invalid FEN games", () => {
+    expect(comparisonInitialPosition({ FEN: "invalid" }, false)).toHaveLength(64);
+    expect(comparisonInitialPosition({ FEN: "invalid" }, true)).toContain("rnbqkbnr");
   });
 });
 

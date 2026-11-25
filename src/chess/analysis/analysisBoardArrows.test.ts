@@ -37,7 +37,7 @@ describe("analysis board decorations", () => {
     expect(buildAnalysisMoveHighlightSquares(baseOptions)).toEqual(["g1", "f3"]);
   });
 
-  it("shows the top three deep-analysis moves as distinct red arrows", () => {
+  it("shows the top three game-analysis moves as distinct red arrows", () => {
     const arrows = buildAnalysisBoardArrows(baseOptions);
 
     expect(arrows.map(({ from, to }) => [from, to])).toEqual([
@@ -75,7 +75,7 @@ describe("analysis board decorations", () => {
     expect(buildAnalysisMoveHighlightSquares(options)).toEqual(["g1", "f3"]);
   });
 
-  it("prefers live-evaluation lines over stored deep-analysis lines", () => {
+  it("prefers live-evaluation lines over stored game-analysis lines", () => {
     const liveEvaluation: EngineEvaluation = {
       eval: 0.7,
       bar: 0.6,
