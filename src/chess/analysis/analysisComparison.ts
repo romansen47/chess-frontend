@@ -3,6 +3,7 @@ import type {
   GameAnalysisRunSummary,
   MoveRow,
 } from "../types";
+import { createChess960InitialFen } from "../board/boardUtils";
 
 export type AnalysisDifferenceFilter = "all" | "bestMove" | "continuation" | "score" | "mate";
 
@@ -11,6 +12,12 @@ export const SIGNIFICANT_NORMALIZED_SCORE_GAP = 8;
 export interface ComparisonRunSelection {
   leftId: number;
   rightId: number;
+}
+
+export interface ComparisonMovePair {
+  moveNumber: number;
+  white?: AnalysisPositionComparison;
+  black?: AnalysisPositionComparison;
 }
 
 export const STANDARD_INITIAL_POSITION =
@@ -115,6 +122,55 @@ export function comparisonInitialPosition(
     if (fenPosition) return fenPosition;
   }
   return STANDARD_INITIAL_POSITION;
+}
+
+/** Resolves the FEN required to translate stored UCI engine lines into display notation. */
+export function comparisonInitialFen(
+  metadata: Readonly<Record<string, string>>,
+  standardStartingPosition: boolean | null,
+): string {
+  if (standardStartingPosition !== true && metadata.FEN?.trim()) {
+    return metadata.FEN.trim();
+  }
+  return createChess960InitialFen(518);
+}
+
+/** Returns the canonical game history leading to one analysed position. */
+export function comparisonUciHistory(
+  moves: readonly MoveRow[],
+  ply: number,
+): string[] {
+  const history: string[] = [];
+  for (const row of moves) {
+    if (history.length >= ply) break;
+    if (row.whiteUci) history.push(row.whiteUci);
+    if (history.length >= ply) break;
+    if (row.blackUci) history.push(row.blackUci);
+  }
+  return history;
+}
+
+/** Groups filtered half-moves into the familiar white/black move-list rows. */
+export function groupComparisonMoves(
+  positions: readonly AnalysisPositionComparison[],
+): ComparisonMovePair[] {
+  const rows = new Map<number, ComparisonMovePair>();
+  for (const position of positions) {
+    if (position.ply <= 0) continue;
+    const moveNumber = Math.ceil(position.ply / 2);
+    const row = rows.get(moveNumber) ?? { moveNumber };
+    if (position.ply % 2 === 1) row.white = position;
+    else row.black = position;
+    rows.set(moveNumber, row);
+  }
+  return [...rows.values()].sort((left, right) => left.moveNumber - right.moveNumber);
+}
+
+/** Returns SAN only, without the move number already displayed by the row. */
+export function comparisonMoveSan(moves: readonly MoveRow[], ply: number): string {
+  const moveNumber = Math.ceil(ply / 2);
+  const row = moves.find((candidate) => candidate.moveNumber === moveNumber);
+  return (ply % 2 === 1 ? row?.white : row?.black) ?? "?";
 }
 
 /** Resolves one ply to familiar chess notation and its resulting board. */

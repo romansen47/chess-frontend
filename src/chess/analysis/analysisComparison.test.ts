@@ -4,9 +4,13 @@ import type {
   GameAnalysisRunSummary,
 } from "../types";
 import {
+  comparisonInitialFen,
   comparisonInitialPosition,
   comparisonMoveDisplay,
+  comparisonMoveSan,
+  comparisonUciHistory,
   engineEvaluationLabel,
+  groupComparisonMoves,
   initialComparisonRunSelection,
   isAnalysisDifference,
   principalVariationLabel,
@@ -74,6 +78,29 @@ describe("analysis comparison", () => {
       uci: "f8e7",
     });
     expect(comparisonMoveDisplay(rows, 14).label).toBe("7... Qxd4");
+    expect(comparisonMoveSan(rows, 13)).toBe("Be7");
+    expect(comparisonMoveSan(rows, 14)).toBe("Qxd4");
+  });
+
+  it("groups white and black half-moves into familiar move-list rows", () => {
+    const white = { ...base, ply: 1 };
+    const black = { ...base, ply: 2 };
+    const nextWhite = { ...base, ply: 3 };
+
+    expect(groupComparisonMoves([white, black, nextWhite])).toEqual([
+      { moveNumber: 1, white, black },
+      { moveNumber: 2, white: nextWhite },
+    ]);
+  });
+
+  it("builds the canonical UCI history up to the selected ply", () => {
+    const rows = [
+      { moveNumber: 1, whiteUci: "e2e4", blackUci: "e7e5" },
+      { moveNumber: 2, whiteUci: "g1f3", blackUci: "b8c6" },
+    ];
+
+    expect(comparisonUciHistory(rows, 0)).toEqual([]);
+    expect(comparisonUciHistory(rows, 3)).toEqual(["e2e4", "e7e5", "g1f3"]);
   });
 
   it("renders the actual starting position, including a custom FEN", () => {
@@ -82,6 +109,7 @@ describe("analysis comparison", () => {
 
     expect(positionStringFromFen(fen)).toBe(expected);
     expect(comparisonInitialPosition({ FEN: fen }, false)).toBe(expected);
+    expect(comparisonInitialFen({ FEN: fen }, false)).toBe(fen);
     expect(comparisonMoveDisplay([], 0, expected, "Startposition")).toEqual({
       label: "Startposition",
       position: expected,
@@ -92,6 +120,7 @@ describe("analysis comparison", () => {
   it("falls back to the classical board for standard and invalid FEN games", () => {
     expect(comparisonInitialPosition({ FEN: "invalid" }, false)).toHaveLength(64);
     expect(comparisonInitialPosition({ FEN: "invalid" }, true)).toContain("rnbqkbnr");
+    expect(comparisonInitialFen({}, true)).toContain("rnbqkbnr/pppppppp");
   });
 });
 

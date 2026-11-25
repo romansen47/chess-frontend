@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import { mapPositionStringToLocalPieces } from "../board/positionUtils";
 import { piecesMatchPosition, transitionBoardPosition } from "../board/pieceTransitions";
-import { getAnalysisMoveSelectionForPly } from "./analysisSelectionUtils";
+import {
+  getAnalysisMoveSelectionForPly,
+  getAnalysisNavigationSound,
+} from "./analysisSelectionUtils";
 import type { UseAnalysisControllerOptions } from "./analysisControllerTypes";
 import type { AnalysisState } from "./useAnalysisState";
 
@@ -22,6 +25,7 @@ export function useAnalysisNavigation(
     selectOptions?: { updateBoard?: boolean },
   ) {
     if (!state.analysisReplayActiveRef.current || !position || position.length !== 64) return;
+    const positionChanged = state.analysisSelectedPlyRef.current !== ply;
     const hadVariation = state.analysisVariationMovesRef.current.length > 0;
     if (hadVariation) void dependencies.stopAnalysisEvaluation();
     dependencies.resetAnalysisVariation();
@@ -38,6 +42,7 @@ export function useAnalysisNavigation(
       options.setPieces(mapPositionStringToLocalPieces(position));
     }
     options.setLastMove(null);
+    if (positionChanged) void options.playGameSound(getAnalysisNavigationSound(san));
   }
 
   function selectAnalysisPositionByPly(ply: number) {

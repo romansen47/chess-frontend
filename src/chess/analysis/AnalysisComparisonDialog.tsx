@@ -4,6 +4,7 @@ import {
   activateGameAnalysisRun,
   compareGameAnalysisRuns,
 } from "../api/analysisApi";
+import { hydrateBrowserEngineLines } from "../api/browserLineDisplayApi";
 import type {
   AnalysisPositionComparison,
   GameAnalysisComparison,
@@ -16,9 +17,13 @@ import AnalysisComparisonChart from "./AnalysisComparisonChart";
 import AnalysisStaticBoard from "./AnalysisStaticBoard";
 import {
   type AnalysisDifferenceFilter,
+  comparisonInitialFen,
   comparisonInitialPosition,
   comparisonMoveDisplay,
+  comparisonMoveSan,
+  comparisonUciHistory,
   engineEvaluationLabel,
+  groupComparisonMoves,
   initialComparisonRunSelection,
   isAnalysisDifference,
   selectComparisonLeftRun,
@@ -52,10 +57,12 @@ function PositionSuggestions({
   label,
   profileName,
   position,
+  moveLabels,
 }: {
   label: string;
   profileName: string;
   position: StoredAnalysisPosition;
+  moveLabels: readonly string[];
 }) {
   const { t } = useI18n();
   const suggestions = position.lines.slice(0, 3);
@@ -70,10 +77,12 @@ function PositionSuggestions({
         <span>{t("analysis.comparisonEvaluation")}</span>
       </div>
       <ol className="analysis-comparison-suggestions" aria-label={t("analysis.comparisonSuggestions")}>
-        {suggestions.map((suggestion) => (
+        {suggestions.map((suggestion, index) => (
           <li key={suggestion.rank}>
             <span className="analysis-comparison-suggestion-rank">{suggestion.rank}.</span>
-            <code>{suggestion.uciMoves[0] ?? "—"}</code>
+            <span className="analysis-comparison-suggestion-move">
+              {moveLabels[index] ?? "…"}
+            </span>
             <strong>{engineEvaluationLabel(
               suggestion.evaluation,
               suggestion.mateDistance,
@@ -145,6 +154,8 @@ export default function AnalysisComparisonDialog({
     () => comparison?.positions.filter((position) => isAnalysisDifference(position, filter)) ?? [],
     [comparison, filter],
   );
+  const startPosition = differences.find((position) => position.ply === 0);
+  const movePairs = useMemo(() => groupComparisonMoves(differences), [differences]);
   const selected = comparison?.positions.find((position) => position.ply === selectedPly)
     ?? differences[0]
     ?? null;
@@ -153,6 +164,57 @@ export default function AnalysisComparisonDialog({
     analysisStandardStartingPosition,
   );
   const startLabel = t("analysis.comparisonStartPosition");
+  const [suggestionMoveLabels, setSuggestionMoveLabels] = useState<{
+    left: string[];
+    right: string[];
+  }>({ left: [], right: [] });
+
+  useEffect(() => {
+    if (!selected) {
+      setSuggestionMoveLabels({ left: [], right: [] });
+      return;
+    }
+    let cancelled = false;
+    const leftLines = selected.left.lines.slice(0, 3);
+    const rightLines = selected.right.lines.slice(0, 3);
+    const sourceLines = [...leftLines, ...rightLines];
+    setSuggestionMoveLabels({ left: [], right: [] });
+    void hydrateBrowserEngineLines(
+      {
+        initialFen: comparisonInitialFen(
+          analysisGameMetadata,
+          analysisStandardStartingPosition,
+        ),
+        uciMoves: comparisonUciHistory(moves, selected.ply),
+      },
+      sourceLines.map((line) => ({
+        eval: line.evaluation,
+        depth: line.depth,
+        mateDistance: line.mateDistance,
+        moves: line.uciMoves.join(" "),
+      })),
+    ).then((hydrated) => {
+      if (cancelled) return;
+      const labels = hydrated.map((line) => line.moves.trim().split(/\s+/, 1)[0] || "—");
+      setSuggestionMoveLabels({
+        left: labels.slice(0, leftLines.length),
+        right: labels.slice(leftLines.length),
+      });
+    }).catch(() => {
+      if (!cancelled) {
+        setSuggestionMoveLabels({
+          left: leftLines.map(() => "—"),
+          right: rightLines.map(() => "—"),
+        });
+      }
+    });
+    return () => { cancelled = true; };
+  }, [
+    selected,
+    moves,
+    analysisGameMetadata,
+    analysisStandardStartingPosition,
+  ]);
 
   function choosePosition(position: AnalysisPositionComparison) {
     setSelectedPly(position.ply);
@@ -247,25 +309,31 @@ export default function AnalysisComparisonDialog({
 
             <div className="analysis-comparison-body">
               <div className="analysis-comparison-list">
-                {differences.map((position) => (
+                {startPosition && (
                   <button
                     type="button"
-                    key={position.ply}
-                    className={position.ply === selected?.ply ? "selected" : ""}
-                    onClick={() => choosePosition(position)}
+                    className={selected?.ply === 0 ? "analysis-comparison-start selected" : "analysis-comparison-start"}
+                    onClick={() => choosePosition(startPosition)}
                   >
-                    <strong>{comparisonMoveDisplay(
-                      moves,
-                      position.ply,
-                      initialPosition,
-                      startLabel,
-                    ).label}</strong>
-                    <span>
-                      A {engineEvaluationLabel(position.left.evaluation, position.left.mateDistance)}
-                      {" · "}
-                      B {engineEvaluationLabel(position.right.evaluation, position.right.mateDistance)}
-                    </span>
+                    {startLabel}
                   </button>
+                )}
+                {movePairs.map((pair) => (
+                  <div className="analysis-comparison-move-row" key={pair.moveNumber}>
+                    <span className="analysis-comparison-move-number">{pair.moveNumber}.</span>
+                    {[pair.white, pair.black].map((position, index) => position ? (
+                      <button
+                        type="button"
+                        key={position.ply}
+                        className={position.ply === selected?.ply ? "selected" : ""}
+                        onClick={() => choosePosition(position)}
+                      >
+                        {comparisonMoveSan(moves, position.ply)}
+                      </button>
+                    ) : (
+                      <span key={index} className="analysis-comparison-move-empty" />
+                    ))}
+                  </div>
                 ))}
                 {differences.length === 0 && <p>{t("analysis.comparisonNoDifferences")}</p>}
               </div>
@@ -286,8 +354,18 @@ export default function AnalysisComparisonDialog({
                     </div>
                   )}
                   <div className="analysis-comparison-sides">
-                    <PositionSuggestions label="A" profileName={comparison.left.profileName} position={selected.left} />
-                    <PositionSuggestions label="B" profileName={comparison.right.profileName} position={selected.right} />
+                    <PositionSuggestions
+                      label="A"
+                      profileName={comparison.left.profileName}
+                      position={selected.left}
+                      moveLabels={suggestionMoveLabels.left}
+                    />
+                    <PositionSuggestions
+                      label="B"
+                      profileName={comparison.right.profileName}
+                      position={selected.right}
+                      moveLabels={suggestionMoveLabels.right}
+                    />
                   </div>
                   <p>
                     {t("analysis.comparisonCommonPrefix", { count: selected.commonPrefixLength })}

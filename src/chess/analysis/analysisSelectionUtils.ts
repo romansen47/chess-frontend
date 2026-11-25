@@ -1,4 +1,4 @@
-import type { AnalysisProfilePoint, EngineLine, MoveRow, PieceColor } from "../types";
+import type { AnalysisProfilePoint, EngineLine, GameSound, MoveRow, PieceColor } from "../types";
 import { getDefaultAnalysisLineIndex } from "./analysisUtils";
 
 export interface AnalysisMoveSelection {
@@ -39,6 +39,11 @@ export function getAnalysisSideToMove(
 ): PieceColor | null {
   if (selectedPly == null) return null;
   return (selectedPly + variationMoveCount) % 2 === 0 ? "white" : "black";
+}
+
+/** Uses the same move/capture distinction as the regular board while navigating analysis. */
+export function getAnalysisNavigationSound(san: string | undefined): GameSound {
+  return san?.includes("x") ? "capture" : "move";
 }
 
 export function getEffectiveAnalysisLineIndex(
