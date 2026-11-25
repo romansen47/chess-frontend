@@ -146,10 +146,17 @@
   cursor: pointer;
 }
 
+.analysis-comparison-list button > span {
+  color: #d2d2d2;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 .analysis-comparison-list button.selected { background: #3c5267; }
 
 .analysis-comparison-sides {
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -184,50 +191,85 @@
   background: #222;
 }
 
+.analysis-comparison-side > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
 .analysis-comparison-side h3 {
-  margin-bottom: 0.65rem;
   color: #dceeff;
   font-size: 0.95rem;
 }
 
-.analysis-comparison-side dl {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0;
-}
-
-.analysis-comparison-side dl > div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem;
-  align-items: baseline;
-}
-
-.analysis-comparison-side dt {
+.analysis-comparison-side > header span,
+.analysis-comparison-suggestion-head {
   color: #bdbdbd;
+  font-size: 0.76rem;
 }
 
-.analysis-comparison-side dd {
+.analysis-comparison-suggestion-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  margin: 0 0 0.3rem 1.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.analysis-comparison-suggestions {
+  display: grid;
+  gap: 0.25rem;
   margin: 0;
-  font-weight: 700;
-  text-align: right;
+  padding: 0;
+  list-style: none;
 }
 
-.analysis-comparison-side code {
-  display: block;
-  margin-top: 0.6rem;
-  overflow-wrap: anywhere;
-  color: #ddd;
+.analysis-comparison-suggestions li {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(4rem, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.45rem 0.5rem;
+  border-radius: 4px;
+  background: #2b2b2b;
+}
+
+.analysis-comparison-suggestion-rank {
+  color: #9a9a9a;
+}
+
+.analysis-comparison-suggestions code {
+  color: #f1f1f1;
+  font-size: 0.9rem;
+}
+
+.analysis-comparison-suggestions strong {
+  color: #f1f1f1;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-comparison-no-suggestions {
+  margin: 0;
+  color: #bdbdbd;
+  font-style: italic;
+}
+
+@media (max-width: 980px) {
+  .analysis-comparison-detail {
+    grid-template-columns: minmax(190px, 220px) minmax(0, 1fr);
+  }
+
+  .analysis-comparison-sides {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
   .analysis-comparison-selectors,
   .analysis-comparison-body {
     grid-template-columns: 1fr;
-  }
-
-  .analysis-comparison-sides {
-    flex-direction: column;
   }
 
   .analysis-comparison-detail {

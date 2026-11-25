@@ -62,6 +62,17 @@ export function principalVariationLabel(moves: readonly string[] | undefined): s
   return moves?.length ? moves.join(" ") : "—";
 }
 
+/** Formats the engine's original evaluation without normalized-score conversion. */
+export function engineEvaluationLabel(
+  evaluation: number,
+  mateDistance: number | null,
+): string {
+  if (mateDistance != null) {
+    return mateDistance > 0 ? `#${mateDistance}` : `#−${Math.abs(mateDistance)}`;
+  }
+  return `${evaluation >= 0 ? "+" : ""}${evaluation.toFixed(2)}`;
+}
+
 export interface ComparisonMoveDisplay {
   label: string;
   position: string | null;

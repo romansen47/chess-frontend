@@ -6,6 +6,7 @@ import type {
 import {
   comparisonInitialPosition,
   comparisonMoveDisplay,
+  engineEvaluationLabel,
   initialComparisonRunSelection,
   isAnalysisDifference,
   principalVariationLabel,
@@ -48,6 +49,13 @@ describe("analysis comparison", () => {
   it("formats canonical variants without inventing notation", () => {
     expect(principalVariationLabel(["e2e4", "e7e5"])).toBe("e2e4 e7e5");
     expect(principalVariationLabel([])).toBe("—");
+  });
+
+  it("shows original engine evaluations, including mate scores", () => {
+    expect(engineEvaluationLabel(0.38, null)).toBe("+0.38");
+    expect(engineEvaluationLabel(-1.25, null)).toBe("-1.25");
+    expect(engineEvaluationLabel(99, 3)).toBe("#3");
+    expect(engineEvaluationLabel(-99, -2)).toBe("#−2");
   });
 
   it("formats plies as ordinary move notation and provides the board position", () => {

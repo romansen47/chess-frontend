@@ -18,9 +18,9 @@ import {
   type AnalysisDifferenceFilter,
   comparisonInitialPosition,
   comparisonMoveDisplay,
+  engineEvaluationLabel,
   initialComparisonRunSelection,
   isAnalysisDifference,
-  principalVariationLabel,
   selectComparisonLeftRun,
 } from "./analysisComparison";
 import "./AnalysisComparisonDialog.css";
@@ -48,43 +48,44 @@ function runLabel(run: GameAnalysisRunSummary): string {
   return `${run.profileName} · MultiPV ${run.multiPv} · ${run.createdAt}`;
 }
 
-function PositionSide({
-  title,
+function PositionSuggestions({
+  label,
+  profileName,
   position,
-  foreignRank,
 }: {
-  title: string;
+  label: string;
+  profileName: string;
   position: StoredAnalysisPosition;
-  foreignRank: number | null;
 }) {
   const { t } = useI18n();
-  const best = position.lines[0];
+  const suggestions = position.lines.slice(0, 3);
   return (
     <section className="analysis-comparison-side">
-      <h3>{title}</h3>
-      <dl>
-        <div>
-          <dt>{t("analysis.comparisonEvaluation")}</dt>
-          <dd>{position.evaluation >= 0 ? "+" : ""}{position.evaluation.toFixed(2)}</dd>
-        </div>
-        <div>
-          <dt>{t("analysis.comparisonDepthLabel")}</dt>
-          <dd>{position.depth}</dd>
-        </div>
-        <div>
-          <dt>{t("analysis.comparisonNormalizedScoreLabel")}</dt>
-          <dd>{position.normalizedScore.toFixed(2)}</dd>
-        </div>
-        <div>
-          <dt>{t("analysis.comparisonBestMoveLabel")}</dt>
-          <dd>{best?.uciMoves[0] ?? "—"}</dd>
-        </div>
-        <div>
-          <dt>{t("analysis.comparisonRankOtherLabel")}</dt>
-          <dd>{foreignRank ?? t("analysis.comparisonNotStored")}</dd>
-        </div>
-      </dl>
-      <code>{principalVariationLabel(best?.uciMoves)}</code>
+      <header>
+        <h3>{label} · {profileName}</h3>
+        <span>{t("analysis.comparisonDepth", { depth: position.depth })}</span>
+      </header>
+      <div className="analysis-comparison-suggestion-head" aria-hidden="true">
+        <span>{t("analysis.comparisonMove")}</span>
+        <span>{t("analysis.comparisonEvaluation")}</span>
+      </div>
+      <ol className="analysis-comparison-suggestions" aria-label={t("analysis.comparisonSuggestions")}>
+        {suggestions.map((suggestion) => (
+          <li key={suggestion.rank}>
+            <span className="analysis-comparison-suggestion-rank">{suggestion.rank}.</span>
+            <code>{suggestion.uciMoves[0] ?? "—"}</code>
+            <strong>{engineEvaluationLabel(
+              suggestion.evaluation,
+              suggestion.mateDistance,
+            )}</strong>
+          </li>
+        ))}
+      </ol>
+      {suggestions.length === 0 && (
+        <p className="analysis-comparison-no-suggestions">
+          {t("analysis.comparisonNoSuggestions")}
+        </p>
+      )}
     </section>
   );
 }
@@ -167,6 +168,10 @@ export default function AnalysisComparisonDialog({
   const selectedMove = selected
     ? comparisonMoveDisplay(moves, selected.ply, initialPosition, startLabel)
     : null;
+  const selectedBoardPosition = selected?.ply === 0
+    ? initialPosition
+    : selectedMove?.position ?? null;
+  const selectedUci = selectedMove?.uci ?? null;
 
   return (
     <div className="analysis-comparison-dialog" role="dialog" aria-modal="true" aria-labelledby="analysis-comparison-title">
@@ -255,7 +260,11 @@ export default function AnalysisComparisonDialog({
                       initialPosition,
                       startLabel,
                     ).label}</strong>
-                    <span>Δ {position.normalizedScoreGap.toFixed(2)}</span>
+                    <span>
+                      A {engineEvaluationLabel(position.left.evaluation, position.left.mateDistance)}
+                      {" · "}
+                      B {engineEvaluationLabel(position.right.evaluation, position.right.mateDistance)}
+                    </span>
                   </button>
                 ))}
                 {differences.length === 0 && <p>{t("analysis.comparisonNoDifferences")}</p>}
@@ -263,22 +272,22 @@ export default function AnalysisComparisonDialog({
 
               {selected && (
                 <div className="analysis-comparison-detail">
-                  {selectedMove?.position && (
+                  {selectedBoardPosition && (
                     <div className="analysis-comparison-board-wrap">
-                      <strong>{selectedMove.label}</strong>
+                      <strong>{selectedMove?.label ?? startLabel}</strong>
                       <AnalysisStaticBoard
-                        position={selectedMove.position}
+                        position={selectedBoardPosition}
                         orientation={boardOrientation}
-                        highlightedMove={selectedMove.uci && selectedMove.uci.length >= 4
-                          ? { from: selectedMove.uci.slice(0, 2), to: selectedMove.uci.slice(2, 4) }
+                        highlightedMove={selectedUci && selectedUci.length >= 4
+                          ? { from: selectedUci.slice(0, 2), to: selectedUci.slice(2, 4) }
                           : null}
                         className="analysis-comparison-board"
                       />
                     </div>
                   )}
                   <div className="analysis-comparison-sides">
-                    <PositionSide title={`A · ${comparison.left.profileName}`} position={selected.left} foreignRank={selected.leftBestMoveRankOnRight} />
-                    <PositionSide title={`B · ${comparison.right.profileName}`} position={selected.right} foreignRank={selected.rightBestMoveRankOnLeft} />
+                    <PositionSuggestions label="A" profileName={comparison.left.profileName} position={selected.left} />
+                    <PositionSuggestions label="B" profileName={comparison.right.profileName} position={selected.right} />
                   </div>
                   <p>
                     {t("analysis.comparisonCommonPrefix", { count: selected.commonPrefixLength })}
