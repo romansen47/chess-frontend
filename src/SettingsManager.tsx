@@ -35,7 +35,7 @@ const EMPTY_ASSIGNMENTS: EngineProfileAssignments = {
   whitePlayerProfileId: null,
   blackPlayerProfileId: null,
   evaluationProfileId: null,
-  deepAnalysisProfileId: null,
+  gameAnalysisProfileId: null,
 };
 
 function copyAssignments(

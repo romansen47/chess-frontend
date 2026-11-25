@@ -2,7 +2,7 @@ export type NativeEngineRole =
   | "WHITE_PLAYER"
   | "BLACK_PLAYER"
   | "EVALUATION"
-  | "DEEP_ANALYSIS";
+  | "GAME_ANALYSIS";
 
 export type NativeEngineAvailabilityReason =
   | "AVAILABLE"
@@ -22,7 +22,7 @@ export interface EngineCapabilities {
   whitePlayer: EngineCapability;
   blackPlayer: EngineCapability;
   evaluation: EngineCapability;
-  deepAnalysis: EngineCapability;
+  gameAnalysis: EngineCapability;
 }
 
 export interface EngineUnavailableErrorPayload {

@@ -9,7 +9,7 @@ interface LiveEvaluationViewProps {
   evaluationKey: string | null;
   activePly: number | null;
   variationMode: boolean;
-  deepAnalysisRunning?: boolean;
+  gameAnalysisRunning?: boolean;
   orientation?: BoardOrientation;
   animateVariations?: boolean;
   animationIntervalMs?: number;
@@ -28,7 +28,7 @@ export default function LiveEvaluationView({
   evaluationKey,
   activePly,
   variationMode,
-  deepAnalysisRunning = false,
+  gameAnalysisRunning = false,
   orientation = "white",
   animateVariations = true,
   animationIntervalMs = 1000,
@@ -72,8 +72,8 @@ export default function LiveEvaluationView({
         <div className="analysis-detail-placeholder">
           {evaluation
             ? t("analysis.noBoardPositionsVariation")
-            : deepAnalysisRunning && !variationMode
-              ? t("analysis.liveEvaluationUnavailableDuringDeepAnalysis")
+            : gameAnalysisRunning && !variationMode
+              ? t("analysis.liveEvaluationUnavailableDuringGameAnalysis")
               : t("analysis.enableEvaluationBar")}
         </div>
       </div>
@@ -83,8 +83,8 @@ export default function LiveEvaluationView({
 
         {!evaluation && (
           <div className="analysis-detail-placeholder analysis-evaluation-placeholder">
-            {deepAnalysisRunning && !variationMode
-              ? t("analysis.liveEvaluationUnavailableDuringDeepAnalysis")
+            {gameAnalysisRunning && !variationMode
+              ? t("analysis.liveEvaluationUnavailableDuringGameAnalysis")
               : variationMode
                 ? t("analysis.evaluationCalculating")
                 : activePly

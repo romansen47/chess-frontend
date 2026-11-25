@@ -8,13 +8,19 @@ import type {
   AnalysisPositionComparison,
   GameAnalysisComparison,
   GameAnalysisRunSummary,
+  MoveRow,
   StoredAnalysisPosition,
 } from "../types";
+import type { BoardOrientation } from "../board/boardOrientation";
 import AnalysisComparisonChart from "./AnalysisComparisonChart";
+import AnalysisStaticBoard from "./AnalysisStaticBoard";
 import {
   type AnalysisDifferenceFilter,
+  comparisonMoveDisplay,
+  initialComparisonRunSelection,
   isAnalysisDifference,
   principalVariationLabel,
+  selectComparisonLeftRun,
 } from "./analysisComparison";
 import "./AnalysisComparisonDialog.css";
 
@@ -23,6 +29,8 @@ interface AnalysisComparisonDialogProps {
   onClose: () => void;
   onSelectPly: (ply: number) => void;
   onRunsChanged: () => void;
+  moves: MoveRow[];
+  boardOrientation: BoardOrientation;
 }
 
 const FILTER_TRANSLATION_KEYS = {
@@ -37,7 +45,7 @@ function runLabel(run: GameAnalysisRunSummary): string {
   const limit = run.requestedDepth > 0
     ? `depth ${run.requestedDepth}`
     : `${run.moveTimeSeconds}s`;
-  return `${run.active ? "✓ " : ""}${run.engineName} · ${limit} · MultiPV ${run.multiPv} · ${run.createdAt}`;
+  return `${run.profileName} · ${limit} · MultiPV ${run.multiPv} · ${run.createdAt}`;
 }
 
 function PositionSide({
@@ -70,10 +78,13 @@ export default function AnalysisComparisonDialog({
   onClose,
   onSelectPly,
   onRunsChanged,
+  moves,
+  boardOrientation,
 }: AnalysisComparisonDialogProps) {
   const { t } = useI18n();
-  const [leftId, setLeftId] = useState(runs[0]?.id ?? 0);
-  const [rightId, setRightId] = useState(runs[1]?.id ?? 0);
+  const initialSelection = initialComparisonRunSelection(runs);
+  const [leftId, setLeftId] = useState(initialSelection.leftId);
+  const [rightId, setRightId] = useState(initialSelection.rightId);
   const [comparison, setComparison] = useState<GameAnalysisComparison | null>(null);
   const [selectedPly, setSelectedPly] = useState<number | null>(null);
   const [filter, setFilter] = useState<AnalysisDifferenceFilter>("all");
@@ -98,6 +109,19 @@ export default function AnalysisComparisonDialog({
     return () => { cancelled = true; };
   }, [leftId, rightId]);
 
+  useEffect(() => {
+    if (!leftId) return;
+    let cancelled = false;
+    void activateGameAnalysisRun(leftId)
+      .then(() => {
+        if (!cancelled) onRunsChanged();
+      })
+      .catch((reason: unknown) => {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason));
+      });
+    return () => { cancelled = true; };
+  }, [leftId, onRunsChanged]);
+
   const differences = useMemo(
     () => comparison?.positions.filter((position) => isAnalysisDifference(position, filter)) ?? [],
     [comparison, filter],
@@ -111,14 +135,15 @@ export default function AnalysisComparisonDialog({
     onSelectPly(position.ply);
   }
 
-  async function activate(runId: number) {
-    try {
-      await activateGameAnalysisRun(runId);
-      onRunsChanged();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    }
+  function chooseLeftRun(nextLeftId: number) {
+    const next = selectComparisonLeftRun(runs, nextLeftId, rightId);
+    setLeftId(next.leftId);
+    setRightId(next.rightId);
   }
+
+  const selectedMove = selected
+    ? comparisonMoveDisplay(moves, selected.ply)
+    : null;
 
   return (
     <div className="analysis-comparison-dialog" role="dialog" aria-modal="true" aria-labelledby="analysis-comparison-title">
@@ -131,25 +156,25 @@ export default function AnalysisComparisonDialog({
         <div className="analysis-comparison-selectors">
           <label>
             A
-            <select value={leftId} onChange={(event) => setLeftId(Number(event.target.value))}>
+            <select value={leftId} onChange={(event) => chooseLeftRun(Number(event.target.value))}>
               {runs.map((run) => <option key={run.id} value={run.id}>{runLabel(run)}</option>)}
             </select>
-            <button type="button" onClick={() => void activate(leftId)}>{t("analysis.useRun")}</button>
           </label>
           <label>
             B
             <select value={rightId} onChange={(event) => setRightId(Number(event.target.value))}>
-              {runs.map((run) => <option key={run.id} value={run.id}>{runLabel(run)}</option>)}
+              {runs
+                .filter((run) => run.id !== leftId)
+                .map((run) => <option key={run.id} value={run.id}>{runLabel(run)}</option>)}
             </select>
-            <button type="button" onClick={() => void activate(rightId)}>{t("analysis.useRun")}</button>
           </label>
         </div>
 
         {comparison && (
           <>
             <div className="analysis-comparison-legend">
-              <span className="left">A · {comparison.left.engineName}</span>
-              <span className="right">B · {comparison.right.engineName}</span>
+              <span className="left">A · {comparison.left.profileName}</span>
+              <span className="right">B · {comparison.right.profileName}</span>
             </div>
             <AnalysisComparisonChart
               positions={comparison.positions}
@@ -182,7 +207,7 @@ export default function AnalysisComparisonDialog({
                     className={position.ply === selected?.ply ? "selected" : ""}
                     onClick={() => choosePosition(position)}
                   >
-                    <strong>{t("analysis.comparisonPly", { ply: position.ply })}</strong>
+                    <strong>{comparisonMoveDisplay(moves, position.ply).label}</strong>
                     <span>Δ {position.normalizedScoreGap.toFixed(2)}</span>
                   </button>
                 ))}
@@ -191,6 +216,19 @@ export default function AnalysisComparisonDialog({
 
               {selected && (
                 <div className="analysis-comparison-detail">
+                  {selectedMove?.position && (
+                    <div className="analysis-comparison-board-wrap">
+                      <strong>{selectedMove.label}</strong>
+                      <AnalysisStaticBoard
+                        position={selectedMove.position}
+                        orientation={boardOrientation}
+                        highlightedMove={selectedMove.uci && selectedMove.uci.length >= 4
+                          ? { from: selectedMove.uci.slice(0, 2), to: selectedMove.uci.slice(2, 4) }
+                          : null}
+                        className="analysis-comparison-board"
+                      />
+                    </div>
+                  )}
                   <div className="analysis-comparison-sides">
                     <PositionSide title="A" position={selected.left} foreignRank={selected.leftBestMoveRankOnRight} />
                     <PositionSide title="B" position={selected.right} foreignRank={selected.rightBestMoveRankOnLeft} />

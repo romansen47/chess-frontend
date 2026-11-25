@@ -18,7 +18,7 @@ const availableCapabilities: EngineCapabilities = {
   whitePlayer: { configured: false, available: false, reason: "NOT_CONFIGURED" },
   blackPlayer: { configured: false, available: false, reason: "NOT_CONFIGURED" },
   evaluation: { configured: true, available: true, reason: "AVAILABLE" },
-  deepAnalysis: { configured: false, available: false, reason: "NOT_CONFIGURED" },
+  gameAnalysis: { configured: false, available: false, reason: "NOT_CONFIGURED" },
 };
 
 const unavailableCapabilities: EngineCapabilities = {

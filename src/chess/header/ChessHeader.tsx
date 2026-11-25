@@ -41,7 +41,7 @@ export default function ChessHeader({
 }: ChessHeaderProps) {
   const { language, t } = useI18n();
   const analysisBusy = analysisReplayActive && !analysisReplayFinished;
-  const [deepAnalysisAvailable, setDeepAnalysisAvailable] = useState<boolean | null>(null);
+  const [gameAnalysisAvailable, setGameAnalysisAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -55,9 +55,9 @@ export default function ChessHeader({
     const refresh = async () => {
       try {
         const capabilities = await fetchEngineCapabilities();
-        if (!cancelled) setDeepAnalysisAvailable(capabilities.deepAnalysis.available);
+        if (!cancelled) setGameAnalysisAvailable(capabilities.gameAnalysis.available);
       } catch {
-        if (!cancelled) setDeepAnalysisAvailable(false);
+        if (!cancelled) setGameAnalysisAvailable(false);
       }
     };
     void refresh();
@@ -68,7 +68,7 @@ export default function ChessHeader({
     };
   }, []);
 
-  const analysisDisabled = deepAnalysisAvailable === false;
+  const analysisDisabled = gameAnalysisAvailable === false;
   const analysisUnavailableTitle = "Keine funktionsbereite native Engine für die Analyse verfügbar.";
 
   return (

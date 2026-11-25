@@ -7,7 +7,7 @@ const NATIVE_ENGINE_ROLES = new Set<NativeEngineRole>([
   "WHITE_PLAYER",
   "BLACK_PLAYER",
   "EVALUATION",
-  "DEEP_ANALYSIS",
+  "GAME_ANALYSIS",
 ]);
 
 function isNativeEngineRole(value: unknown): value is NativeEngineRole {

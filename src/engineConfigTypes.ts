@@ -35,7 +35,7 @@ export interface EngineProfileAssignments {
   whitePlayerProfileId: string | null;
   blackPlayerProfileId: string | null;
   evaluationProfileId: string | null;
-  deepAnalysisProfileId: string | null;
+  gameAnalysisProfileId: string | null;
 }
 
 export interface EngineConfigOverview {

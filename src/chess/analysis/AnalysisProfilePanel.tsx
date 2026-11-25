@@ -107,6 +107,8 @@ export default function AnalysisProfilePanel({
           onClose={() => setShowComparison(false)}
           onSelectPly={actions.selectPositionByPly}
           onRunsChanged={refreshRuns}
+          moves={moves}
+          boardOrientation={state.boardOrientation}
         />
       )}
     </>

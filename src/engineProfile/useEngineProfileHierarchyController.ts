@@ -183,8 +183,8 @@ export function useEngineProfileHierarchyController({ overview, onOverviewChange
     if (overview.defaults.evaluationProfileId === profileId) {
       labels.push(t("settings.liveEvaluation"));
     }
-    if (overview.defaults.deepAnalysisProfileId === profileId) {
-      labels.push(t("settings.deepAnalysis"));
+    if (overview.defaults.gameAnalysisProfileId === profileId) {
+      labels.push(t("settings.gameAnalysis"));
     }
     return labels;
   }

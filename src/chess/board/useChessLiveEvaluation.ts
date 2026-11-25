@@ -90,7 +90,7 @@ export function useChessLiveEvaluation(options: Options) {
     engine.setEngineConfigLoadError(null);
     options.setAnalysisSettings((previous) => {
       if (data.profiles.some((profile) => profile.id === previous.engineProfileId)) return previous;
-      const preferred = data.profiles.find((profile) => profile.id === data.defaults.deepAnalysisProfileId);
+      const preferred = data.profiles.find((profile) => profile.id === data.defaults.gameAnalysisProfileId);
       return { ...previous, engineProfileId: preferred?.id ?? data.profiles[0]?.id ?? null };
     });
     engine.setEngineEval(null);

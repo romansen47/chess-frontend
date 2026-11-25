@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { AnalysisPositionComparison } from "../types";
-import { isAnalysisDifference, principalVariationLabel } from "./analysisComparison";
+import type {
+  AnalysisPositionComparison,
+  GameAnalysisRunSummary,
+} from "../types";
+import {
+  comparisonMoveDisplay,
+  initialComparisonRunSelection,
+  isAnalysisDifference,
+  principalVariationLabel,
+  selectComparisonLeftRun,
+} from "./analysisComparison";
 
 const base: AnalysisPositionComparison = {
   ply: 12,
@@ -16,6 +25,13 @@ const base: AnalysisPositionComparison = {
 };
 
 describe("analysis comparison", () => {
+  it("uses the active run as A and keeps B distinct", () => {
+    const runs = [run(1, false), run(2, true), run(3, false)];
+
+    expect(initialComparisonRunSelection(runs)).toEqual({ leftId: 2, rightId: 1 });
+    expect(selectComparisonLeftRun(runs, 1, 1)).toEqual({ leftId: 1, rightId: 2 });
+  });
+
   it("distinguishes a different root move from a different continuation", () => {
     expect(isAnalysisDifference({ ...base, differentBestMove: true }, "bestMove")).toBe(true);
     expect(isAnalysisDifference({ ...base, differentContinuation: true }, "bestMove")).toBe(false);
@@ -31,4 +47,38 @@ describe("analysis comparison", () => {
     expect(principalVariationLabel(["e2e4", "e7e5"])).toBe("e2e4 e7e5");
     expect(principalVariationLabel([])).toBe("—");
   });
+
+  it("formats plies as ordinary move notation and provides the board position", () => {
+    const rows = [{
+      moveNumber: 7,
+      white: "Be7",
+      black: "Qxd4",
+      whiteUci: "f8e7",
+      blackUci: "d8d4",
+      whitePosition: "w".repeat(64),
+      blackPosition: "b".repeat(64),
+    }];
+    expect(comparisonMoveDisplay(rows, 13)).toEqual({
+      label: "7. Be7",
+      position: "w".repeat(64),
+      uci: "f8e7",
+    });
+    expect(comparisonMoveDisplay(rows, 14).label).toBe("7... Qxd4");
+  });
 });
+
+function run(id: number, active: boolean): GameAnalysisRunSummary {
+  return {
+    id,
+    engineName: "Engine",
+    engineProfileId: `profile-${id}`,
+    profileName: `Profile ${id}`,
+    requestedDepth: 20,
+    moveTimeSeconds: 0,
+    multiPv: 3,
+    positionCount: 10,
+    maximumDepth: 20,
+    createdAt: "now",
+    active,
+  };
+}

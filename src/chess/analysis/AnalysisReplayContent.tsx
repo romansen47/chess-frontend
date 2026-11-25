@@ -96,9 +96,9 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
           aria-labelledby={variationMode ? undefined : activePrimaryTabId}
         >
           {variationMode ? <>
-            <AnalysisEngineTabs activeView="live" showDeepAnalysis={false} onChange={actions.setEngineView} />
+            <AnalysisEngineTabs activeView="live" showGameAnalysis={false} onChange={actions.setEngineView} />
             <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
-              activePly={state.analysisSelectedPosition?.ply ?? null} variationMode deepAnalysisRunning={false}
+              activePly={state.analysisSelectedPosition?.ply ?? null} variationMode gameAnalysisRunning={false}
               orientation={state.boardOrientation}
               animateVariations={state.animateEngineVariations}
               animationIntervalMs={state.engineVariationAnimationIntervalMs} />
@@ -109,10 +109,10 @@ export default function AnalysisReplayContent({ state, actions }: Props) {
           ) : state.analysisDetailsTab === "database" ? (
             <AnalysisEngineDetails state={state} actions={actions} />
           ) : <>
-            <AnalysisEngineTabs activeView={state.analysisEngineView} showDeepAnalysis onChange={actions.setEngineView} />
+            <AnalysisEngineTabs activeView={state.analysisEngineView} showGameAnalysis onChange={actions.setEngineView} />
             {liveViewActive ? (
               <LiveEvaluationView evaluation={state.analysisEvaluation} evaluationKey={state.evaluationKey}
-                activePly={state.analysisSelectedPosition?.ply ?? null} variationMode={false} deepAnalysisRunning={false}
+                activePly={state.analysisSelectedPosition?.ply ?? null} variationMode={false} gameAnalysisRunning={false}
                 orientation={state.boardOrientation}
                 animateVariations={state.animateEngineVariations}
                 animationIntervalMs={state.engineVariationAnimationIntervalMs} />

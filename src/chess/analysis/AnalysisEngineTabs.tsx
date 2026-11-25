@@ -5,13 +5,13 @@ export type AnalysisEngineView = "deep" | "live";
 
 interface AnalysisEngineTabsProps {
   activeView: AnalysisEngineView;
-  showDeepAnalysis: boolean;
+  showGameAnalysis: boolean;
   onChange: (view: AnalysisEngineView) => void;
 }
 
 export default function AnalysisEngineTabs({
   activeView,
-  showDeepAnalysis,
+  showGameAnalysis,
   onChange,
 }: AnalysisEngineTabsProps) {
   const { t } = useI18n();
@@ -22,7 +22,7 @@ export default function AnalysisEngineTabs({
       role="tablist"
       aria-label={t("analysis.engineLinesAria")}
     >
-      {showDeepAnalysis && (
+      {showGameAnalysis && (
         <button
           type="button"
           role="tab"
@@ -35,7 +35,7 @@ export default function AnalysisEngineTabs({
             .join(" ")}
           onClick={() => onChange("deep")}
         >
-          {t("settings.deepAnalysis")}
+          {t("settings.gameAnalysis")}
         </button>
       )}
       <button

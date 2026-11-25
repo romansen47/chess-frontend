@@ -25,7 +25,7 @@ describe("fetchEngineCapabilities", () => {
         available: false,
         reason: "EXECUTABLE_NOT_FOUND",
       },
-      deepAnalysis: {
+      gameAnalysis: {
         configured: true,
         available: false,
         reason: "UCI_UNRESPONSIVE",

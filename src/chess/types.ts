@@ -184,6 +184,7 @@ export interface GameAnalysisRunSummary {
   id: number;
   engineName: string;
   engineProfileId: string;
+  profileName: string;
   requestedDepth: number;
   moveTimeSeconds: number;
   multiPv: number;

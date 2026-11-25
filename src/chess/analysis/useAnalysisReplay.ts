@@ -132,10 +132,10 @@ export function useAnalysisReplay(
   function openAnalysisSettingsDialog() {
     state.setAnalysisReplayError(null);
     state.setAnalysisReplayStatus(null);
-    if (options.engineConfigOverview?.defaults.deepAnalysisProfileId) {
+    if (options.engineConfigOverview?.defaults.gameAnalysisProfileId) {
       state.setAnalysisSettings((previous) => ({
         ...previous,
-        engineProfileId: options.engineConfigOverview?.defaults.deepAnalysisProfileId ?? null,
+        engineProfileId: options.engineConfigOverview?.defaults.gameAnalysisProfileId ?? null,
       }));
     }
     options.setShowGameEndDialog(false);
@@ -232,7 +232,7 @@ export function useAnalysisReplay(
     state.setAnalysisSettings((previous) => {
       if (options.engineConfigOverview?.profiles.some((profile) => profile.id === previous.engineProfileId)) return previous;
       const preferred = options.engineConfigOverview?.profiles.find(
-        (profile) => profile.id === options.engineConfigOverview?.defaults.deepAnalysisProfileId,
+        (profile) => profile.id === options.engineConfigOverview?.defaults.gameAnalysisProfileId,
       );
       return {
         ...previous,

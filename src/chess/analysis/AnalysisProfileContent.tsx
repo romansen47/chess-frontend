@@ -15,7 +15,7 @@ interface Props {
 /**
  * Shared composition boundary for the analysis profile and all content below it.
  *
- * <p>CAT deliberately renders the detail area only after deep analysis has
+ * <p>CAT deliberately renders the detail area only after game analysis has
  * completed or been cancelled. Using the terminal replay state avoids brief
  * detail-tab flashes during preparation/resume transitions. Desktop and mobile
  * use this same component so the visibility rule cannot drift between layouts.</p>

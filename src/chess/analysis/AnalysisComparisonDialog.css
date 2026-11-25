@@ -50,13 +50,12 @@
 
 .analysis-comparison-selectors label {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 0.5rem;
 }
 
 .analysis-comparison-selectors select,
-.analysis-comparison-selectors button,
 .analysis-comparison-filters button {
   min-height: 2.2rem;
   border: 1px solid #606060;
@@ -135,6 +134,28 @@
 
 .analysis-comparison-sides { align-items: stretch; }
 
+.analysis-comparison-detail {
+  display: grid;
+  grid-template-columns: minmax(190px, 260px) minmax(0, 1fr);
+  align-items: start;
+  gap: 0.8rem;
+}
+
+.analysis-comparison-board-wrap {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.analysis-comparison-board {
+  width: min(100%, 260px);
+  border-radius: 5px;
+}
+
+.analysis-comparison-detail > p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .analysis-comparison-side {
   flex: 1;
   min-width: 0;
@@ -159,5 +180,13 @@
 
   .analysis-comparison-sides {
     flex-direction: column;
+  }
+
+  .analysis-comparison-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-comparison-detail > p {
+    grid-column: auto;
   }
 }

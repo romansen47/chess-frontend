@@ -36,20 +36,20 @@ export default function AnalysisSettingsDialog({
   onStart,
 }: AnalysisSettingsDialogProps) {
   const { t } = useI18n();
-  const [deepAnalysisAvailable, setDeepAnalysisAvailable] = useState<boolean | null>(null);
+  const [gameAnalysisAvailable, setGameAnalysisAvailable] = useState<boolean | null>(null);
   useEffect(() => {
     let cancelled = false;
     void fetchEngineCapabilities()
       .then((capabilities) => {
-        if (!cancelled) setDeepAnalysisAvailable(capabilities.deepAnalysis.available);
+        if (!cancelled) setGameAnalysisAvailable(capabilities.gameAnalysis.available);
       })
       .catch(() => {
-        if (!cancelled) setDeepAnalysisAvailable(false);
+        if (!cancelled) setGameAnalysisAvailable(false);
       });
     return () => { cancelled = true; };
   }, [profiles, selectedProfile?.id]);
 
-  const unavailable = deepAnalysisAvailable === false;
+  const unavailable = gameAnalysisAvailable === false;
   const timeSearch = settings.depth <= 0;
 
   const selectTimeSearch = () => {

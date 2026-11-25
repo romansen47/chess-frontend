@@ -65,7 +65,7 @@ export default function EngineDefaultsSettings({
   const assignments: Array<[AssignmentKey, string]> = [
     ["whitePlayerProfileId", t("settings.whiteCpu")],
     ["blackPlayerProfileId", t("settings.blackCpu")],
-    ["deepAnalysisProfileId", t("settings.deepAnalysis")],
+    ["gameAnalysisProfileId", t("settings.gameAnalysis")],
   ];
 
   return <>
@@ -94,7 +94,7 @@ export default function EngineDefaultsSettings({
         <div className="engine-config-default-grid">
           {assignmentCard("whitePlayerProfileId", t("settings.whiteCpuPlayer"), t("settings.whiteCpuDescription"))}
           {assignmentCard("blackPlayerProfileId", t("settings.blackCpuPlayer"), t("settings.blackCpuDescription"))}
-          {assignmentCard("deepAnalysisProfileId", t("settings.deepAnalysis"), t("settings.deepAnalysisDescription"))}
+          {assignmentCard("gameAnalysisProfileId", t("settings.gameAnalysis"), t("settings.gameAnalysisDescription"))}
         </div>
         <div className="engine-config-actions engine-config-actions-footer">
           <div className="engine-config-actions-spacer" />

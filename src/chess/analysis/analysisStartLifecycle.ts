@@ -7,7 +7,7 @@ export interface AnalysisStartInterruption {
 
 /**
  * Stops every engine-backed calculation that can conflict with starting a new
- * deep analysis. All stop operations are attempted even when one of them fails.
+ * game analysis. All stop operations are attempted even when one of them fails.
  */
 export async function stopAnalysisCalculations(
   interruption: AnalysisStartInterruption,

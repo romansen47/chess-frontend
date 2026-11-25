@@ -32,7 +32,7 @@ const overview: EngineConfigOverview = {
     whitePlayerProfileId: null,
     blackPlayerProfileId: null,
     evaluationProfileId: null,
-    deepAnalysisProfileId: null,
+    gameAnalysisProfileId: null,
   },
   fallbackProfileId: null,
   version: 1,
